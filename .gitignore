@@ -1,0 +1,7 @@
+.directory
+*.csv
+*.ods
+*.xlsx
+*.json
+*.pkl
+*.txt
