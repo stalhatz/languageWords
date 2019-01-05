@@ -26,7 +26,7 @@ class TextElement:
 #     b = a.stdout.decode('utf-8')
 #     return b
   
-# from PyQt5.QtWidgets import (QApplication,QInputDialog, QLineEdit,QCompleter)
+from PyQt5.QtWidgets import (QApplication,QInputDialog, QLineEdit,QCompleter)
 # def getQtTextInput(taskList, labelText):
 #   app = QApplication([])
 #   a = QInputDialog()
@@ -97,13 +97,22 @@ def loadFromPickle(filename):
     a = pickle.load(input)
   return a
 
+def createDFFromDict(dictWords):
+  words["text"] = []
+  words["hyperlink"] = []
+  words["tag"] = []
+  for key in dictWords:
+    words["text"].append(key)
+    words["hyperlink"].append(dictWords[key][0])
+    words["tag"].append(dictWords[key][1])
+  return pd.DataFrame.from_dict(words)
 
 import argparse
 
 words = {}
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='Process some integers.')
-  parser.add_argument('-l', nargs='?', const='dictWords.pkl', default=None)
+  parser.add_argument('-l', nargs='?', const='dictWords.pd.pkl', default=None)
   parser.add_argument('-s', nargs='?', const='dictWords.pkl', default=None)
   args = parser.parse_args()
   
@@ -117,13 +126,4 @@ if __name__ == "__main__":
       dictWords = loadFromPickle(args.l)
     except:
       print("Could not load from file")
-  
-  words["text"] = []
-  words["hyperlink"] = []
-  words["tag"] = []
-  for key in dictWords:
-    words["text"].append(key)
-    words["hyperlink"].append(dictWords[key][0])
-    words["tag"].append(dictWords[key][1])
-  df = pd.DataFrame.from_dict(words)
-  print(df)
+  print(dictWords)  
