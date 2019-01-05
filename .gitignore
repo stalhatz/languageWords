@@ -5,3 +5,5 @@
 *.json
 *.pkl
 *.txt
+*.pyc
+ui_*.py
