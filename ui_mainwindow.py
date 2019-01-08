@@ -16,13 +16,14 @@ class DictWebList(QAbstractListModel):
     self.definitionsList = []
     request = requests.get(url.toString())
     if request.status_code > 200:
-      self.definitionsList.append("Could not load page. Code" + str(request.status_code))
+      self.definitionsList.append("Could not load page. Code :: " + str(request.status_code))
     else:
       html =  request.text
       s = BeautifulSoup(html,"html.parser")
+      #Wiktionary
       for element in s.select("ol > li"):
         self.definitionsList.append(element.text.split("\n")[0])
-      self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.definitionsList) , 0))
+    self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.definitionsList) , 0))
   def rowCount(self, modelIndex):
     return len(self.definitionsList)
   def data(self, index, role):
