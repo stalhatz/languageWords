@@ -6,4 +6,5 @@
 *.pkl
 *.txt
 *.pyc
+*.autosave
 ui_*.py
