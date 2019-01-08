@@ -58,6 +58,7 @@ class PandasWordList(QAbstractListModel):
     self.webView = webview
     self.dict = "wiktionary"
     self.url = None
+    self.currentIndex = -1
   def rowCount(self, modelIndex):
     return len(self.df_image)
   def data(self, index, role):
@@ -66,11 +67,12 @@ class PandasWordList(QAbstractListModel):
     if role==Qt.DisplayRole:
       return str(self.df_image.iloc[index.row(),0])
   def selected(self, index , prevIndex):
+    
     if self.dict == "wiktionary":
       self.url = QUrl("https://fr.wiktionary.org/wiki/" + str(self.df_image.iloc[index.row(),0]) )
     elif self.dict == "larousse":
       self.url = QUrl("https://www.larousse.fr/dictionnaires/francais/" + str(self.df_image.iloc[index.row(),0]) )
-    #self.webView.load(url) 
+    self.currentIndex = index.row()
     self.pageLoad.emit(self.url)
   def reload(self):
     if self.url is not None:
@@ -80,6 +82,8 @@ class PandasWordList(QAbstractListModel):
     self.dataChanged.emit()
   def updateDict(self,dictName):
     self.dict = dictName
+    if self.currentIndex > 0:
+      self.selected(self.createIndex(self.currentIndex,0) , self.createIndex(0 , 0))
 words = {}
 
 class Ui_MainWindow(object):
