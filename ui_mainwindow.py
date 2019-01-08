@@ -111,7 +111,8 @@ class Ui_MainWindow(object):
       self.horizontalLayout.addWidget(self.tabwidget)
 
       self.dictListView = QtWidgets.QListView(self.tabwidget)
-      self.dictListView.setObjectName("webView")
+      self.dictListView.setObjectName("dictView")
+      self.dictListView.setWordWrap(True)
       self.tabwidget.addTab(self.dictListView , "Custom view")
 
       self.webView = QtWebEngineWidgets.QWebEngineView(self.tabwidget)

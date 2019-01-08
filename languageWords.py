@@ -104,6 +104,10 @@ if __name__ == "__main__":
     except:
       print("Could not load from file")
   app = QApplication([])
+
+  stylesheet="stylesheet1.css"
+  with open(stylesheet,"r") as fh:
+    app.setStyleSheet(fh.read())
   
   window = QMainWindow()
   ui = Ui_MainWindow()
