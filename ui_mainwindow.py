@@ -20,9 +20,16 @@ class DictWebList(QAbstractListModel):
     else:
       html =  request.text
       s = BeautifulSoup(html,"html.parser")
-      #Wiktionary
-      for element in s.select("ol > li"):
-        self.definitionsList.append(element.text.split("\n")[0])
+
+      if "wiktionary" in url.toString():
+        #Wiktionary
+        for element in s.select("ol > li"):
+          self.definitionsList.append(element.text.split("\n")[0])
+      elif "larousse" in url.toString():
+        #Larousse
+        for element in s.find_all("li",class_ = "DivisionDefinition"):
+          self.definitionsList.append(str(element.find(text=True,recursive=False) ))
+    #print (self.definitionsList)
     self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.definitionsList) , 0))
   def rowCount(self, modelIndex):
     return len(self.definitionsList)
@@ -73,6 +80,7 @@ class PandasWordList(QAbstractListModel):
     elif self.dict == "larousse":
       self.url = QUrl("https://www.larousse.fr/dictionnaires/francais/" + str(self.df_image.iloc[index.row(),0]) )
     self.currentIndex = index.row()
+    print(self.url)
     self.pageLoad.emit(self.url)
   def reload(self):
     if self.url is not None:
