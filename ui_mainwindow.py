@@ -4,9 +4,10 @@ from PyQt5.QtCore import (QUrl,QVariant,Qt,pyqtSignal)
 from PyQt5.QtCore import (QAbstractListModel,QModelIndex,QStringListModel)
 
 import requests
-from bs4 import BeautifulSoup
+
 import pandas as pd
-import unidecode
+
+import dictionaries as dictHandler
 
 class DictWebList(QAbstractListModel):
   dataChanged = pyqtSignal(QModelIndex,QModelIndex)
@@ -20,17 +21,7 @@ class DictWebList(QAbstractListModel):
       self.definitionsList.append("Could not load page. Code :: " + str(request.status_code))
     else:
       html =  request.text
-      s = BeautifulSoup(html,"html.parser")
-
-      if "wiktionary" in url.toString():
-        #Wiktionary
-        for element in s.select("ol > li"):
-          self.definitionsList.append(element.text.split("\n")[0])
-      elif "larousse" in url.toString():
-        #Larousse
-        for element in s.find_all("li",class_ = "DivisionDefinition"):
-          self.definitionsList.append(str(element.find(text=True,recursive=False) ))
-    #print (self.definitionsList)
+      self.definitionsList = dictHandler.getDefinitionsFromHtml(url.toString() , html)
     self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.definitionsList) , 0))
   def rowCount(self, modelIndex):
     return len(self.definitionsList)
@@ -75,15 +66,8 @@ class PandasWordList(QAbstractListModel):
     if role==Qt.DisplayRole:
       return str(self.df_image.iloc[index.row(),0])
   def selected(self, index , prevIndex):
-    
-    if self.dict == "wiktionary":
-      self.url = QUrl("https://fr.wiktionary.org/wiki/" + str(self.df_image.iloc[index.row(),0]) )
-    elif self.dict == "larousse":
-      word = str(self.df_image.iloc[index.row(),0])
-      unaccented_word = unidecode.unidecode(word)
-      self.url = QUrl("https://www.larousse.fr/dictionnaires/francais/" + unaccented_word )
+    self.url =  QUrl(dictHandler.createUrl(self.dict , str(self.df_image.iloc[index.row(),0])))
     self.currentIndex = index.row()
-    print(self.url)
     self.pageLoad.emit(self.url)
   def reload(self):
     if self.url is not None:
