@@ -6,6 +6,7 @@ from PyQt5.QtCore import (QAbstractListModel,QModelIndex,QStringListModel)
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
+import unidecode
 
 class DictWebList(QAbstractListModel):
   dataChanged = pyqtSignal(QModelIndex,QModelIndex)
@@ -78,7 +79,9 @@ class PandasWordList(QAbstractListModel):
     if self.dict == "wiktionary":
       self.url = QUrl("https://fr.wiktionary.org/wiki/" + str(self.df_image.iloc[index.row(),0]) )
     elif self.dict == "larousse":
-      self.url = QUrl("https://www.larousse.fr/dictionnaires/francais/" + str(self.df_image.iloc[index.row(),0]) )
+      word = str(self.df_image.iloc[index.row(),0])
+      unaccented_word = unidecode.unidecode(word)
+      self.url = QUrl("https://www.larousse.fr/dictionnaires/francais/" + unaccented_word )
     self.currentIndex = index.row()
     print(self.url)
     self.pageLoad.emit(self.url)
