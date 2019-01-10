@@ -87,14 +87,17 @@ class Ui_MainWindow(object):
       MainWindow.resize(728, 521)
       self.centralwidget = QtWidgets.QWidget(MainWindow)
       self.centralwidget.setObjectName("centralwidget")
+
+
       self.horizontalLayout = QtWidgets.QHBoxLayout(self.centralwidget)
       self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
       self.horizontalLayout.setObjectName("horizontalLayout")
       self.verticalLayout = QtWidgets.QVBoxLayout()
       self.verticalLayout.setObjectName("verticalLayout")
       self.dictSelect = QtWidgets.QComboBox(self.centralwidget)
-      self.dictSelect.setMaximumSize(QtCore.QSize(400, 100))
+      self.dictSelect.setMaximumSize(QtCore.QSize(300, 50))
       self.dictSelect.setObjectName("dictSelect")
+      self.verticalLayout.addWidget(self.dictSelect)
       self.wordview = QtWidgets.QListView(self.centralwidget)
       self.wordview.setMaximumSize(QtCore.QSize(400, 400))
       self.wordview.setObjectName("wordview")
