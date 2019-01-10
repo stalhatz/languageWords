@@ -2,13 +2,16 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 from PyQt5.QtCore import (QUrl,QVariant,Qt,pyqtSignal)
 from PyQt5.QtCore import (QAbstractListModel,QModelIndex,QStringListModel)
-
+from PyQt5.QtNetwork import (QNetworkAccessManager,QNetworkRequest,QNetworkReply)
 import requests
 
 import pandas as pd
 
 import dictionaries as dictHandler
 
+# FIXME : Async requests.
+# QNetworkAccessManager (which would be the easiest way to do this) not working due to QTBUG-68156
+# Should use requests-futures
 class DictWebList(QAbstractListModel):
   dataChanged = pyqtSignal(QModelIndex,QModelIndex)
   def __init__(self):
@@ -29,7 +32,6 @@ class DictWebList(QAbstractListModel):
     if not index.isValid() or not (0<=index.row()<len(self.definitionsList)):  return QVariant()
     if role==Qt.DisplayRole:      return self.definitionsList[index.row()]
 
-
 class PandasTagList(QAbstractListModel):
   tagChanged = pyqtSignal(str, name='tagChanged')
   def __init__(self, df):
@@ -45,7 +47,8 @@ class PandasTagList(QAbstractListModel):
   def selected(self, index , prevIndex):
     self.selectedIndex = index.row()
     self.tagChanged.emit( str(self.df.iloc[index.row(),0]) )
-
+  def getCurrentTag():
+    str(self.df.iloc[index.row(),0])
 
 class PandasWordList(QAbstractListModel):
   dataChanged = pyqtSignal()
@@ -80,18 +83,38 @@ class PandasWordList(QAbstractListModel):
     if self.currentIndex > 0:
       self.selected(self.createIndex(self.currentIndex,0) , self.createIndex(0 , 0))
 words = {}
-
+# TODO: Breakup ui setup in functions
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
       MainWindow.setObjectName("MainWindow")
       MainWindow.resize(728, 521)
       self.centralwidget = QtWidgets.QWidget(MainWindow)
       self.centralwidget.setObjectName("centralwidget")
+      
+      self.outerVerticalLayout = QtWidgets.QVBoxLayout(self.centralwidget)
+      self.outerVerticalLayout.setObjectName("outerVerticalLayout")
+      self.buttonHorizontalLayout = QtWidgets.QHBoxLayout()
+      self.buttonHorizontalLayout.setObjectName("buttonHorizontalLayout")
 
+      self.addWordButton = QtWidgets.QPushButton(self.centralwidget)
+      self.addWordButton.setObjectName("addWordButton")
+      self.addWordButton.setMaximumSize(QtCore.QSize(100,100))
+      self.addWordButton.setText("Add Word")
+      self.editWordButton = QtWidgets.QPushButton(self.centralwidget)
+      self.editWordButton.setObjectName("editWordButton")
+      self.editWordButton.setMaximumSize(QtCore.QSize(100,100))
+      self.editWordButton.setText("Edit Word")
 
-      self.horizontalLayout = QtWidgets.QHBoxLayout(self.centralwidget)
+      self.buttonHorizontalLayout.addWidget(self.addWordButton)
+      self.buttonHorizontalLayout.addWidget(self.editWordButton)
+
+      self.horizontalLayout = QtWidgets.QHBoxLayout()
       self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
       self.horizontalLayout.setObjectName("horizontalLayout")
+      
+      self.outerVerticalLayout.addLayout(self.buttonHorizontalLayout)
+      self.outerVerticalLayout.addLayout(self.horizontalLayout)
+      
       self.verticalLayout = QtWidgets.QVBoxLayout()
       self.verticalLayout.setObjectName("verticalLayout")
       self.dictSelect = QtWidgets.QComboBox(self.centralwidget)
@@ -183,5 +206,19 @@ class Ui_MainWindow(object):
       MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
       self.menuFile.setTitle(_translate("MainWindow", "Fi&le"))
       self.actionOpen.setText(_translate("MainWindow", "Open..."))
+    
+    # TODO: Show dialogs for adding/editing words.
+    # def showAddWordDialog(self,event):
+    #   currentTag = self.ptl.getCurrentTag()
+    #   self.addWordDialog = QtWidgets.QDialog(self.centralwidget)
+    #   hLayout = QtWidgets.QHBoxLayout(self.addWordDialog)
+    #   vLeftLayout = QtWidgets.QVBoxLayout(self.addWordDialog)
+    #   vRightLayout = QtWidgets.QVBoxLayout(self.addWordDialog)
+    #   hLayout.addLayout(vLeftLayout)
+    #   hLayout.addLayout(vRightLayout)
+
+    #   label = 
+
+    # def showEditWordDialog(self,event):
 
 from PyQt5 import QtWebEngineWidgets 

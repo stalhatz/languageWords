@@ -47,16 +47,6 @@ from PyQt5.QtWidgets import (QApplication,QWidget,QMainWindow)
 #   else:
 #     return a.textValue()
 
-# def showDialog(command, _title, taskList = None):
-#   if command == "input":
-#     return getQtTextInput(taskList, _title)
-#   elif command == "notification":
-#     title = ["--title" , _title]
-#     text = [_title]
-#     args =  title + ["--passivepopup"] + text
-#     runCommand("kdialog", args)
-
-
 # self.webView = QtWebEngineWidgets.QWebEngineView(self.centralwidget)
 # from PyQt5 import QtWebEngineWidgets   
 
@@ -81,11 +71,6 @@ def createDFFromDict(dictWords):
     words["hyperlink"].append(dictWords[key][0])
     words["tag"].append(dictWords[key][1])
   return pd.DataFrame.from_dict(words)
-
-
-
-#def handleTabWidgetSignals():
-
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='Process some integers.')
