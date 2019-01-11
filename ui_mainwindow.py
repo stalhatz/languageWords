@@ -6,10 +6,13 @@ from PyQt5.QtNetwork import (QNetworkAccessManager,QNetworkRequest,QNetworkReply
 import requests
 
 import pandas as pd
-
+from requests_futures.sessions import FuturesSession
+from concurrent.futures import ThreadPoolExecutor
 import dictionaries as dictHandler
+from functools import partial
 
-# FIXME : Async requests.
+# FIXME : Async requests. It's fast but it will not show the definitions sometimes 
+# (Racing condition? Is the server blocking us?).
 # QNetworkAccessManager (which would be the easiest way to do this) not working due to QTBUG-68156
 # Should use requests-futures
 class DictWebList(QAbstractListModel):
@@ -17,9 +20,20 @@ class DictWebList(QAbstractListModel):
   def __init__(self):
     super(DictWebList,self).__init__()
     self.definitionsList = []
+    self.lastRequest = None
+    self.session = FuturesSession(max_workers=1)
+    self.url = None
   def load(self,url):
+    self.url = url
     self.definitionsList = []
-    request = requests.get(url.toString())
+    future = self.session.get(url.toString())
+    future.add_done_callback(partial(self._load,url))
+    self.lastRequest = future
+  def _load(self,url,future):
+    if url != self.url:
+      future.cancel() #Should cancel itself when issuing the next request as max_workers = 1
+      return
+    request = future.result()
     if request.status_code > 200:
       self.definitionsList.append("Could not load page. Code :: " + str(request.status_code))
     else:
