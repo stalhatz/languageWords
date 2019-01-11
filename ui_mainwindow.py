@@ -17,6 +17,7 @@ from functools import partial
 # Should use requests-futures
 class DictWebList(QAbstractListModel):
   dataChanged = pyqtSignal(QModelIndex,QModelIndex)
+  showMessage = pyqtSignal(str)
   def __init__(self):
     super(DictWebList,self).__init__()
     self.definitionsList = []
@@ -29,6 +30,7 @@ class DictWebList(QAbstractListModel):
     future = self.session.get(url.toString())
     future.add_done_callback(partial(self._load,url))
     self.lastRequest = future
+    self.showMessage.emit("Loading from " + url.toString() )
   def _load(self,url,future):
     if url != self.url:
       future.cancel() #Should cancel itself when issuing the next request as max_workers = 1
@@ -37,6 +39,7 @@ class DictWebList(QAbstractListModel):
     if request.status_code > 200:
       self.definitionsList.append("Could not load page. Code :: " + str(request.status_code))
     else:
+      self.showMessage.emit("Finshed loading from " + url.toString())
       html =  request.text
       self.definitionsList = dictHandler.getDefinitionsFromHtml(url.toString() , html)
     self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.definitionsList) , 0))
@@ -126,9 +129,14 @@ class Ui_MainWindow(object):
       self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
       self.horizontalLayout.setObjectName("horizontalLayout")
       
+      self.statusBar = QtWidgets.QStatusBar(self.centralwidget)
+      self.statusBar.setObjectName("statusBar")
+      self.statusBar.showMessage("Hello World")
+
       self.outerVerticalLayout.addLayout(self.buttonHorizontalLayout)
       self.outerVerticalLayout.addLayout(self.horizontalLayout)
-      
+      self.outerVerticalLayout.addWidget(self.statusBar)
+
       self.verticalLayout = QtWidgets.QVBoxLayout()
       self.verticalLayout.setObjectName("verticalLayout")
       self.dictSelect = QtWidgets.QComboBox(self.centralwidget)
@@ -194,7 +202,7 @@ class Ui_MainWindow(object):
       #Connect signals to tab views
       self.pwl.dataChanged.connect(self.wordview.reset)
       self.dwl.dataChanged.connect(self.dictListView.dataChanged)
-      
+      self.dwl.showMessage.connect(self.statusBar.showMessage)
       
       self.tabConnected = -1
       self.connectTabSlots(self.tabwidget.currentIndex())
