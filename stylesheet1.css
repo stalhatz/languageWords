@@ -20,6 +20,9 @@ QListView {
   border-bottom: 2px solid #C2C7CB;
 }
 
+#dictView::disabled{
+  background: #DEDEDE;
+}
 
 QListView::item:alternate {
     background: #EEEEEE;

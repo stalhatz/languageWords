@@ -11,13 +11,15 @@ from concurrent.futures import ThreadPoolExecutor
 import dictionaries as dictHandler
 from functools import partial
 
-# FIXME : Async requests. It's fast but it will not show the definitions sometimes 
+# FIXED : Async requests
+# TODO : Animation while loading using QMovie
 # (Racing condition? Is the server blocking us?).
 # QNetworkAccessManager (which would be the easiest way to do this) not working due to QTBUG-68156
 # Should use requests-futures
 class DictWebList(QAbstractListModel):
   dataChanged = pyqtSignal(QModelIndex,QModelIndex)
   showMessage = pyqtSignal(str)
+  setEnabledView = pyqtSignal(bool)
   def __init__(self):
     super(DictWebList,self).__init__()
     self.definitionsList = []
@@ -31,6 +33,7 @@ class DictWebList(QAbstractListModel):
     future.add_done_callback(partial(self._load,url))
     self.lastRequest = future
     self.showMessage.emit("Loading from " + url.toString() )
+    self.setEnabledView.emit(False)
   def _load(self,url,future):
     if url != self.url:
       future.cancel() #Should cancel itself when issuing the next request as max_workers = 1
@@ -42,6 +45,7 @@ class DictWebList(QAbstractListModel):
       self.showMessage.emit("Finshed loading from " + url.toString())
       html =  request.text
       self.definitionsList = dictHandler.getDefinitionsFromHtml(url.toString() , html)
+    self.setEnabledView.emit(True)
     self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.definitionsList) , 0))
   def rowCount(self, modelIndex):
     return len(self.definitionsList)
@@ -203,7 +207,7 @@ class Ui_MainWindow(object):
       self.pwl.dataChanged.connect(self.wordview.reset)
       self.dwl.dataChanged.connect(self.dictListView.dataChanged)
       self.dwl.showMessage.connect(self.statusBar.showMessage)
-      
+      self.dwl.setEnabledView.connect(self.dictListView.setEnabled)
       self.tabConnected = -1
       self.connectTabSlots(self.tabwidget.currentIndex())
 
