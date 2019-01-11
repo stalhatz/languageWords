@@ -21,25 +21,36 @@ QListView {
 }
 
 #dictView::disabled{
-  background: #DEDEDE;
+  background: #AEAEAE;
 }
+
+#statusBar{
+  border: 0.5px double #C2C7CB;
+  background: #7E7E7E;
+  color: #DEDEDE;
+  font-family: monospace
+}
+
 
 QListView::item:alternate {
     background: #EEEEEE;
 }
 QListView::item:selected:!active {
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                stop: 0 #ABAFE5, stop: 1 #8588B2);
+                                stop: 0 #5B5B5B, stop: 1 #AB9B8B);
+    color : white
 }
 
 QListView::item:selected:active {
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                stop: 0 #6a6ea9, stop: 1 #888dd9);
+                                stop: 0 #5B5B5B, stop: 1 #7B6B6B);
+    color : white
 }
 
 QListView::item:hover {
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                stop: 0 #FAFBFE, stop: 1 #DCDEF1);
+                                stop: 0 #5B5B5B, stop: 1 #9B7B8B);
+    color : white
 }
 
 

@@ -40,13 +40,13 @@ class DictWebList(QAbstractListModel):
       return
     request = future.result()
     if request.status_code > 200:
-      self.definitionsList.append("Could not load page. Code :: " + str(request.status_code))
+      self.showMessage.emit("Error while loading from " + url.toString() + " Code :: " + str(request.status_code))
     else:
-      self.showMessage.emit("Finshed loading from " + url.toString())
+      self.showMessage.emit("Finished loading from " + url.toString())
       html =  request.text
       self.definitionsList = dictHandler.getDefinitionsFromHtml(url.toString() , html)
-    self.setEnabledView.emit(True)
-    self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.definitionsList) , 0))
+      self.setEnabledView.emit(True)
+      self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.definitionsList) , 0))
   def rowCount(self, modelIndex):
     return len(self.definitionsList)
   def data(self, index, role):
