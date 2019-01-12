@@ -97,7 +97,7 @@ if __name__ == "__main__":
   window = QMainWindow()
   ui = Ui_MainWindow()
   ui.setupUi(window)
-  ui.setupDataUi(dictWords)
+  ui.setupDataModels(dictWords)
   ui.dictSelect.insertItems(0,["wiktionary", "larousse"])
 
   window.show()

@@ -1,20 +1,10 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from dataModels import (DictWebList, PandasTagList, PandasWordList)
-#import requests
 
-# TODO: Breakup ui setup in functions
 class Ui_MainWindow(object):
-    def setupUi(self, MainWindow):
-      MainWindow.setObjectName("MainWindow")
-      MainWindow.resize(728, 521)
-      self.centralwidget = QtWidgets.QWidget(MainWindow)
-      self.centralwidget.setObjectName("centralwidget")
-      
-      self.outerVerticalLayout = QtWidgets.QVBoxLayout(self.centralwidget)
-      self.outerVerticalLayout.setObjectName("outerVerticalLayout")
+    def addTopButtons(self):
       self.buttonHorizontalLayout = QtWidgets.QHBoxLayout()
       self.buttonHorizontalLayout.setObjectName("buttonHorizontalLayout")
-
       self.addWordButton = QtWidgets.QPushButton(self.centralwidget)
       self.addWordButton.setObjectName("addWordButton")
       self.addWordButton.setMaximumSize(QtCore.QSize(100,100))
@@ -23,10 +13,9 @@ class Ui_MainWindow(object):
       self.editWordButton.setObjectName("editWordButton")
       self.editWordButton.setMaximumSize(QtCore.QSize(100,100))
       self.editWordButton.setText("Edit Word")
-
       self.buttonHorizontalLayout.addWidget(self.addWordButton)
       self.buttonHorizontalLayout.addWidget(self.editWordButton)
-
+    def addListViews(self):
       self.horizontalLayout = QtWidgets.QHBoxLayout()
       self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
       self.horizontalLayout.setObjectName("horizontalLayout")
@@ -68,27 +57,27 @@ class Ui_MainWindow(object):
       self.webView.setUrl(QtCore.QUrl("about:blank"))
       self.webView.setObjectName("webView")
       self.tabwidget.addTab(self.webView , "Webview")
+      self.tabConnected = -1
+      self.tabwidget.currentChanged.connect(self.connectTabSlots)
+
       #self.horizontalLayout.addWidget(self.webView)
-      
-      MainWindow.setCentralWidget(self.centralwidget)
+    def addMenuBar(self,MainWindow):
       self.menubar = QtWidgets.QMenuBar(MainWindow)
       self.menubar.setGeometry(QtCore.QRect(0, 0, 728, 30))
       self.menubar.setObjectName("menubar")
       self.menuFile = QtWidgets.QMenu(self.menubar)
       self.menuFile.setObjectName("menuFile")
-      MainWindow.setMenuBar(self.menubar)
-      self.statusbar = QtWidgets.QStatusBar(MainWindow)
-      self.statusbar.setObjectName("statusbar")
-      MainWindow.setStatusBar(self.statusbar)
       self.actionOpen = QtWidgets.QAction(MainWindow)
       self.actionOpen.setObjectName("actionOpen")
       self.menuFile.addAction(self.actionOpen)
       self.menubar.addAction(self.menuFile.menuAction())
-
-      self.retranslateUi(MainWindow)
-      QtCore.QMetaObject.connectSlotsByName(MainWindow)
+      MainWindow.setMenuBar(self.menubar)
+    def addStatusBar(self,MainWindow):
+      self.statusbar = QtWidgets.QStatusBar(MainWindow)
+      self.statusbar.setObjectName("statusbar")
+      MainWindow.setStatusBar(self.statusbar)
     
-    def setupDataUi(self, dictWords):
+    def setupDataModels(self,dictWords):
       self.pwl = PandasWordList(dictWords,self.webView)
       self.ptl = PandasTagList(dictWords)
       self.dwl = DictWebList()
@@ -99,18 +88,29 @@ class Ui_MainWindow(object):
       self.wordview.setModel(self.pwl)
       self.wordview.selectionModel().currentChanged.connect(self.pwl.selected)
       self.dictSelect.currentTextChanged.connect(self.pwl.updateDict)
-
       self.ptl.tagChanged.connect(self.pwl.updateWords)
       #Connect signals to tab views
       self.pwl.dataChanged.connect(self.wordview.reset)
       self.dwl.dataChanged.connect(self.dictListView.dataChanged)
       self.dwl.showMessage.connect(self.statusBar.showMessage)
       self.dwl.setEnabledView.connect(self.dictListView.setEnabled)
-      self.tabConnected = -1
+
       self.connectTabSlots(self.tabwidget.currentIndex())
 
-      self.tabwidget.currentChanged.connect(self.connectTabSlots)
-
+    def setupUi(self, MainWindow):
+      MainWindow.setObjectName("MainWindow")
+      MainWindow.resize(728, 521)
+      self.centralwidget = QtWidgets.QWidget(MainWindow)
+      self.centralwidget.setObjectName("centralwidget")
+      self.outerVerticalLayout = QtWidgets.QVBoxLayout(self.centralwidget)
+      self.outerVerticalLayout.setObjectName("outerVerticalLayout")
+      self.addTopButtons()
+      self.addListViews()
+      MainWindow.setCentralWidget(self.centralwidget)
+      self.addMenuBar(MainWindow)            
+      self.addStatusBar(MainWindow)
+      self.retranslateUi(MainWindow)
+      QtCore.QMetaObject.connectSlotsByName(MainWindow)
     def connectTabSlots(self,current):
       if current == 1:
         if self.tabConnected == 0:
