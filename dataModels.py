@@ -100,3 +100,4 @@ class PandasWordList(QAbstractListModel):
     self.dict = dictName
     if self.currentIndex > 0:
       self.selected(self.createIndex(self.currentIndex,0) , self.createIndex(0 , 0))
+  #def addWord(self, word):

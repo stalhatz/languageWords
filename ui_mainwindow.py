@@ -9,6 +9,7 @@ class Ui_MainWindow(object):
       self.addWordButton.setObjectName("addWordButton")
       self.addWordButton.setMaximumSize(QtCore.QSize(100,100))
       self.addWordButton.setText("Add Word")
+      self.addWordButton.clicked.connect(self.showAddWordDialog)
       self.editWordButton = QtWidgets.QPushButton(self.centralwidget)
       self.editWordButton.setObjectName("editWordButton")
       self.editWordButton.setMaximumSize(QtCore.QSize(100,100))
@@ -132,16 +133,45 @@ class Ui_MainWindow(object):
       self.actionOpen.setText(_translate("MainWindow", "Open..."))
     
     # TODO: Show dialogs for adding/editing words.
-    # def showAddWordDialog(self,event):
-    #   currentTag = self.ptl.getCurrentTag()
-    #   self.addWordDialog = QtWidgets.QDialog(self.centralwidget)
-    #   hLayout = QtWidgets.QHBoxLayout(self.addWordDialog)
-    #   vLeftLayout = QtWidgets.QVBoxLayout(self.addWordDialog)
-    #   vRightLayout = QtWidgets.QVBoxLayout(self.addWordDialog)
-    #   hLayout.addLayout(vLeftLayout)
-    #   hLayout.addLayout(vRightLayout)
+    def showAddWordDialog(self,event):
+      #currentTag = self.ptl.getCurrentTag()
+      self.addWordDialog = QtWidgets.QDialog(self.centralwidget)
+      
+      vLayout     = QtWidgets.QVBoxLayout(self.addWordDialog)
+      hLowLayout  = QtWidgets.QHBoxLayout(self.addWordDialog)
+      okButton    = QtWidgets.QPushButton(self.addWordDialog)
+      okButton.setText("OK")
+      okButton.clicked.connect(self.addWordDialog.accept)
+      cancelButton = QtWidgets.QPushButton(self.addWordDialog)
+      cancelButton.setText("Cancel")
+      cancelButton.clicked.connect(self.addWordDialog.reject)
+      hHighLayout = QtWidgets.QHBoxLayout(self.addWordDialog)
+      hLowLayout.addWidget(okButton)
+      hLowLayout.addWidget(cancelButton)
+      vLayout.addLayout(hHighLayout)
+      vLayout.addLayout(hLowLayout)
+      vLeftLayout = QtWidgets.QVBoxLayout(self.addWordDialog)
+      vRightLayout = QtWidgets.QVBoxLayout(self.addWordDialog)
+      hHighLayout.addLayout(vLeftLayout)
+      hHighLayout.addLayout(vRightLayout)
+      textLabel = QtWidgets.QLabel(self.addWordDialog)
+      textLabel.setText("Please enter a new word")
+      textLabel.setMaximumSize(QtCore.QSize(300, 50))
+      lineEdit = QtWidgets.QLineEdit(self.addWordDialog)
+      lineEdit.setMaximumSize(QtCore.QSize(400, 50))
+      vLeftLayout.addWidget(textLabel)
+      vLeftLayout.addWidget(lineEdit)
+      dialogCode = self.addWordDialog.exec()
+      if dialogCode == QtWidgets.QDialog.Accepted:
+        print('Accepted')
+        print("New word is ::" + lineEdit.text())
+        self.pwl
+      elif dialogCode == QtWidgets.QDialog.Rejected:
+        print('Rejected')
+      else:
+        print('Neither Acc or Rej')
 
-    #   label = 
+
 
     # def showEditWordDialog(self,event):
 
