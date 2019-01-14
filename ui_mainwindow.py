@@ -1,5 +1,5 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
-from dataModels import (DictWebList, PandasTagList, PandasWordList)
+from dataModels import (DefinitionController, TagController, WordController)
 
 class Ui_MainWindow(object):
     def addTopButtons(self):
@@ -79,22 +79,22 @@ class Ui_MainWindow(object):
       MainWindow.setStatusBar(self.statusbar)
     
     def setupDataModels(self,wordTable,tagTable):
-      self.pwl = PandasWordList(wordTable,self.webView)
-      self.ptl = PandasTagList(tagTable)
-      self.dwl = DictWebList()
+      self.wc = WordController(wordTable,self.webView)
+      self.tc = TagController(tagTable)
+      self.dc = DefinitionController()
       #Set signals/slots
-      self.dictListView.setModel(self.dwl)
-      self.tagview.setModel(self.ptl)
-      self.tagview.selectionModel().currentChanged.connect(self.ptl.selected)
-      self.wordview.setModel(self.pwl)
-      self.wordview.selectionModel().currentChanged.connect(self.pwl.selected)
-      self.dictSelect.currentTextChanged.connect(self.pwl.updateDict)
-      self.ptl.tagChanged.connect(self.pwl.updateWords)
+      self.dictListView.setModel(self.dc)
+      self.tagview.setModel(self.tc)
+      self.tagview.selectionModel().currentChanged.connect(self.tc.selected)
+      self.wordview.setModel(self.wc)
+      self.wordview.selectionModel().currentChanged.connect(self.wc.selected)
+      self.dictSelect.currentTextChanged.connect(self.wc.updateDict)
+      self.tc.tagChanged.connect(self.wc.updateWords)
       #Connect signals to tab views
-      self.pwl.dataChanged.connect(self.wordview.reset)
-      self.dwl.dataChanged.connect(self.dictListView.dataChanged)
-      self.dwl.showMessage.connect(self.statusBar.showMessage)
-      self.dwl.setEnabledView.connect(self.dictListView.setEnabled)
+      self.wc.dataChanged.connect(self.wordview.reset)
+      self.dc.dataChanged.connect(self.dictListView.dataChanged)
+      self.dc.showMessage.connect(self.statusBar.showMessage)
+      self.dc.setEnabledView.connect(self.dictListView.setEnabled)
       self.connectTabSlots(self.tabwidget.currentIndex())
 
     def setupUi(self, MainWindow):
@@ -114,15 +114,15 @@ class Ui_MainWindow(object):
     def connectTabSlots(self,current):
       if current == 1:
         if self.tabConnected == 0:
-          self.pwl.pageLoad.disconnect(self.dwl.load)
-        self.pwl.pageLoad.connect(self.webView.load)
-        self.pwl.reload()
+          self.wc.pageLoad.disconnect(self.dc.load)
+        self.wc.pageLoad.connect(self.webView.load)
+        self.wc.reload()
         self.tabConnected = 1
       if current == 0:
         if self.tabConnected == 1:
-          self.pwl.pageLoad.disconnect(self.webView.load)
-        self.pwl.pageLoad.connect(self.dwl.load)
-        self.pwl.reload()
+          self.wc.pageLoad.disconnect(self.webView.load)
+        self.wc.pageLoad.connect(self.dc.load)
+        self.wc.reload()
         self.tabConnected = 0
         
     def retranslateUi(self, MainWindow):
@@ -133,7 +133,7 @@ class Ui_MainWindow(object):
     
     # TODO: Show dialogs for adding/editing words.
     def showAddWordDialog(self,event):
-      #currentTag = self.ptl.getCurrentTag()
+      #currentTag = self.tc.getCurrentTag()
       self.addWordDialog = QtWidgets.QDialog(self.centralwidget)
       
       vLayout     = QtWidgets.QVBoxLayout(self.addWordDialog)
@@ -164,7 +164,7 @@ class Ui_MainWindow(object):
       if dialogCode == QtWidgets.QDialog.Accepted:
         print('Accepted')
         print("New word is ::" + lineEdit.text())
-        self.pwl
+        self.wc
       elif dialogCode == QtWidgets.QDialog.Rejected:
         print('Rejected')
       else:

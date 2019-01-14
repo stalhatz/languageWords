@@ -13,12 +13,12 @@ import dictionaries as dictHandler
 # (Racing condition? Is the server blocking us?).
 # QNetworkAccessManager (which would be the easiest way to do this) not working due to QTBUG-68156
 # Should use requests-futures
-class DictWebList(QAbstractListModel):
+class DefinitionController(QAbstractListModel):
   dataChanged = pyqtSignal(QModelIndex,QModelIndex)
   showMessage = pyqtSignal(str)
   setEnabledView = pyqtSignal(bool)
   def __init__(self):
-    super(DictWebList,self).__init__()
+    super(DefinitionController,self).__init__()
     self.definitionsList = []
     self.lastRequest = None
     self.session = FuturesSession(max_workers=1)
@@ -50,13 +50,12 @@ class DictWebList(QAbstractListModel):
     if not index.isValid() or not (0<=index.row()<len(self.definitionsList)):  return QVariant()
     if role==Qt.DisplayRole:      return self.definitionsList[index.row()]
 
-class PandasTagList(QAbstractListModel):
+class TagController(QAbstractListModel):
   tagChanged = pyqtSignal(pd.DataFrame, name='tagChanged')
   def __init__(self, tagTable):
-    super(PandasTagList,self).__init__()
+    super(TagController,self).__init__()
     self.tagTable = tagTable
     self.tagIndex = pd.pivot_table(tagTable,values='text',index='tag',aggfunc=pd.Series.nunique).reset_index()
-    print (self.tagIndex)
     self.selectedIndex = 0
   def rowCount(self, modelIndex):
     return len(self.tagIndex)
@@ -73,11 +72,11 @@ class PandasTagList(QAbstractListModel):
   def getTag(self,index):
     return str(self.tagIndex.iloc[index.row(),0])
 
-class PandasWordList(QAbstractListModel):
+class WordController(QAbstractListModel):
   dataChanged = pyqtSignal()
   pageLoad    = pyqtSignal(QUrl)
   def __init__(self, df ,webview):
-    super(PandasWordList,self).__init__()
+    super(WordController,self).__init__()
     self.df = df
     self.df_image = df
     self.webView = webview
@@ -105,4 +104,4 @@ class PandasWordList(QAbstractListModel):
     self.dict = dictName
     if self.currentIndex > 0:
       self.selected(self.createIndex(self.currentIndex,0) , self.createIndex(0 , 0))
-      
+
