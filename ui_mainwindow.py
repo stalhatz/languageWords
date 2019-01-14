@@ -78,9 +78,9 @@ class Ui_MainWindow(object):
       self.statusbar.setObjectName("statusbar")
       MainWindow.setStatusBar(self.statusbar)
     
-    def setupDataModels(self,dictWords):
-      self.pwl = PandasWordList(dictWords,self.webView)
-      self.ptl = PandasTagList(dictWords)
+    def setupDataModels(self,wordTable,tagTable):
+      self.pwl = PandasWordList(wordTable,self.webView)
+      self.ptl = PandasTagList(tagTable)
       self.dwl = DictWebList()
       #Set signals/slots
       self.dictListView.setModel(self.dwl)
@@ -95,7 +95,6 @@ class Ui_MainWindow(object):
       self.dwl.dataChanged.connect(self.dictListView.dataChanged)
       self.dwl.showMessage.connect(self.statusBar.showMessage)
       self.dwl.setEnabledView.connect(self.dictListView.setEnabled)
-
       self.connectTabSlots(self.tabwidget.currentIndex())
 
     def setupUi(self, MainWindow):

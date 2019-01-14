@@ -62,34 +62,42 @@ def loadFromPickle(filename):
     a = pickle.load(input)
   return a
 
-def createDFFromDict(dictWords):
-  words["text"] = []
-  words["hyperlink"] = []
-  words["tag"] = []
-  for key in dictWords:
-    words["text"].append(key)
-    words["hyperlink"].append(dictWords[key][0])
-    words["tag"].append(dictWords[key][1])
-  return pd.DataFrame.from_dict(words)
-
+def splitWordsTable(table):
+  tagTable = table.drop(["hyperlink"],axis = "columns")
+  wordTable = table.drop(["tag"],axis = "columns")
+  return wordTable,tagTable
+# def createDFFromDict(dictWords):
+#   words["text"] = []
+#   words["hyperlink"] = []
+#   for key in dictWords:
+#     words["text"].append(key)
+#     words["hyperlink"].append(dictWords[key][0])
+#   tags["tag"] = []
+#   tags["text"] = []
+#   for key in dictWords:
+#     words["tag"].append(dictWords[key][1])
+#     words["text"].append(key)
+#   return pd.DataFrame.from_dict(words),pd.DataFrame.from_dict(tags)
+import pandas as pd
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='Process some integers.')
   parser.add_argument('-l', nargs='?', const='dictWords.pd.pkl', default=None)
   parser.add_argument('-s', nargs='?', const='dictWords.pkl', default=None)
   args = parser.parse_args()
   
-  dictWords = {}
+  wordTable = []
+  tagTable = []
 
   if args.s is None and args.l is not None:
     args.s = args.l
   
   if args.l is not None:
-    try:
-      dictWords = loadFromPickle(args.l)
-    except:
-      print("Could not load from file")
+    #try:
+    dictWords = loadFromPickle(args.l)
+    wordTable,tagTable = splitWordsTable(dictWords)
   app = QApplication([])
-
+#    except:
+#      print("Could not load from file")
   stylesheet="stylesheet1.css"
   with open(stylesheet,"r") as fh:
     app.setStyleSheet(fh.read())
@@ -97,7 +105,7 @@ if __name__ == "__main__":
   window = QMainWindow()
   ui = Ui_MainWindow()
   ui.setupUi(window)
-  ui.setupDataModels(dictWords)
+  ui.setupDataModels(wordTable,tagTable)
   ui.dictSelect.insertItems(0,["wiktionary", "larousse"])
 
   window.show()

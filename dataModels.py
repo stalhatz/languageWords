@@ -51,22 +51,27 @@ class DictWebList(QAbstractListModel):
     if role==Qt.DisplayRole:      return self.definitionsList[index.row()]
 
 class PandasTagList(QAbstractListModel):
-  tagChanged = pyqtSignal(str, name='tagChanged')
-  def __init__(self, df):
+  tagChanged = pyqtSignal(pd.DataFrame, name='tagChanged')
+  def __init__(self, tagTable):
     super(PandasTagList,self).__init__()
-    self.df = pd.pivot_table(df,values='text',index='tag',aggfunc=pd.Series.nunique).reset_index()
+    self.tagTable = tagTable
+    self.tagIndex = pd.pivot_table(tagTable,values='text',index='tag',aggfunc=pd.Series.nunique).reset_index()
+    print (self.tagIndex)
     self.selectedIndex = 0
   def rowCount(self, modelIndex):
-    #print("Rowcount() :: " + str(len(self.df)))
-    return len(self.df)
+    return len(self.tagIndex)
   def data(self, index, role):
-    if not index.isValid() or not (0<=index.row()<len(self.df)):  return QVariant()
-    if role==Qt.DisplayRole:      return str(self.df.iloc[index.row(),0])
+    if not index.isValid() or not (0<=index.row()<len(self.tagIndex)):  
+      return QVariant()
+    if role==Qt.DisplayRole:      
+      return self.getTag(index)
   def selected(self, index , prevIndex):
     self.selectedIndex = index.row()
-    self.tagChanged.emit( str(self.df.iloc[index.row(),0]) )
-  def getCurrentTag():
-    str(self.df.iloc[index.row(),0])
+    selectedTag = self.getTag(index)
+    wordTable = self.tagTable[self.tagTable['tag'] == selectedTag]
+    self.tagChanged.emit(  wordTable )
+  def getTag(self,index):
+    return str(self.tagIndex.iloc[index.row(),0])
 
 class PandasWordList(QAbstractListModel):
   dataChanged = pyqtSignal()
@@ -93,11 +98,11 @@ class PandasWordList(QAbstractListModel):
   def reload(self):
     if self.url is not None:
       self.pageLoad.emit(self.url)
-  def updateWords(self,tag):
-    self.df_image = self.df[self.df['tag'] == tag]
+  def updateWords(self,wordList):
+    self.df_image = pd.merge(self.df,wordList, on=['text','text'])
     self.dataChanged.emit()
   def updateDict(self,dictName):
     self.dict = dictName
     if self.currentIndex > 0:
       self.selected(self.createIndex(self.currentIndex,0) , self.createIndex(0 , 0))
-  #def addWord(self, word):
+      
