@@ -1,5 +1,5 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
-from dataModels import (DefinitionController, TagController, WordController)
+from controllers import (DefinitionController, TagController, WordController)
 
 class Ui_MainWindow(object):
     def addTopButtons(self):
