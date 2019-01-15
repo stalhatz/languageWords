@@ -7,7 +7,7 @@ from requests_futures.sessions import FuturesSession
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 
-import dictionaries as dictHandler
+from dataModels import DefinitionDataModel
 # FIXED : Async requests
 # TODO : Animation while loading using QMovie
 # (Racing condition? Is the server blocking us?).
@@ -17,12 +17,13 @@ class DefinitionController(QAbstractListModel):
   dataChanged = pyqtSignal(QModelIndex,QModelIndex)
   showMessage = pyqtSignal(str)
   setEnabledView = pyqtSignal(bool)
-  def __init__(self):
+  def __init__(self , dictDataModel):
     super(DefinitionController,self).__init__()
     self.definitionsList = []
     self.lastRequest = None
     self.session = FuturesSession(max_workers=1)
     self.url = None
+    self.model = dictDataModel
   def load(self,url):
     self.url = url
     self.definitionsList = []
@@ -41,7 +42,7 @@ class DefinitionController(QAbstractListModel):
     else:
       self.showMessage.emit("Finished loading from " + url.toString())
       html =  request.text
-      self.definitionsList = dictHandler.getDefinitionsFromHtml(url.toString() , html)
+      self.definitionsList = self.model.getDefinitionsFromHtml(url.toString() , html)
       self.setEnabledView.emit(True)
       self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.definitionsList) , 0))
   def rowCount(self, modelIndex):
@@ -75,11 +76,11 @@ class TagController(QAbstractListModel):
 class WordController(QAbstractListModel):
   dataChanged = pyqtSignal()
   pageLoad    = pyqtSignal(QUrl)
-  def __init__(self, df ,webview):
+  def __init__(self, wModel, dModel):
     super(WordController,self).__init__()
-    self.df = df
-    self.df_image = df
-    self.webView = webview
+    self.wModel = wModel
+    self.dModel = dModel
+    self.df_image = wModel.wordTable
     self.dict = "wiktionary"
     self.url = None
     self.currentIndex = -1
@@ -91,17 +92,17 @@ class WordController(QAbstractListModel):
     if role==Qt.DisplayRole:
       return str(self.df_image.iloc[index.row(),0])
   def selected(self, index , prevIndex):
-    self.url =  QUrl(dictHandler.createUrl(self.dict , str(self.df_image.iloc[index.row(),0])))
+    self.url =  QUrl(self.dModel.createUrl(self.dict , str(self.df_image.iloc[index.row(),0])))
     self.currentIndex = index.row()
     self.pageLoad.emit(self.url)
   def reload(self):
     if self.url is not None:
       self.pageLoad.emit(self.url)
   def updateWords(self,wordList):
-    self.df_image = pd.merge(self.df,wordList, on=['text','text'])
+    self.df_image = pd.merge(self.wModel.wordTable, wordList, on=['text','text'])
     self.dataChanged.emit()
   def updateDict(self,dictName):
     self.dict = dictName
     if self.currentIndex > 0:
-      self.selected(self.createIndex(self.currentIndex,0) , self.createIndex(0 , 0))
+      self.selected(self.createIndex(self.currentIndex, 0) , self.createIndex(0 , 0))
 

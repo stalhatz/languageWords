@@ -78,10 +78,10 @@ class Ui_MainWindow(object):
       self.statusbar.setObjectName("statusbar")
       MainWindow.setStatusBar(self.statusbar)
     
-    def setupDataModels(self,wordTable,tagTable):
-      self.wc = WordController(wordTable,self.webView)
-      self.tc = TagController(tagTable)
-      self.dc = DefinitionController()
+    def setupDataModels(self,wordDataModel,dictDataModel):
+      self.wc = WordController(wordDataModel,dictDataModel)
+      self.tc = TagController(wordDataModel.tagTable)
+      self.dc = DefinitionController(dictDataModel)
       #Set signals/slots
       self.dictListView.setModel(self.dc)
       self.tagview.setModel(self.tc)

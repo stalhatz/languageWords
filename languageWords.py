@@ -1,27 +1,11 @@
 import time
 import os
 import subprocess
-import datetime as dt
 
-import pickle
 import argparse
-import sys
 
 from ui_mainwindow import Ui_MainWindow
-from PyQt5.QtWidgets import (QApplication,QWidget,QMainWindow)
-# class TextElement:
-#   def __init__(self, text , hyperlink = None , tag = None):
-#     self.text = text
-#     self.link = "" 
-#     self.date = dt.datetime.today()
-#     self.tags = []
-#     self.hyperlink = hyperlink
-#     self.spellChecked = False
-#   def __repr__(self):
-#     return self.text
-#   def __str__(self):
-#     return self.text
-    
+from PyQt5.QtWidgets import (QApplication, QWidget, QMainWindow)
 
 # def runCommand(command, args):
 #   global useGUI
@@ -30,42 +14,6 @@ from PyQt5.QtWidgets import (QApplication,QWidget,QMainWindow)
 #     b = a.stdout.decode('utf-8')
 #     return b
   
-
-# def getQtTextInput(taskList, labelText):
-#   app = QApplication([])
-#   a = QInputDialog()
-#   a.setInputMode(0)
-#   a.setLabelText(labelText)
-#   b = a.findChild(QLineEdit)
-#   c = QCompleter(taskList)
-#   print("Tasklist ::" + str(taskList))
-#   c.setCompletionMode(QCompleter.UnfilteredPopupCompletion)
-#   b.setCompleter(c)
-#   ret = a.exec_()
-#   if ret == 0:
-#     return None
-#   else:
-#     return a.textValue()
-
-# self.webView = QtWebEngineWidgets.QWebEngineView(self.centralwidget)
-# from PyQt5 import QtWebEngineWidgets   
-
-
-
-
-def saveToPickle(a , filename):
-  with open(filename, 'wb') as output:
-    pickle.dump(a, output, pickle.HIGHEST_PROTOCOL)
-  
-def loadFromPickle(filename):
-  with open(filename, 'rb') as input:
-    a = pickle.load(input)
-  return a
-
-def splitWordsTable(table):
-  tagTable = table.drop(["hyperlink"],axis = "columns")
-  wordTable = table.drop(["tag"],axis = "columns")
-  return wordTable,tagTable
 # def createDFFromDict(dictWords):
 #   words["text"] = []
 #   words["hyperlink"] = []
@@ -78,34 +26,34 @@ def splitWordsTable(table):
 #     words["tag"].append(dictWords[key][1])
 #     words["text"].append(key)
 #   return pd.DataFrame.from_dict(words),pd.DataFrame.from_dict(tags)
-import pandas as pd
+from dataModels import (WordDataModel, DefinitionDataModel)
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='Process some integers.')
   parser.add_argument('-l', nargs='?', const='dictWords.pd.pkl', default=None)
   parser.add_argument('-s', nargs='?', const='dictWords.pkl', default=None)
   args = parser.parse_args()
   
-  wordTable = []
-  tagTable = []
-
   if args.s is None and args.l is not None:
     args.s = args.l
   
   if args.l is not None:
-    #try:
-    dictWords = loadFromPickle(args.l)
-    wordTable,tagTable = splitWordsTable(dictWords)
+    wordDataModel = WordDataModel.fromFilename(args.l)
+  else:
+    wordDataModel = WordDataModel(None)
+
   app = QApplication([])
-#    except:
-#      print("Could not load from file")
   stylesheet="stylesheet1.css"
   with open(stylesheet,"r") as fh:
     app.setStyleSheet(fh.read())
   
+  dictDataModel = DefinitionDataModel(["wiktionary", "larousse"],
+                      ["https://fr.wiktionary.org/wiki/","https://www.larousse.fr/dictionnaires/francais/"],
+                      [False,True])
+
   window = QMainWindow()
   ui = Ui_MainWindow()
   ui.setupUi(window)
-  ui.setupDataModels(wordTable,tagTable)
+  ui.setupDataModels(wordDataModel, dictDataModel)
   ui.dictSelect.insertItems(0,["wiktionary", "larousse"])
 
   window.show()
