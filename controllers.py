@@ -3,9 +3,6 @@ from PyQt5.QtCore import (QAbstractListModel, QModelIndex, QStringListModel)
 from PyQt5.QtNetwork import (QNetworkAccessManager, QNetworkRequest, QNetworkReply)
 
 import pandas as pd
-from requests_futures.sessions import FuturesSession
-from concurrent.futures import ThreadPoolExecutor
-from functools import partial
 
 from dataModels import DefinitionDataModel
 # FIXED : Async requests
@@ -15,36 +12,17 @@ from dataModels import DefinitionDataModel
 # Should use requests-futures
 class DefinitionController(QAbstractListModel):
   dataChanged = pyqtSignal(QModelIndex,QModelIndex)
-  showMessage = pyqtSignal(str)
   setEnabledView = pyqtSignal(bool)
-  def __init__(self , dictDataModel):
+  def __init__(self):
     super(DefinitionController,self).__init__()
     self.definitionsList = []
-    self.lastRequest = None
-    self.session = FuturesSession(max_workers=1)
-    self.url = None
-    self.model = dictDataModel
-  def load(self,url):
-    self.url = url
-    self.definitionsList = []
-    future = self.session.get(url.toString())
-    future.add_done_callback(partial(self._load,url))
-    self.lastRequest = future
-    self.showMessage.emit("Loading from " + url.toString() )
-    self.setEnabledView.emit(False)
-  def _load(self,url,future):
-    if url != self.url:
-      future.cancel() #Should cancel itself when issuing the next request as max_workers = 1
-      return
-    request = future.result()
-    if request.status_code > 200:
-      self.showMessage.emit("Error while loading from " + url.toString() + " Code :: " + str(request.status_code))
-    else:
-      self.showMessage.emit("Finished loading from " + url.toString())
-      html =  request.text
-      self.definitionsList = self.model.getDefinitionsFromHtml(url.toString() , html)
-      self.setEnabledView.emit(True)
-      self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.definitionsList) , 0))
+  def loadingInitiated(self, dict, word, external):
+    if not external:
+      self.setEnabledView.emit(False)
+  def updateDefinition(self,definitionsList):
+    self.definitionsList = definitionsList
+    self.setEnabledView.emit(True)
+    self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.definitionsList) , 0))
   def rowCount(self, modelIndex):
     return len(self.definitionsList)
   def data(self, index, role):
@@ -75,15 +53,15 @@ class TagController(QAbstractListModel):
 
 class WordController(QAbstractListModel):
   dataChanged = pyqtSignal()
-  pageLoad    = pyqtSignal(QUrl)
-  def __init__(self, wModel, dModel):
+  loadDefinition    = pyqtSignal(str, str, bool)
+  def __init__(self, wModel):
     super(WordController,self).__init__()
     self.wModel = wModel
-    self.dModel = dModel
     self.df_image = wModel.wordTable
     self.dict = "wiktionary"
     self.url = None
     self.currentIndex = -1
+    self.externalLoading = False
   def rowCount(self, modelIndex):
     return len(self.df_image)
   def data(self, index, role):
@@ -92,17 +70,20 @@ class WordController(QAbstractListModel):
     if role==Qt.DisplayRole:
       return str(self.df_image.iloc[index.row(),0])
   def selected(self, index , prevIndex):
-    self.url =  QUrl(self.dModel.createUrl(self.dict , str(self.df_image.iloc[index.row(),0])))
     self.currentIndex = index.row()
-    self.pageLoad.emit(self.url)
-  def reload(self):
-    if self.url is not None:
-      self.pageLoad.emit(self.url)
+    self.loadDefinition.emit(str(self.df_image.iloc[index.row(),0]),self.dict , self.externalLoading)
   def updateWords(self,wordList):
     self.df_image = pd.merge(self.wModel.wordTable, wordList, on=['text','text'])
     self.dataChanged.emit()
   def updateDict(self,dictName):
     self.dict = dictName
+    if self.currentIndex > 0:
+      self.selected(self.createIndex(self.currentIndex, 0) , self.createIndex(0 , 0))
+  def setDefinitionLoadingSource(self,widgetID):
+    if widgetID == 1:
+      self.externalLoading = True
+    else:
+      self.externalLoading = False
     if self.currentIndex > 0:
       self.selected(self.createIndex(self.currentIndex, 0) , self.createIndex(0 , 0))
 

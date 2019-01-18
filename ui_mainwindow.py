@@ -49,17 +49,15 @@ class Ui_MainWindow(object):
       self.tabwidget.setObjectName("tabwidget")
       self.horizontalLayout.addWidget(self.tabwidget)
 
-      self.dictListView = QtWidgets.QListView(self.tabwidget)
-      self.dictListView.setObjectName("dictView")
-      self.dictListView.setWordWrap(True)
-      self.tabwidget.addTab(self.dictListView , "Custom view")
+      self.definitionListView = QtWidgets.QListView(self.tabwidget)
+      self.definitionListView.setObjectName("dictView")
+      self.definitionListView.setWordWrap(True)
+      self.tabwidget.addTab(self.definitionListView , "Custom view")
 
       self.webView = QtWebEngineWidgets.QWebEngineView(self.tabwidget)
       self.webView.setUrl(QtCore.QUrl("about:blank"))
       self.webView.setObjectName("webView")
       self.tabwidget.addTab(self.webView , "Webview")
-      self.tabConnected = -1
-      self.tabwidget.currentChanged.connect(self.connectTabSlots)
 
       #self.horizontalLayout.addWidget(self.webView)
     def addMenuBar(self,MainWindow):
@@ -78,24 +76,30 @@ class Ui_MainWindow(object):
       self.statusbar.setObjectName("statusbar")
       MainWindow.setStatusBar(self.statusbar)
     
-    def setupDataModels(self,wordDataModel,dictDataModel):
-      self.wc = WordController(wordDataModel,dictDataModel)
+    def setupDataModels(self,wordDataModel,defDataModel):
+      self.wc = WordController(wordDataModel)
       self.tc = TagController(wordDataModel.tagTable)
-      self.dc = DefinitionController(dictDataModel)
+      self.dc = DefinitionController()
       #Set signals/slots
-      self.dictListView.setModel(self.dc)
+      self.definitionListView.setModel(self.dc)
       self.tagview.setModel(self.tc)
       self.tagview.selectionModel().currentChanged.connect(self.tc.selected)
       self.wordview.setModel(self.wc)
       self.wordview.selectionModel().currentChanged.connect(self.wc.selected)
       self.dictSelect.currentTextChanged.connect(self.wc.updateDict)
+      #InterController signals
       self.tc.tagChanged.connect(self.wc.updateWords)
       #Connect signals to tab views
       self.wc.dataChanged.connect(self.wordview.reset)
-      self.dc.dataChanged.connect(self.dictListView.dataChanged)
-      self.dc.showMessage.connect(self.statusBar.showMessage)
-      self.dc.setEnabledView.connect(self.dictListView.setEnabled)
-      self.connectTabSlots(self.tabwidget.currentIndex())
+      self.dc.dataChanged.connect(self.definitionListView.dataChanged)
+      self.dc.setEnabledView.connect(self.definitionListView.setEnabled)
+      self.tabwidget.currentChanged.connect(self.wc.setDefinitionLoadingSource)
+      #Connect signals to data models
+      self.wc.loadDefinition.connect(defDataModel.load)
+      self.wc.loadDefinition.connect(self.dc.loadingInitiated)
+      defDataModel.definitionsUpdated.connect(self.dc.updateDefinition)
+      defDataModel.externalPageLoad.connect(self.webView.load)
+      defDataModel.showMessage.connect(self.statusBar.showMessage)
 
     def setupUi(self, MainWindow):
       MainWindow.setObjectName("MainWindow")
@@ -111,19 +115,6 @@ class Ui_MainWindow(object):
       self.addStatusBar(MainWindow)
       self.retranslateUi(MainWindow)
       QtCore.QMetaObject.connectSlotsByName(MainWindow)
-    def connectTabSlots(self,current):
-      if current == 1:
-        if self.tabConnected == 0:
-          self.wc.pageLoad.disconnect(self.dc.load)
-        self.wc.pageLoad.connect(self.webView.load)
-        self.wc.reload()
-        self.tabConnected = 1
-      if current == 0:
-        if self.tabConnected == 1:
-          self.wc.pageLoad.disconnect(self.webView.load)
-        self.wc.pageLoad.connect(self.dc.load)
-        self.wc.reload()
-        self.tabConnected = 0
         
     def retranslateUi(self, MainWindow):
       _translate = QtCore.QCoreApplication.translate
