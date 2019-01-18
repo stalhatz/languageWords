@@ -77,7 +77,7 @@ class Ui_MainWindow(object):
       MainWindow.setStatusBar(self.statusbar)
     
     def setupDataModels(self,wordDataModel,defDataModel):
-      self.wc = WordController(wordDataModel)
+      self.wc = WordController(wordDataModel.wordTable)
       self.tc = TagController(wordDataModel.tagTable)
       self.dc = DefinitionController()
       #Set signals/slots

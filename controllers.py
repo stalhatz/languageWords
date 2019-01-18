@@ -42,7 +42,7 @@ class TagController(QAbstractListModel):
     if not index.isValid() or not (0<=index.row()<len(self.tagIndex)):  
       return QVariant()
     if role==Qt.DisplayRole:      
-      return self.getTag(index)
+      return self.getTag(index) + " ("+str(self.getTagCount(index))+")"
   def selected(self, index , prevIndex):
     self.selectedIndex = index.row()
     selectedTag = self.getTag(index)
@@ -50,14 +50,16 @@ class TagController(QAbstractListModel):
     self.tagChanged.emit(  wordTable )
   def getTag(self,index):
     return str(self.tagIndex.iloc[index.row(),0])
+  def getTagCount(self,index):
+    return self.tagIndex.iloc[index.row(),1]
 
 class WordController(QAbstractListModel):
   dataChanged = pyqtSignal()
   loadDefinition    = pyqtSignal(str, str, bool)
-  def __init__(self, wModel):
+  def __init__(self, wordTable):
     super(WordController,self).__init__()
-    self.wModel = wModel
-    self.df_image = wModel.wordTable
+    self.wordTable = wordTable
+    self.df_image = wordTable
     self.dict = "wiktionary"
     self.url = None
     self.currentIndex = -1
@@ -73,7 +75,7 @@ class WordController(QAbstractListModel):
     self.currentIndex = index.row()
     self.loadDefinition.emit(str(self.df_image.iloc[index.row(),0]),self.dict , self.externalLoading)
   def updateWords(self,wordList):
-    self.df_image = pd.merge(self.wModel.wordTable, wordList, on=['text','text'])
+    self.df_image = pd.merge(self.wordTable, wordList, on=['text','text'])
     self.dataChanged.emit()
   def updateDict(self,dictName):
     self.dict = dictName
