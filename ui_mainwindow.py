@@ -23,7 +23,6 @@ class Ui_MainWindow(object):
       
       self.statusBar = QtWidgets.QStatusBar(self.centralwidget)
       self.statusBar.setObjectName("statusBar")
-      self.statusBar.showMessage("Hello World")
 
       self.outerVerticalLayout.addLayout(self.buttonHorizontalLayout)
       self.outerVerticalLayout.addLayout(self.horizontalLayout)
@@ -32,7 +31,7 @@ class Ui_MainWindow(object):
       self.verticalLayout = QtWidgets.QVBoxLayout()
       self.verticalLayout.setObjectName("verticalLayout")
       self.dictSelect = QtWidgets.QComboBox(self.centralwidget)
-      self.dictSelect.setMaximumSize(QtCore.QSize(300, 50))
+      self.dictSelect.setMaximumSize(QtCore.QSize(300, 30))
       self.dictSelect.setObjectName("dictSelect")
       self.verticalLayout.addWidget(self.dictSelect)
       self.wordview = QtWidgets.QListView(self.centralwidget)
@@ -50,7 +49,7 @@ class Ui_MainWindow(object):
       self.horizontalLayout.addWidget(self.tabwidget)
 
       self.definitionListView = QtWidgets.QListView(self.tabwidget)
-      self.definitionListView.setObjectName("dictView")
+      self.definitionListView.setObjectName("definitionListView")
       self.definitionListView.setWordWrap(True)
       self.tabwidget.addTab(self.definitionListView , "Custom view")
 
@@ -100,6 +99,8 @@ class Ui_MainWindow(object):
       defDataModel.definitionsUpdated.connect(self.dc.updateDefinition)
       defDataModel.externalPageLoad.connect(self.webView.load)
       defDataModel.showMessage.connect(self.statusBar.showMessage)
+
+      self.dictSelect.insertItems(0,defDataModel.dictNames)
 
     def setupUi(self, MainWindow):
       MainWindow.setObjectName("MainWindow")

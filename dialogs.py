@@ -1,29 +1,91 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
-
+#TODO: Decide if the dialog should be recreated every time it needs to be shown or 
+# whether it should be hidden and shown thus constucted only once (responsiveness benefits?)
 class WordDialog(QtWidgets.QDialog):
   def __init__(self ,parent):
     super(WordDialog,self).__init__(parent)
     vLayout     = QtWidgets.QVBoxLayout(self)
+
     hLowLayout  = QtWidgets.QHBoxLayout()
-    okButton    = QtWidgets.QPushButton(self)
-    okButton.setText("OK")
-    okButton.clicked.connect(self.accept)
-    cancelButton = QtWidgets.QPushButton(self)
-    cancelButton.setText("Cancel")
-    cancelButton.clicked.connect(self.reject)
     hHighLayout = QtWidgets.QHBoxLayout()
-    hLowLayout.addWidget(okButton)
-    hLowLayout.addWidget(cancelButton)
     vLayout.addLayout(hHighLayout)
     vLayout.addLayout(hLowLayout)
+
+    #hLowLayout
+    okButton    = QtWidgets.QPushButton(self)
+    okButton.setText("&OK")
+    okButton.clicked.connect(self.accept)
+    cancelButton = QtWidgets.QPushButton(self)
+    cancelButton.setText("&Cancel")
+    cancelButton.clicked.connect(self.reject)
+    hLowLayout.addWidget(okButton)
+    hLowLayout.addWidget(cancelButton)
+
+    #hHighLayout
     vLeftLayout = QtWidgets.QVBoxLayout()
     vRightLayout = QtWidgets.QVBoxLayout()
+    horizontalSpacer = QtWidgets.QSpacerItem(40, 40, QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Expanding) 
     hHighLayout.addLayout(vLeftLayout)
+    hHighLayout.addItem(horizontalSpacer)
     hHighLayout.addLayout(vRightLayout)
-    textLabel = QtWidgets.QLabel(self)
-    textLabel.setText("Please enter a new word")
-    textLabel.setMaximumSize(QtCore.QSize(300, 50))
-    lineEdit = QtWidgets.QLineEdit(self)
-    lineEdit.setMaximumSize(QtCore.QSize(400, 50))
-    vLeftLayout.addWidget(textLabel)
-    vLeftLayout.addWidget(lineEdit)
+
+    #vLeftLayout (hHighLayout)
+    #verticalSpacer = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Expanding) 
+    wTextLabel = QtWidgets.QLabel(self)
+    wTextLabel.setText("Please enter a new word")
+    wTextLabel.setMaximumSize(QtCore.QSize(300, 25))
+    wLineEdit = QtWidgets.QLineEdit(self)
+    wLineEdit.setMaximumSize(QtCore.QSize(400, 25))
+    vLeftLayout.addStretch()
+    vLeftLayout.addWidget(wTextLabel)
+    vLeftLayout.addWidget(wLineEdit)
+    
+    #vRightLayout (hHighLayout)
+    tTextLabel = QtWidgets.QLabel(self)
+    tTextLabel.setText("Tags")
+    tTextLabel.setMaximumSize(QtCore.QSize(100, 50))
+    self.tagView = QtWidgets.QListView(self)
+    self.tagModel = QtCore.QStringListModel()
+    self.tagView.setModel(self.tagModel)
+    
+    #self.tagView.setSelectionBehavior(QtWidgets.QAbstractItemView.)
+    self.tLineEdit = QtWidgets.QLineEdit(self)
+    self.tLineEdit.setMaximumSize(QtCore.QSize(400, 50))
+    vRightLayout.addWidget(tTextLabel)
+    vRightLayout.addWidget(self.tagView)
+    vRightLayout.addWidget(self.tLineEdit)
+    tagHLayout = QtWidgets.QHBoxLayout()
+    vRightLayout.addLayout(tagHLayout)
+    
+    #tagHLayout (vRightLayout (hHighLayout))
+    self.addTagButton    = QtWidgets.QPushButton(self)
+    self.addTagButton.setText("&Add Tag")
+    self.addTagButton.clicked.connect(self.addTag)
+    self.removeTagButton    = QtWidgets.QPushButton(self)
+    self.removeTagButton.setText("&Remove Tag")
+    self.removeTagButton.clicked.connect(self.removeTag)
+    self.removeTagButton.setEnabled(False) #New word
+    tagHLayout.addWidget(self.addTagButton)
+    tagHLayout.addWidget(self.removeTagButton)
+  
+  def addTag(self,event):
+    stringList = self.tagModel.stringList()
+    stringList.append(self.tLineEdit.text())
+    self.tagModel.setStringList(stringList)
+    self.tLineEdit.clear()
+    self.removeTagButton.setEnabled(True)
+
+  def removeTag(self,event):
+    stringList = self.tagModel.stringList()
+    if len(stringList) > 0:
+      index = self.tagView.currentIndex().row()
+      del stringList[index]
+      self.tagModel.setStringList(stringList)
+      if len(stringList) == 0:
+        self.removeTagButton.setEnabled(False)
+
+  def getTags(self):
+    return self.tagModel.stringList()
+    
+  def getWord(self):
+    self.wLineEdit.text()

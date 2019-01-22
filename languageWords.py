@@ -46,7 +46,8 @@ if __name__ == "__main__":
   with open(stylesheet,"r") as fh:
     app.setStyleSheet(fh.read())
   
-  dictDataModel = DefinitionDataModel(["wiktionary", "larousse"],
+  dictionaryNames = ["wiktionary", "larousse"]
+  dictDataModel = DefinitionDataModel(dictionaryNames,
                       ["https://fr.wiktionary.org/wiki/","https://www.larousse.fr/dictionnaires/francais/"],
                       [False,True])
 
@@ -54,7 +55,6 @@ if __name__ == "__main__":
   ui = Ui_MainWindow()
   ui.setupUi(window)
   ui.setupDataModels(wordDataModel, dictDataModel)
-  ui.dictSelect.insertItems(0,["wiktionary", "larousse"])
 
   window.show()
   app.exec_()

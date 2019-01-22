@@ -98,4 +98,3 @@ class DefinitionDataModel(QObject):
       html =  request.text
       self.definitionsList = self.getDefinitionsFromHtml(url, html)
       self.definitionsUpdated.emit(self.definitionsList)
-      
