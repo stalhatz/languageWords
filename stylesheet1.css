@@ -10,17 +10,17 @@ QListView {
     color: #C2C7CB;    
 }
 
-#dictView{
+#definitionListView{
   font-size: 20px; /*There is no support for responsive font size at the moment. Should be changed in runtime*/
   alternate-background-color: #3B3B3B;
 }
-#dictView::item{
+#definitionListView::item{
   padding-bottom: 4px; 
   padding-top: 4px; 
   border-bottom: 2px solid #C2C7CB;
 }
 
-#dictView::disabled{
+#definitionListView::disabled{
   background: #AEAEAE;
 }
 

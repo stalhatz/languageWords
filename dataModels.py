@@ -34,8 +34,14 @@ class WordDataModel(QObject):
     dictWords = loadFromPickle(file)
     wordTable, tagTable = splitWordsTable(dictWords)
     return cls([wordTable, tagTable])
-    
-
+  
+  def getTags(self):
+    tagIndex = pd.pivot_table(self.tagTable,values='text',index='tag',aggfunc=pd.Series.nunique).reset_index()
+    return list(tagIndex['tag'])
+  
+  def getWords(self):
+    words = self.wordTable.iloc[:,0]
+    return list(words)
 class DefinitionDataModel(QObject):
   definitionsUpdated  = pyqtSignal(list)
   externalPageLoad    = pyqtSignal(QUrl)

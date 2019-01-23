@@ -1,6 +1,7 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from controllers import (DefinitionController, TagController, WordController)
 from dialogs import WordDialog
+# TODO : Setup keyboard shortcuts for easily navigating between ListViews/ListEdits etc.
 class Ui_MainWindow(object):
     def addTopButtons(self):
       self.buttonHorizontalLayout = QtWidgets.QHBoxLayout()
@@ -17,32 +18,41 @@ class Ui_MainWindow(object):
       self.buttonHorizontalLayout.addWidget(self.addWordButton)
       self.buttonHorizontalLayout.addWidget(self.editWordButton)
     def addListViews(self):
+
+      #outerVerticalLayout
       self.horizontalLayout = QtWidgets.QHBoxLayout()
       self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
-      self.horizontalLayout.setObjectName("horizontalLayout")
-      
+      self.horizontalLayout.setObjectName("horizontalLayout")  
       self.statusBar = QtWidgets.QStatusBar(self.centralwidget)
       self.statusBar.setObjectName("statusBar")
-
       self.outerVerticalLayout.addLayout(self.buttonHorizontalLayout)
       self.outerVerticalLayout.addLayout(self.horizontalLayout)
       self.outerVerticalLayout.addWidget(self.statusBar)
 
+      #horizontalLayout (outerVerticalLayout)
       self.verticalLayout = QtWidgets.QVBoxLayout()
       self.verticalLayout.setObjectName("verticalLayout")
+      self.horizontalLayout.addLayout(self.verticalLayout)
+      #verticalLayout (horizontalLayout (outerVerticalLayout))
       self.dictSelect = QtWidgets.QComboBox(self.centralwidget)
       self.dictSelect.setMaximumSize(QtCore.QSize(300, 30))
       self.dictSelect.setObjectName("dictSelect")
-      self.verticalLayout.addWidget(self.dictSelect)
       self.wordview = QtWidgets.QListView(self.centralwidget)
       self.wordview.setMaximumSize(QtCore.QSize(400, 400))
       self.wordview.setObjectName("wordview")
-      self.verticalLayout.addWidget(self.wordview)
       self.tagview = QtWidgets.QListView(self.centralwidget)
       self.tagview.setMaximumSize(QtCore.QSize(400, 400))
       self.tagview.setObjectName("tagview")
+      self.tagFilter = QtWidgets.QLineEdit(self.centralwidget)
+      self.tagFilter.setObjectName("tagFilter")
+      self.tagFilter.setPlaceholderText("Enter text to filter tags")
+      self.tagFilter.setMaximumSize(QtCore.QSize(400, 30))
+      self.verticalLayout.addWidget(self.dictSelect)
+      self.verticalLayout.addWidget(self.wordview)
       self.verticalLayout.addWidget(self.tagview)
-      self.horizontalLayout.addLayout(self.verticalLayout)
+      self.verticalLayout.addWidget(self.tagFilter)
+      
+      
 
       self.tabwidget = QtWidgets.QTabWidget(self.centralwidget)
       self.tabwidget.setObjectName("tabwidget")
@@ -79,18 +89,20 @@ class Ui_MainWindow(object):
       self.wc = WordController(wordDataModel.wordTable)
       self.tc = TagController(wordDataModel.tagTable)
       self.dc = DefinitionController()
-      #Set signals/slots
+      #Set signals/slots views to controllers
       self.definitionListView.setModel(self.dc)
       self.tagview.setModel(self.tc)
       self.tagview.selectionModel().currentChanged.connect(self.tc.selected)
       self.wordview.setModel(self.wc)
       self.wordview.selectionModel().currentChanged.connect(self.wc.selected)
       self.dictSelect.currentTextChanged.connect(self.wc.updateDict)
+      self.tagFilter.textChanged.connect(self.tc.filterTags)
       #InterController signals
       self.tc.tagChanged.connect(self.wc.updateWords)
       #Connect signals to tab views
-      self.wc.dataChanged.connect(self.wordview.reset)
+      self.wc.dataChanged.connect(self.wordview.dataChanged)
       self.dc.dataChanged.connect(self.definitionListView.dataChanged)
+      self.tc.dataChanged.connect(self.tagview.dataChanged)
       self.dc.setEnabledView.connect(self.definitionListView.setEnabled)
       self.tabwidget.currentChanged.connect(self.wc.setDefinitionLoadingSource)
       #Connect signals to data models

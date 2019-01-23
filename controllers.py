@@ -5,6 +5,7 @@ from PyQt5.QtNetwork import (QNetworkAccessManager, QNetworkRequest, QNetworkRep
 import pandas as pd
 
 from dataModels import DefinitionDataModel
+import unidecode
 # FIXED : Async requests
 # TODO : Animation while loading using QMovie
 # (Racing condition? Is the server blocking us?).
@@ -30,6 +31,7 @@ class DefinitionController(QAbstractListModel):
     if role==Qt.DisplayRole:      return self.definitionsList[index.row()]
 
 class TagController(QAbstractListModel):
+  dataChanged = pyqtSignal(QModelIndex,QModelIndex)
   tagChanged = pyqtSignal(pd.DataFrame, name='tagChanged')
   def __init__(self, tagTable):
     super(TagController,self).__init__()
@@ -52,9 +54,16 @@ class TagController(QAbstractListModel):
     return str(self.tagIndex.iloc[index.row(),0])
   def getTagCount(self,index):
     return self.tagIndex.iloc[index.row(),1]
+  # TODO: unidecode filter and pandas Series to match string with accents / no accents
+  # TODO: use > = < filters to filter tags with certain number of corresponding words
+  def filterTags(self,filter):
+    transfomedFilter = unidecode.unidecode(filter).lower()
+    self.tagIndex = pd.pivot_table(self.tagTable,values='text',index='tag',aggfunc=pd.Series.nunique).reset_index()
+    self.tagIndex = self.tagIndex[self.tagIndex.tag.str.lower().str.contains(transfomedFilter)]
+    self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.tagIndex) , 0))
 
 class WordController(QAbstractListModel):
-  dataChanged = pyqtSignal()
+  dataChanged = pyqtSignal(QModelIndex,QModelIndex)
   loadDefinition    = pyqtSignal(str, str, bool)
   def __init__(self, wordTable):
     super(WordController,self).__init__()
@@ -76,7 +85,7 @@ class WordController(QAbstractListModel):
     self.loadDefinition.emit(str(self.df_image.iloc[index.row(),0]),self.dict , self.externalLoading)
   def updateWords(self,wordList):
     self.df_image = pd.merge(self.wordTable, wordList, on=['text','text'])
-    self.dataChanged.emit()
+    self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.df_image) , 0))
   def updateDict(self,dictName):
     self.dict = dictName
     if self.currentIndex > 0:
