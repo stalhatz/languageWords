@@ -2,6 +2,23 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 #TODO: Decide if the dialog should be recreated every time it needs to be shown or 
 # whether it should be hidden and shown thus constucted only once (responsiveness benefits?)
 class WordDialog(QtWidgets.QDialog):
+  class DictDialogListModel(QtCore.QAbstractListModel):
+    def __init__(self):
+      super(WordDialog.DictDialogListModel, self).__init__()
+      self.dictNames = ["wiktionary","larousse"]
+    def rowCount(self, modelIndex):
+      return len(self.dictNames)
+    def data(self, index, role):
+      # print(index.row())
+      if not index.isValid() or not (0<=index.row()<len(self.dictNames)):
+        return QtCore.QVariant()
+      if role==QtCore.Qt.DisplayRole:
+        print(self.dictNames[index.row()])
+        return self.dictNames[index.row()]
+      if role==QtCore.Qt.DecorationRole:
+        return QtGui.QIcon.fromTheme("edit-undo")
+      
+
   def __init__(self ,parent):
     super(WordDialog,self).__init__(parent)
     vLayout     = QtWidgets.QVBoxLayout(self)
@@ -31,12 +48,17 @@ class WordDialog(QtWidgets.QDialog):
 
     #vLeftLayout (hHighLayout)
     #verticalSpacer = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Expanding) 
-    wTextLabel = QtWidgets.QLabel(self)
+    dictListView  = QtWidgets.QListView(self)
+    dictModel     = self.DictDialogListModel()
+    dictListView.setModel(dictModel)
+
+    wTextLabel    = QtWidgets.QLabel(self)
     wTextLabel.setText("Please enter a new word")
     wTextLabel.setMaximumSize(QtCore.QSize(300, 25))
     wLineEdit = QtWidgets.QLineEdit(self)
     wLineEdit.setMaximumSize(QtCore.QSize(400, 25))
     vLeftLayout.addStretch()
+    vLeftLayout.addWidget(dictListView)
     vLeftLayout.addWidget(wTextLabel)
     vLeftLayout.addWidget(wLineEdit)
     
@@ -86,6 +108,6 @@ class WordDialog(QtWidgets.QDialog):
 
   def getTags(self):
     return self.tagModel.stringList()
-    
+
   def getWord(self):
     self.wLineEdit.text()
