@@ -86,6 +86,7 @@ class Ui_MainWindow(object):
       MainWindow.setStatusBar(self.statusbar)
     
     def setupDataModels(self,wordDataModel,defDataModel):
+      self.wdm = wordDataModel
       self.wc = WordController(wordDataModel.wordTable)
       self.tc = TagController(wordDataModel.tagTable)
       self.dc = DefinitionController()
@@ -138,7 +139,7 @@ class Ui_MainWindow(object):
     # TODO: Show dialogs for adding/editing words.
     def showAddWordDialog(self,event):
       #currentTag = self.tc.getCurrentTag()
-      self.addWordDialog = WordDialog(self.centralwidget)
+      self.addWordDialog = WordDialog(self.centralwidget,self.wdm)
       dialogCode = self.addWordDialog.exec()
       if dialogCode == QtWidgets.QDialog.Accepted:
         print('Accepted')

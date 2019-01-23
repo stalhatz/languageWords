@@ -19,8 +19,10 @@ class WordDialog(QtWidgets.QDialog):
         return QtGui.QIcon.fromTheme("edit-undo")
       
 
-  def __init__(self ,parent):
+  def __init__(self ,parent , wordModel):
     super(WordDialog,self).__init__(parent)
+    self.wordModel = wordModel
+
     vLayout     = QtWidgets.QVBoxLayout(self)
 
     hLowLayout  = QtWidgets.QHBoxLayout()
@@ -67,6 +69,9 @@ class WordDialog(QtWidgets.QDialog):
     self.tLineEdit = QtWidgets.QLineEdit(self)
     self.tLineEdit.setMaximumSize(QtCore.QSize(400, 50))
     self.tLineEdit.setPlaceholderText("Enter a new tag linked to the word")
+    tagCompleter = QtWidgets.QCompleter(wordModel.getTags())
+    self.tLineEdit.setCompleter(tagCompleter)
+
     vRightLayout.addWidget(self.tagView)
     vRightLayout.addWidget(self.tLineEdit)
     tagHLayout = QtWidgets.QHBoxLayout()
