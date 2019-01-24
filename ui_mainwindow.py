@@ -23,11 +23,11 @@ class Ui_MainWindow(object):
       self.horizontalLayout = QtWidgets.QHBoxLayout()
       self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
       self.horizontalLayout.setObjectName("horizontalLayout")  
-      self.statusBar = QtWidgets.QStatusBar(self.centralwidget)
-      self.statusBar.setObjectName("statusBar")
+      #self.statusBar = QtWidgets.QStatusBar(self.centralwidget)
+      #self.statusBar.setObjectName("statusBar")
       self.outerVerticalLayout.addLayout(self.buttonHorizontalLayout)
       self.outerVerticalLayout.addLayout(self.horizontalLayout)
-      self.outerVerticalLayout.addWidget(self.statusBar)
+      #self.outerVerticalLayout.addWidget(self.statusBar)
 
       #horizontalLayout (outerVerticalLayout)
       self.verticalLayout = QtWidgets.QVBoxLayout()
@@ -81,9 +81,9 @@ class Ui_MainWindow(object):
       self.menubar.addAction(self.menuFile.menuAction())
       MainWindow.setMenuBar(self.menubar)
     def addStatusBar(self,MainWindow):
-      self.statusbar = QtWidgets.QStatusBar(MainWindow)
-      self.statusbar.setObjectName("statusbar")
-      MainWindow.setStatusBar(self.statusbar)
+      self.statusBar = QtWidgets.QStatusBar(MainWindow)
+      self.statusBar.setObjectName("statusbar")
+      MainWindow.setStatusBar(self.statusBar)
     
     def setupDataModels(self,wordDataModel,defDataModel):
       self.wdm = wordDataModel

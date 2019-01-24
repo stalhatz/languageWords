@@ -1,3 +1,4 @@
+from hunspell import HunSpell
 from PyQt5 import QtCore, QtGui, QtWidgets
 #TODO: Decide if the dialog should be recreated every time it needs to be shown or 
 # whether it should be hidden and shown thus constucted only once (responsiveness benefits?)
@@ -9,11 +10,9 @@ class WordDialog(QtWidgets.QDialog):
     def rowCount(self, modelIndex):
       return len(self.dictNames)
     def data(self, index, role):
-      # print(index.row())
       if not index.isValid() or not (0<=index.row()<len(self.dictNames)):
         return QtCore.QVariant()
       if role==QtCore.Qt.DisplayRole:
-        print(self.dictNames[index.row()])
         return self.dictNames[index.row()]
       if role==QtCore.Qt.DecorationRole:
         return QtGui.QIcon.fromTheme("edit-undo")
@@ -22,22 +21,28 @@ class WordDialog(QtWidgets.QDialog):
   def __init__(self ,parent , wordModel):
     super(WordDialog,self).__init__(parent)
     self.wordModel = wordModel
+    self.dictionary = HunSpell("/usr/share/hunspell/fr.dic", "/usr/share/hunspell/fr.aff")
+
 
     vLayout     = QtWidgets.QVBoxLayout(self)
 
+    #vLayout
     hLowLayout  = QtWidgets.QHBoxLayout()
     hHighLayout = QtWidgets.QHBoxLayout()
+    self.statusBar = QtWidgets.QStatusBar(self)
     vLayout.addLayout(hHighLayout)
     vLayout.addLayout(hLowLayout)
-
+    vLayout.addWidget(self.statusBar)
+    
     #hLowLayout
-    okButton    = QtWidgets.QPushButton(self)
-    okButton.setText("&OK")
-    okButton.clicked.connect(self.accept)
+    self.okButton    = QtWidgets.QPushButton(self)
+    self.okButton.setText("&OK")
+    self.okButton.setEnabled(False)
+    self.okButton.clicked.connect(self.accept)
     cancelButton = QtWidgets.QPushButton(self)
     cancelButton.setText("&Cancel")
     cancelButton.clicked.connect(self.reject)
-    hLowLayout.addWidget(okButton)
+    hLowLayout.addWidget(self.okButton)
     hLowLayout.addWidget(cancelButton)
 
     #hHighLayout
@@ -57,6 +62,7 @@ class WordDialog(QtWidgets.QDialog):
     wLineEdit = QtWidgets.QLineEdit(self)
     wLineEdit.setMaximumSize(QtCore.QSize(400, 25))
     wLineEdit.setPlaceholderText("Enter a new word")
+    wLineEdit.textChanged.connect(self.wordTextChanged)
     vLeftLayout.addStretch()
     vLeftLayout.addWidget(dictListView)
     vLeftLayout.addWidget(wLineEdit)
@@ -69,7 +75,9 @@ class WordDialog(QtWidgets.QDialog):
     self.tLineEdit = QtWidgets.QLineEdit(self)
     self.tLineEdit.setMaximumSize(QtCore.QSize(400, 50))
     self.tLineEdit.setPlaceholderText("Enter a new tag linked to the word")
+    self.tLineEdit.textChanged.connect(self.tagTextChanged)
     tagCompleter = QtWidgets.QCompleter(wordModel.getTags())
+    tagCompleter.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
     self.tLineEdit.setCompleter(tagCompleter)
 
     vRightLayout.addWidget(self.tagView)
@@ -79,6 +87,7 @@ class WordDialog(QtWidgets.QDialog):
     
     #tagHLayout (vRightLayout (hHighLayout))
     self.addTagButton    = QtWidgets.QPushButton(self)
+    self.addTagButton.setEnabled(False)
     self.addTagButton.setText("&Add Tag")
     self.addTagButton.clicked.connect(self.addTag)
     self.removeTagButton    = QtWidgets.QPushButton(self)
@@ -88,6 +97,36 @@ class WordDialog(QtWidgets.QDialog):
     tagHLayout.addWidget(self.addTagButton)
     tagHLayout.addWidget(self.removeTagButton)
   
+  def tagTextChanged(self,text):
+    shouldEnable = False
+    if text != "":
+      if any(text == x for x in self.tagModel.stringList()):
+        shouldEnable = False
+        self.statusBar.showMessage("Tag already added")
+      else:
+        shouldEnable = True
+    if shouldEnable:
+      self.addTagButton.setEnabled(True)
+      self.statusBar.showMessage("")
+    else:
+      self.addTagButton.setEnabled(False)
+      
+
+  def wordTextChanged(self,text):
+    correctlySpelled = False
+    if text != "":
+      correctlySpelled = True
+      for word in text.split():
+        if not self.dictionary.spell(word):
+          correctlySpelled = False
+          break
+    if correctlySpelled:
+      self.okButton.setEnabled(True)
+      self.statusBar.showMessage("")
+    else:
+      self.okButton.setEnabled(False)
+      self.statusBar.showMessage("Please check your spelling")
+      
   def addTag(self,event):
     stringList = self.tagModel.stringList()
     stringList.append(self.tLineEdit.text())

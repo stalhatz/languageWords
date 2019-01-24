@@ -24,7 +24,7 @@ QListView {
   background: #AEAEAE;
 }
 
-#statusBar{
+QStatusBar{
   border: 0.5px double #C2C7CB;
   background: #7E7E7E;
   color: #DEDEDE;
