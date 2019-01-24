@@ -1,6 +1,8 @@
 from hunspell import HunSpell
 from PyQt5 import QtCore, QtGui, QtWidgets
 #TODO: Decide if the dialog should be recreated every time it needs to be shown or 
+#TODO: Lookup for hunspell dictionaries in usual directories
+#TODO: Implement dictionaries ListView. Show dictionary availability while typing the word.
 # whether it should be hidden and shown thus constucted only once (responsiveness benefits?)
 class WordDialog(QtWidgets.QDialog):
   class DictDialogListModel(QtCore.QAbstractListModel):
