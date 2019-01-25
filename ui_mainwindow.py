@@ -9,12 +9,12 @@ class Ui_MainWindow(object):
       self.addWordButton = QtWidgets.QPushButton(self.centralwidget)
       self.addWordButton.setObjectName("addWordButton")
       self.addWordButton.setMaximumSize(QtCore.QSize(100,100))
-      self.addWordButton.setText("Add Word")
+      self.addWordButton.setText("&Add Word")
       self.addWordButton.clicked.connect(self.showAddWordDialog)
       self.editWordButton = QtWidgets.QPushButton(self.centralwidget)
       self.editWordButton.setObjectName("editWordButton")
       self.editWordButton.setMaximumSize(QtCore.QSize(100,100))
-      self.editWordButton.setText("Edit Word")
+      self.editWordButton.setText("&Edit Word")
       self.buttonHorizontalLayout.addWidget(self.addWordButton)
       self.buttonHorizontalLayout.addWidget(self.editWordButton)
     def addListViews(self):
@@ -87,8 +87,8 @@ class Ui_MainWindow(object):
     
     def setupDataModels(self,wordDataModel,defDataModel):
       self.wdm = wordDataModel
-      self.wc = WordController(wordDataModel.wordTable)
-      self.tc = TagController(wordDataModel.tagTable)
+      self.wc = WordController(wordDataModel)
+      self.tc = TagController(wordDataModel)
       self.dc = DefinitionController()
       #Set signals/slots views to controllers
       self.definitionListView.setModel(self.dc)
@@ -107,6 +107,7 @@ class Ui_MainWindow(object):
       self.dc.setEnabledView.connect(self.definitionListView.setEnabled)
       self.tabwidget.currentChanged.connect(self.wc.setDefinitionLoadingSource)
       #Connect signals to data models
+      self.wdm.dataChanged.connect(self.tc.updateTags)
       self.wc.loadDefinition.connect(defDataModel.load)
       self.wc.loadDefinition.connect(self.dc.loadingInitiated)
       defDataModel.definitionsUpdated.connect(self.dc.updateDefinition)
@@ -142,7 +143,11 @@ class Ui_MainWindow(object):
       self.addWordDialog = WordDialog(self.centralwidget,self.wdm)
       dialogCode = self.addWordDialog.exec()
       if dialogCode == QtWidgets.QDialog.Accepted:
-        print('Accepted')
+        newWord = self.addWordDialog.getWord()
+        tags    = self.addWordDialog.getTags()
+        self.wdm.addWord(newWord,tags)
+        print('Accepted. New Word:' + newWord)
+        print("Tags: " + str(tags))
       elif dialogCode == QtWidgets.QDialog.Rejected:
         print('Rejected')
 

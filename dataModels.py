@@ -24,15 +24,19 @@ def splitWordsTable(table):
   return wordTable, tagTable
 
 class WordDataModel(QObject):
+  dataChanged         = pyqtSignal()
   def __init__(self, data):
     super(WordDataModel, self).__init__()
     self.wordTable  = data[0]
     self.tagTable   = data[1]
 
+
   @classmethod
   def fromFilename(cls,file):
     dictWords = loadFromPickle(file)
     wordTable, tagTable = splitWordsTable(dictWords)
+    print(wordTable.head())
+    print(tagTable.head())
     return cls([wordTable, tagTable])
   
   def getTags(self):
@@ -42,6 +46,15 @@ class WordDataModel(QObject):
   def getWords(self):
     words = self.wordTable.iloc[:,0]
     return list(words)
+  
+  def addWord(self,word,tags):
+    self.wordTable = self.wordTable.append({"text" : word}, ignore_index = True)
+    tagTableList = []
+    for tag in tags:
+      tagTableList.append({"tag":tag , "text" : word})
+    self.tagTable = self.tagTable.append(tagTableList)
+    self.dataChanged.emit()
+
 class DefinitionDataModel(QObject):
   definitionsUpdated  = pyqtSignal(list)
   externalPageLoad    = pyqtSignal(QUrl)

@@ -61,13 +61,13 @@ class WordDialog(QtWidgets.QDialog):
     dictModel     = self.DictDialogListModel()
     dictListView.setModel(dictModel)
 
-    wLineEdit = QtWidgets.QLineEdit(self)
-    wLineEdit.setMaximumSize(QtCore.QSize(400, 25))
-    wLineEdit.setPlaceholderText("Enter a new word")
-    wLineEdit.textChanged.connect(self.wordTextChanged)
+    self.wLineEdit = QtWidgets.QLineEdit(self)
+    self.wLineEdit.setMaximumSize(QtCore.QSize(400, 25))
+    self.wLineEdit.setPlaceholderText("Enter a new word")
+    self.wLineEdit.textChanged.connect(self.wordTextChanged)
     vLeftLayout.addStretch()
     vLeftLayout.addWidget(dictListView)
-    vLeftLayout.addWidget(wLineEdit)
+    vLeftLayout.addWidget(self.wLineEdit)
     
     #vRightLayout (hHighLayout) 
     self.tagView = QtWidgets.QListView(self)
@@ -149,4 +149,4 @@ class WordDialog(QtWidgets.QDialog):
     return self.tagModel.stringList()
 
   def getWord(self):
-    self.wLineEdit.text()
+    return self.wLineEdit.text()

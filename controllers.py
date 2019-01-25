@@ -33,11 +33,11 @@ class DefinitionController(QAbstractListModel):
 class TagController(QAbstractListModel):
   dataChanged = pyqtSignal(QModelIndex,QModelIndex)
   tagChanged = pyqtSignal(pd.DataFrame, name='tagChanged')
-  def __init__(self, tagTable):
+  def __init__(self, wordModel):
     super(TagController,self).__init__()
-    self.tagTable = tagTable
-    self.tagIndex = pd.pivot_table(tagTable,values='text',index='tag',aggfunc=pd.Series.nunique).reset_index()
-    self.selectedIndex = 0
+    self.wordModel = wordModel
+    self.tagIndex = pd.pivot_table(self.wordModel.tagTable,values='text',index='tag',aggfunc=pd.Series.nunique).reset_index()
+    self.selectedIndex = self.createIndex(0,0)
   def rowCount(self, modelIndex):
     return len(self.tagIndex)
   def data(self, index, role):
@@ -46,29 +46,35 @@ class TagController(QAbstractListModel):
     if role==Qt.DisplayRole:      
       return self.getTag(index) + " ("+str(self.getTagCount(index))+")"
   def selected(self, index , prevIndex):
-    self.selectedIndex = index.row()
+    self.selectedIndex = index
     selectedTag = self.getTag(index)
-    wordTable = self.tagTable[self.tagTable['tag'] == selectedTag]
+    wordTable = self.wordModel.tagTable[self.wordModel.tagTable['tag'] == selectedTag]
     self.tagChanged.emit(  wordTable )
   def getTag(self,index):
     return str(self.tagIndex.iloc[index.row(),0])
   def getTagCount(self,index):
     return self.tagIndex.iloc[index.row(),1]
+  def updateTags(self):
+    self.tagIndex = pd.pivot_table(self.wordModel.tagTable,values='text',index='tag',aggfunc=pd.Series.nunique).reset_index()
+    self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.tagIndex) , 0))
+    selectedTag = self.getTag(self.selectedIndex)
+    wordTable = self.wordModel.tagTable[self.wordModel.tagTable['tag'] == selectedTag]
+    self.tagChanged.emit(  wordTable )
   # TODO: unidecode filter and pandas Series to match string with accents / no accents
   # TODO: use > = < filters to filter tags with certain number of corresponding words
   def filterTags(self,filter):
     transfomedFilter = unidecode.unidecode(filter).lower()
-    self.tagIndex = pd.pivot_table(self.tagTable,values='text',index='tag',aggfunc=pd.Series.nunique).reset_index()
+    self.tagIndex = pd.pivot_table(self.wordModel.tagTable,values='text',index='tag',aggfunc=pd.Series.nunique).reset_index()
     self.tagIndex = self.tagIndex[self.tagIndex.tag.str.lower().str.contains(transfomedFilter)]
-    self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.tagIndex) , 0))
+    
 
 class WordController(QAbstractListModel):
   dataChanged = pyqtSignal(QModelIndex,QModelIndex)
   loadDefinition    = pyqtSignal(str, str, bool)
-  def __init__(self, wordTable):
+  def __init__(self, wordModel):
     super(WordController,self).__init__()
-    self.wordTable = wordTable
-    self.df_image = wordTable
+    self.wordModel = wordModel
+    self.df_image = self.wordModel.wordTable
     self.dict = "wiktionary"
     self.url = None
     self.currentIndex = -1
@@ -84,7 +90,7 @@ class WordController(QAbstractListModel):
     self.currentIndex = index.row()
     self.loadDefinition.emit(str(self.df_image.iloc[index.row(),0]),self.dict , self.externalLoading)
   def updateWords(self,wordList):
-    self.df_image = pd.merge(self.wordTable, wordList, on=['text','text'])
+    self.df_image = pd.merge(self.wordModel.wordTable, wordList, on=['text','text'])
     self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.df_image) , 0))
   def updateDict(self,dictName):
     self.dict = dictName
@@ -96,5 +102,5 @@ class WordController(QAbstractListModel):
     else:
       self.externalLoading = False
     if self.currentIndex > 0:
-      self.selected(self.createIndex(self.currentIndex, 0) , self.createIndex(0 , 0))
+      self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.df_image) , 0))
 
