@@ -36,12 +36,16 @@ class TagController(QAbstractListModel):
   def __init__(self, wordModel):
     super(TagController,self).__init__()
     self.wordModel = wordModel
-    self.tagIndex = pd.pivot_table(self.wordModel.tagTable,values='text',index='tag',aggfunc=pd.Series.nunique).reset_index()
+    if self.wordModel.tagTable.empty:
+      self.tagIndex  = pd.DataFrame(columns=["tag","text"])
+    else:
+      self.tagIndex = pd.pivot_table(self.wordModel.tagTable,values='text',index='tag',aggfunc=pd.Series.nunique).reset_index()
     self.selectedIndex = self.createIndex(0,0)
   def rowCount(self, modelIndex):
-    return len(self.tagIndex)
+    return len(self.tagIndex.index)
   def data(self, index, role):
-    if not index.isValid() or not (0<=index.row()<len(self.tagIndex)):  
+    print (len(self.tagIndex.index))
+    if not index.isValid() or not (0<=index.row()<len(self.tagIndex.index)):  
       return QVariant()
     if role==Qt.DisplayRole:      
       return self.getTag(index) + " ("+str(self.getTagCount(index))+")"
@@ -56,7 +60,7 @@ class TagController(QAbstractListModel):
     return self.tagIndex.iloc[index.row(),1]
   def updateTags(self):
     self.tagIndex = pd.pivot_table(self.wordModel.tagTable,values='text',index='tag',aggfunc=pd.Series.nunique).reset_index()
-    self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.tagIndex) , 0))
+    self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.tagIndex.index) , 0))
     selectedTag = self.getTag(self.selectedIndex)
     wordTable = self.wordModel.tagTable[self.wordModel.tagTable['tag'] == selectedTag]
     self.tagChanged.emit(  wordTable )
@@ -80,9 +84,9 @@ class WordController(QAbstractListModel):
     self.currentIndex = -1
     self.externalLoading = False
   def rowCount(self, modelIndex):
-    return len(self.df_image)
+    return len(self.df_image.index)
   def data(self, index, role):
-    if not index.isValid() or not (0<=index.row()<len(self.df_image)):
+    if not index.isValid() or not (0<=index.row()<len(self.df_image.index)):
       return QVariant()
     if role==Qt.DisplayRole:
       return str(self.df_image.iloc[index.row(),0])
@@ -91,7 +95,7 @@ class WordController(QAbstractListModel):
     self.loadDefinition.emit(str(self.df_image.iloc[index.row(),0]),self.dict , self.externalLoading)
   def updateWords(self,wordList):
     self.df_image = pd.merge(self.wordModel.wordTable, wordList, on=['text','text'])
-    self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.df_image) , 0))
+    self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.df_image.index) , 0))
   def updateDict(self,dictName):
     self.dict = dictName
     if self.currentIndex > 0:
@@ -101,6 +105,6 @@ class WordController(QAbstractListModel):
       self.externalLoading = True
     else:
       self.externalLoading = False
-    if self.currentIndex > 0:
-      self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.df_image) , 0))
+    if self.currentIndex >= 0:
+      self.loadDefinition.emit(str(self.df_image.iloc[self.currentIndex,0]),self.dict , self.externalLoading)
 

@@ -78,6 +78,13 @@ class Ui_MainWindow(object):
       self.actionOpen = QtWidgets.QAction(MainWindow)
       self.actionOpen.setObjectName("actionOpen")
       self.menuFile.addAction(self.actionOpen)
+      self.actionOpen.triggered.connect(self.openFile)
+
+      self.actionSave = QtWidgets.QAction(MainWindow)
+      self.actionSave.setObjectName("actionSave")
+      self.menuFile.addAction(self.actionSave)
+      self.actionSave.triggered.connect(self.saveFile)
+
       self.menubar.addAction(self.menuFile.menuAction())
       MainWindow.setMenuBar(self.menubar)
     def addStatusBar(self,MainWindow):
@@ -87,6 +94,7 @@ class Ui_MainWindow(object):
     
     def setupDataModels(self,wordDataModel,defDataModel):
       self.wdm = wordDataModel
+      self.ddm = defDataModel
       self.wc = WordController(wordDataModel)
       self.tc = TagController(wordDataModel)
       self.dc = DefinitionController()
@@ -107,6 +115,7 @@ class Ui_MainWindow(object):
       self.dc.setEnabledView.connect(self.definitionListView.setEnabled)
       self.tabwidget.currentChanged.connect(self.wc.setDefinitionLoadingSource)
       #Connect signals to data models
+      self.ddm.dictNamesUpdated.connect(self.updateDictNames)
       self.wdm.dataChanged.connect(self.tc.updateTags)
       self.wc.loadDefinition.connect(defDataModel.load)
       self.wc.loadDefinition.connect(self.dc.loadingInitiated)
@@ -136,6 +145,7 @@ class Ui_MainWindow(object):
       MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
       self.menuFile.setTitle(_translate("MainWindow", "Fi&le"))
       self.actionOpen.setText(_translate("MainWindow", "Open..."))
+      self.actionSave.setText(_translate("MainWindow", "Save..."))
     
     # TODO: Show dialogs for adding/editing words.
     def showAddWordDialog(self,event):
@@ -150,10 +160,30 @@ class Ui_MainWindow(object):
         print("Tags: " + str(tags))
       elif dialogCode == QtWidgets.QDialog.Rejected:
         print('Rejected')
+    
+    def openFile(self):
+      fileName,fileType = QtWidgets.QFileDialog.getOpenFileName(self.centralwidget,"Open File", ".", "Pickle Files (*.pkl)")
+      if fileName == "":
+        return
+      else:
+        with open(fileName, 'rb') as _input:
+          self.wdm._fromFile(_input)
+          self.ddm._fromFile(_input)
+          self.wdm.updateData()
+          self.ddm.updateDictNames()
 
+    def saveFile(self):
+      fileName,fileType = QtWidgets.QFileDialog.getSaveFileName(self.centralwidget,"Save File",".","Pickle Files (*.pkl)")
+      if fileName == "":
+        return
+      else:
+        with open(fileName, 'wb') as output:
+          self.wdm.toFile(output)
+          self.ddm.toFile(output)
 
-
-
+    def updateDictNames(self,dictNames):
+      self.dictSelect.clear()
+      self.dictSelect.insertItems(0,dictNames)
     # def showEditWordDialog(self,event):
 
 from PyQt5 import QtWebEngineWidgets 

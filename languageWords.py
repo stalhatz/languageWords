@@ -29,7 +29,7 @@ from PyQt5.QtWidgets import (QApplication, QWidget, QMainWindow)
 from dataModels import (WordDataModel, DefinitionDataModel)
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='Process some integers.')
-  parser.add_argument('-l', nargs='?', const='dictWords.pd.pkl', default=None)
+  parser.add_argument('-l', nargs='?', const='french_test.pkl', default=None)
   parser.add_argument('-s', nargs='?', const='dictWords.pkl', default=None)
   args = parser.parse_args()
   
@@ -37,24 +37,25 @@ if __name__ == "__main__":
     args.s = args.l
   
   if args.l is not None:
-    wordDataModel = WordDataModel.fromFilename(args.l)
+    wordDataModel = WordDataModel.fromFile(args.l)
+    dictionaryNames = ["wiktionary", "larousse"]
+    defDataModel = DefinitionDataModel(dictionaryNames,
+                      ["https://fr.wiktionary.org/wiki/","https://www.larousse.fr/dictionnaires/francais/"],
+                      [False,True])
   else:
-    wordDataModel = WordDataModel(None)
+    wordDataModel = WordDataModel()
+    defDataModel = DefinitionDataModel()
 
   app = QApplication([])
   stylesheet="stylesheet1.css"
   with open(stylesheet,"r") as fh:
     app.setStyleSheet(fh.read())
   
-  dictionaryNames = ["wiktionary", "larousse"]
-  dictDataModel = DefinitionDataModel(dictionaryNames,
-                      ["https://fr.wiktionary.org/wiki/","https://www.larousse.fr/dictionnaires/francais/"],
-                      [False,True])
 
   window = QMainWindow()
   ui = Ui_MainWindow()
   ui.setupUi(window)
-  ui.setupDataModels(wordDataModel, dictDataModel)
+  ui.setupDataModels(wordDataModel, defDataModel)
 
   window.show()
   app.exec_()
