@@ -69,6 +69,7 @@ class TagController(QAbstractListModel):
     transfomedFilter = unidecode.unidecode(filter).lower()
     self.tagIndex = pd.pivot_table(self.wordModel.tagTable,values='text',index='tag',aggfunc=pd.Series.nunique).reset_index()
     self.tagIndex = self.tagIndex[self.tagIndex.tag.str.lower().str.contains(transfomedFilter)]
+    self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.tagIndex.index) , 0))
     
 
 class WordController(QAbstractListModel):
