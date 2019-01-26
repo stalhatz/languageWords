@@ -40,37 +40,33 @@ class WordDataModel(QObject):
       self.wordTable  = data[0]
       self.tagTable   = data[1]
 
+  def saveData(self,output):
+    saveToPickle(self.wordTable, output)
+    saveToPickle(self.tagTable, output)
+  
+  def loadData(self,_input):
+    self.wordTable = loadFromPickle(_input)
+    self.tagTable  = loadFromPickle(_input)
+
   def toFile(self,file):
     if isinstance(file,str):
       with open(file, 'wb') as output:
-        saveToPickle(self.wordTable, output)
-        saveToPickle(self.tagTable, output)
+        self.saveData(self,output)
     else:
-      saveToPickle(self.wordTable, file)
-      saveToPickle(self.tagTable, file)
+      self.saveData(self,output)
 
   def _fromFile(self,file):
     if isinstance(file,str):
       with open(file, 'rb') as _input: 
-        self.wordTable = loadFromPickle(_input)
-        self.tagTable  = loadFromPickle(_input)
+        self.loadData(_input)
     else:
-      self.wordTable = loadFromPickle(file)
-      self.tagTable  = loadFromPickle(file)
-
+      self.loadData(file)
+  
   @classmethod
   def fromFile(cls,file):
-    if isinstance(file,str):
-      with open(file, 'rb') as _input: 
-        #Backwords comp, remove as fast as it works
-        #dictWords = loadFromPickle(_input)
-        #wordTable, tagTable = splitWordsTable(dictWords)
-        wordTable = loadFromPickle(_input)
-        tagTable  = loadFromPickle(_input)
-    else:
-      wordTable = loadFromPickle(file)
-      tagTable  = loadFromPickle(file)
-    return cls([wordTable, tagTable])
+    a = cls()
+    a._fromFile(file)
+    return a
   
   def getTags(self):
     tagIndex = pd.pivot_table(self.tagTable,values='text',index='tag',aggfunc=pd.Series.nunique).reset_index()
@@ -158,37 +154,34 @@ class DefinitionDataModel(QObject):
       self.definitionsList = self.getDefinitionsFromHtml(url, html)
       self.definitionsUpdated.emit(self.definitionsList)
   
+
+  def saveData(self,output):
+    saveToPickle(self.dictNames, output)
+    saveToPickle(self.dictUrls, output)
+    saveToPickle(self.stripAccents, output)
+
+  def loadData(self,_input):
+    self.dictNames = loadFromPickle(_input)
+    self.dictUrls = loadFromPickle(_input)
+    self.stripAccents = loadFromPickle(_input)
+
+
   def toFile(self,file):
     if isinstance(file,str):
       with open(file, 'wb') as output:
-        saveToPickle(self.dictNames, output)
-        saveToPickle(self.dictUrls, output)
-        saveToPickle(self.stripAccents, output)
+        self.saveData(output)
     else:
-      saveToPickle(self.dictNames, file)
-      saveToPickle(self.dictUrls, file)
-      saveToPickle(self.stripAccents, file)
+      self.saveData(file)
 
   def _fromFile(self,file):
     if isinstance(file,str):
       with open(file, 'rb') as _input: 
-        self.dictNames = loadFromPickle(_input)
-        self.dictUrls = loadFromPickle(_input)
-        self.stripAccents = loadFromPickle(_input)
+        self.loadData(_input)
     else:
-      self.dictNames = loadFromPickle(file)
-      self.dictUrls = loadFromPickle(file)
-      self.stripAccents = loadFromPickle(file)
-
+      self.loadData(file)
+  
   @classmethod
   def fromFile(cls,file):
-    if isinstance(file,str):
-      with open(file, 'rb') as _input: 
-        dictNames = loadFromPickle(_input)
-        dictUrls = loadFromPickle(_input)
-        stripAccents = loadFromPickle(_input)
-    else:
-      dictNames = loadFromPickle(file)
-      dictUrls = loadFromPickle(file)
-      stripAccents = loadFromPickle(file)
-    return cls(dictName,dictUrls,stripAccents)
+    a = cls()
+    a._fromFile(file)
+    return a

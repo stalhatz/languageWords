@@ -44,7 +44,6 @@ class TagController(QAbstractListModel):
   def rowCount(self, modelIndex):
     return len(self.tagIndex.index)
   def data(self, index, role):
-    print (len(self.tagIndex.index))
     if not index.isValid() or not (0<=index.row()<len(self.tagIndex.index)):  
       return QVariant()
     if role==Qt.DisplayRole:      
