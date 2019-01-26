@@ -1,9 +1,9 @@
 from hunspell import HunSpell
 from PyQt5 import QtCore, QtGui, QtWidgets
+import unidecode
 #TODO: Decide if the dialog should be recreated every time it needs to be shown or 
 #TODO: Lookup for hunspell dictionaries in usual directories
 #TODO: Implement dictionaries ListView. Show dictionary availability while typing the word.
-#TODO: Check that a new word does not already exist
 #TODO: Edit Dialog
 # whether it should be hidden and shown thus constucted only once (responsiveness benefits?)
 class WordDialog(QtWidgets.QDialog):
@@ -26,7 +26,7 @@ class WordDialog(QtWidgets.QDialog):
     super(WordDialog,self).__init__(parent)
     self.wordModel = wordModel
     self.dictionary = HunSpell("/usr/share/hunspell/fr.dic", "/usr/share/hunspell/fr.aff")
-
+    self.words = [unidecode.unidecode(x.lower()) for x in self.wordModel.getWords()]
 
     vLayout     = QtWidgets.QVBoxLayout(self)
 
@@ -80,7 +80,7 @@ class WordDialog(QtWidgets.QDialog):
     self.tLineEdit.setMaximumSize(QtCore.QSize(400, 50))
     self.tLineEdit.setPlaceholderText("Enter a new tag linked to the word")
     self.tLineEdit.textChanged.connect(self.tagTextChanged)
-    tagCompleter = QtWidgets.QCompleter(wordModel.getTags())
+    tagCompleter = QtWidgets.QCompleter(self.wordModel.getTags())
     tagCompleter.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
     self.tLineEdit.setCompleter(tagCompleter)
 
@@ -125,8 +125,12 @@ class WordDialog(QtWidgets.QDialog):
           correctlySpelled = False
           break
     if correctlySpelled:
-      self.okButton.setEnabled(True)
-      self.statusBar.showMessage("")
+      if any(unidecode.unidecode(text.lower()) == s for s in self.words):
+        self.okButton.setEnabled(False)
+        self.statusBar.showMessage("Word already exists")
+      else:
+        self.okButton.setEnabled(True)
+        self.statusBar.showMessage("")
     else:
       self.okButton.setEnabled(False)
       self.statusBar.showMessage("Please check your spelling")

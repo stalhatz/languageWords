@@ -63,10 +63,10 @@ class WordDataModel(QObject):
     if isinstance(file,str):
       with open(file, 'rb') as _input: 
         #Backwords comp, remove as fast as it works
-        dictWords = loadFromPickle(_input)
-        wordTable, tagTable = splitWordsTable(dictWords)
-        #wordTable = loadFromPickle(_input)
-        #tagTable  = loadFromPickle(_input)
+        #dictWords = loadFromPickle(_input)
+        #wordTable, tagTable = splitWordsTable(dictWords)
+        wordTable = loadFromPickle(_input)
+        tagTable  = loadFromPickle(_input)
     else:
       wordTable = loadFromPickle(file)
       tagTable  = loadFromPickle(file)
