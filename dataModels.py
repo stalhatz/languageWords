@@ -1,5 +1,4 @@
-#We should create classes for offline and online dictionaries (subclasses of the same baseclass)
-#For the time being it will just be functions
+#TODO: Pickled object versioning: insert a version number to change whenever the serialized representation changes
 import unidecode
 from bs4 import BeautifulSoup
 
