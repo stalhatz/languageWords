@@ -33,6 +33,7 @@ class WordDataModel(QObject):
   dataChanged         = pyqtSignal()
   def __init__(self, data = None):
     super(WordDataModel, self).__init__()
+    self.version = 0.01
     if data is None:
       self.wordTable  = pd.DataFrame(columns = ["text" , "hyperlink"])
       self.tagTable   = pd.DataFrame(columns = ["text" , "tag"])
@@ -41,19 +42,24 @@ class WordDataModel(QObject):
       self.tagTable   = data[1]
 
   def saveData(self,output):
+    saveToPickle(self.version, output)
+    #version 0.01
     saveToPickle(self.wordTable, output)
     saveToPickle(self.tagTable, output)
   
   def loadData(self,_input):
+    #The version variable is only for backwards compatibility with the class version.
+    #It should not be stores to the object
+    version = loadFromPickle(_input)
     self.wordTable = loadFromPickle(_input)
     self.tagTable  = loadFromPickle(_input)
 
   def toFile(self,file):
     if isinstance(file,str):
       with open(file, 'wb') as output:
-        self.saveData(self,output)
+        self.saveData(output)
     else:
-      self.saveData(self,output)
+      self.saveData(file)
 
   def _fromFile(self,file):
     if isinstance(file,str):
@@ -94,6 +100,7 @@ class DefinitionDataModel(QObject):
   showMessage         = pyqtSignal(str)
   def __init__(self, dictionaryNames = [], dictionaryUrls = [], stripAccents = False):
     super(DefinitionDataModel, self).__init__()
+    self.version      = 0.01
     self.dictNames    = dictionaryNames
     self.dictUrls     = dictionaryUrls
     self.stripAccents = stripAccents
@@ -156,11 +163,16 @@ class DefinitionDataModel(QObject):
   
 
   def saveData(self,output):
+    saveToPickle(self.version, output)
+    #version 0.01
     saveToPickle(self.dictNames, output)
     saveToPickle(self.dictUrls, output)
     saveToPickle(self.stripAccents, output)
 
   def loadData(self,_input):
+    #The version variable is only for backwards compatibility with the class version.
+    #It should not be stores to the object
+    version = loadFromPickle(_input)
     self.dictNames = loadFromPickle(_input)
     self.dictUrls = loadFromPickle(_input)
     self.stripAccents = loadFromPickle(_input)
