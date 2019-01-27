@@ -39,10 +39,6 @@ if __name__ == "__main__":
   if args.l is not None:
     with open(args.l , "rb") as _input:
       wordDataModel = WordDataModel.fromFile(_input)
-      # dictionaryNames = ["wiktionary", "larousse"]
-      # defDataModel = DefinitionDataModel(dictionaryNames,
-      #                   ["https://fr.wiktionary.org/wiki/","https://www.larousse.fr/dictionnaires/francais/"],
-      #                   [False,True])
       defDataModel = DefinitionDataModel.fromFile(_input)
   else:
     wordDataModel = WordDataModel()

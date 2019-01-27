@@ -1,6 +1,6 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from controllers import (DefinitionController, TagController, WordController)
-from dialogs import WordDialog
+from dialogs import WordDialog,DictionaryDialog
 # TODO : Setup keyboard shortcuts for easily navigating between ListViews/ListEdits etc.
 class Ui_MainWindow(object):
     def addTopButtons(self):
@@ -8,15 +8,23 @@ class Ui_MainWindow(object):
       self.buttonHorizontalLayout.setObjectName("buttonHorizontalLayout")
       self.addWordButton = QtWidgets.QPushButton(self.centralwidget)
       self.addWordButton.setObjectName("addWordButton")
-      self.addWordButton.setMaximumSize(QtCore.QSize(100,100))
+      self.addWordButton.setMaximumSize(QtCore.QSize(100,50))
       self.addWordButton.setText("&Add Word")
       self.addWordButton.clicked.connect(self.showAddWordDialog)
       self.editWordButton = QtWidgets.QPushButton(self.centralwidget)
       self.editWordButton.setObjectName("editWordButton")
-      self.editWordButton.setMaximumSize(QtCore.QSize(100,100))
+      self.editWordButton.setMaximumSize(QtCore.QSize(100,50))
       self.editWordButton.setText("&Edit Word")
+      self.editWordButton.clicked.connect(self.showEditWordDialog)
+      self.editDictsButton = QtWidgets.QPushButton(self.centralwidget)
+      self.editDictsButton.setObjectName("editDictButton")
+      self.editDictsButton.setMaximumSize(QtCore.QSize(150,50))
+      self.editDictsButton.setText("Edit &Dictionaries")
+      self.editDictsButton.clicked.connect(self.showEditDictsDialog)
+
       self.buttonHorizontalLayout.addWidget(self.addWordButton)
       self.buttonHorizontalLayout.addWidget(self.editWordButton)
+      self.buttonHorizontalLayout.addWidget(self.editDictsButton)
     def addListViews(self):
 
       #outerVerticalLayout
@@ -149,7 +157,6 @@ class Ui_MainWindow(object):
     
     # TODO: Show dialogs for adding/editing words.
     def showAddWordDialog(self,event):
-      #currentTag = self.tc.getCurrentTag()
       self.addWordDialog = WordDialog(self.centralwidget,self.wdm)
       dialogCode = self.addWordDialog.exec()
       if dialogCode == QtWidgets.QDialog.Accepted:
@@ -160,7 +167,17 @@ class Ui_MainWindow(object):
         print("Tags: " + str(tags))
       elif dialogCode == QtWidgets.QDialog.Rejected:
         print('Rejected')
-    
+    def showEditWordDialog(self,event):
+      pass
+    def showEditDictsDialog(self,event):
+      self.editDictsDialog = DictionaryDialog(self.centralwidget,self.ddm)
+      dialogCode = self.editDictsDialog.exec()
+      if dialogCode == QtWidgets.QDialog.Accepted:
+        #go over the QTableWidget and rebuild the definitionsDataModel
+        pass
+      elif dialogCode == QtWidgets.QDialog.Rejected:
+        print('Rejected')
+
     def openFile(self):
       fileName,fileType = QtWidgets.QFileDialog.getOpenFileName(self.centralwidget,"Open File", ".", "Pickle Files (*.pkl)")
       if fileName == "":
