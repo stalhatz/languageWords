@@ -8,9 +8,9 @@ import unidecode
 # whether it should be hidden and shown thus constucted only once (responsiveness benefits?)
 class WordDialog(QtWidgets.QDialog):
   class DictDialogListModel(QtCore.QAbstractListModel):
-    def __init__(self):
+    def __init__(self,defModel):
       super(WordDialog.DictDialogListModel, self).__init__()
-      self.dictNames = ["wiktionary","larousse"]
+      self.dictNames = defModel.getDictNames()
     def rowCount(self, modelIndex):
       return len(self.dictNames)
     def data(self, index, role):
@@ -22,7 +22,7 @@ class WordDialog(QtWidgets.QDialog):
         return QtGui.QIcon.fromTheme("edit-undo")
       
 
-  def __init__(self ,parent , wordModel):
+  def __init__(self, parent, wordModel, defModel):
     super(WordDialog,self).__init__(parent)
     self.wordModel = wordModel
     self.dictionary = HunSpell("/usr/share/hunspell/fr.dic", "/usr/share/hunspell/fr.aff")
@@ -60,7 +60,7 @@ class WordDialog(QtWidgets.QDialog):
     #vLeftLayout (hHighLayout)
     #verticalSpacer = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Expanding) 
     dictListView  = QtWidgets.QListView(self)
-    dictModel     = self.DictDialogListModel()
+    dictModel     = self.DictDialogListModel(defModel)
     dictListView.setModel(dictModel)
 
     self.wLineEdit = QtWidgets.QLineEdit(self)
@@ -169,9 +169,9 @@ class DictionaryDialog(QtWidgets.QDialog):
     self.dictTable  = QtWidgets.QTableWidget(self)
     #self.dictTable.setMinimumSize(QtCore.QSize(500, 300))
     self.dictTable.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows )
-    self.dictTable.setRowCount(len(defModel.dictNames))
+    self.dictTable.setRowCount(len(defModel.getDictNames()))
     self.dictTable.setColumnCount(3)
-    for i,dictName in enumerate(defModel.dictNames):
+    for i,dictName in enumerate(defModel.getDictNames()):
       item = QtWidgets.QTableWidgetItem(dictName)
       self.dictTable.setItem(i,0,item)
     for i,dictUrl in enumerate(defModel.dictUrls):

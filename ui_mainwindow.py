@@ -131,7 +131,7 @@ class Ui_MainWindow(object):
       defDataModel.externalPageLoad.connect(self.webView.load)
       defDataModel.showMessage.connect(self.statusBar.showMessage)
 
-      self.dictSelect.insertItems(0,defDataModel.dictNames)
+      self.dictSelect.insertItems(0,defDataModel.getDictNames())
 
     def setupUi(self, MainWindow):
       MainWindow.setObjectName("MainWindow")
