@@ -109,7 +109,6 @@ class DefinitionDataModel(QObject):
     self.lastRequest  = None
     self.url          = None
     self.availableDicts = self.findModules("./dictionaries")
-    self.language     = "French"
 
   def findModules(self,directory):
     availableDicts = {}

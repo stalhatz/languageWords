@@ -1,6 +1,8 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from controllers import (DefinitionController, TagController, WordController)
 from dialogs import WordDialog,DictionaryDialog
+from dataModels import WordDataModel,DefinitionDataModel
+import pickle
 # TODO : Setup keyboard shortcuts for easily navigating between ListViews/ListEdits etc.
 class Ui_MainWindow(object):
     def addTopButtons(self):
@@ -136,6 +138,8 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
       MainWindow.setObjectName("MainWindow")
       MainWindow.resize(728, 521)
+      self.version = 0.01
+
       self.centralwidget = QtWidgets.QWidget(MainWindow)
       self.centralwidget.setObjectName("centralwidget")
       self.outerVerticalLayout = QtWidgets.QVBoxLayout(self.centralwidget)
@@ -177,13 +181,40 @@ class Ui_MainWindow(object):
         pass
       elif dialogCode == QtWidgets.QDialog.Rejected:
         print('Rejected')
-
+    
+    @classmethod
+    def defaultInit(cls,window):
+      wordDataModel = WordDataModel()
+      defDataModel = DefinitionDataModel()
+      obj = cls()
+      obj.setupUi(window)
+      obj.setupDataModels(wordDataModel, defDataModel)
+      return obj
+  
+    @classmethod 
+    def fromFile(cls, file, window):
+      with open(file , "rb") as _input:
+        version = pickle.load(_input)
+        language = pickle.load(_input)
+        wordDataModel = WordDataModel.fromFile(_input)
+        defDataModel = DefinitionDataModel.fromFile(_input)
+        wordDataModel.language = language
+        defDataModel.language = language
+        obj = cls()
+        obj.setupUi(window)
+        obj.setupDataModels(wordDataModel, defDataModel)
+        return obj
+    
     def openFile(self):
       fileName,fileType = QtWidgets.QFileDialog.getOpenFileName(self.centralwidget,"Open File", ".", "Pickle Files (*.pkl)")
       if fileName == "":
         return
       else:
         with open(fileName, 'rb') as _input:
+          version = pickle.load(_input)
+          language = pickle.load(_input)
+          self.wdm.language = language
+          self.ddm.language = language
           self.wdm._fromFile(_input)
           self.ddm._fromFile(_input)
           self.wdm.updateData()
@@ -195,6 +226,8 @@ class Ui_MainWindow(object):
         return
       else:
         with open(fileName, 'wb') as output:
+          pickle.dump(self.version, output, pickle.HIGHEST_PROTOCOL) #Version
+          pickle.dump("French", output , pickle.HIGHEST_PROTOCOL) #Language
           self.wdm.toFile(output)
           self.ddm.toFile(output)
 
