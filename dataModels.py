@@ -102,13 +102,22 @@ class DefinitionDataModel(QObject):
   definitionsUpdated  = pyqtSignal(list)
   externalPageLoad    = pyqtSignal(QUrl)
   showMessage         = pyqtSignal(str)
-  def __init__(self, dictionaryNames = [], dictionaryUrls = []):
+  def __init__(self, dictNames = []):
     super(DefinitionDataModel, self).__init__()
     self.version      = 0.02
     self.session      = FuturesSession(max_workers=1)
     self.lastRequest  = None
     self.url          = None
     self.availableDicts = self.findModules("./dictionaries")
+    self.selectDictsFromNames(dictNames)
+
+  def selectDictsFromNames(self,dictNames):
+    #We will silently ignore all names not corresponding to available dictionaries
+    self.selectedDicts = {}
+    for name in dictNames:
+      if name in self.availableDicts:
+        self.selectedDicts[name] = self.availableDicts[name]
+    self.updateDictNames()
 
   def findModules(self,directory):
     availableDicts = {}
@@ -120,15 +129,21 @@ class DefinitionDataModel(QObject):
       availableDicts[dictionary.name] = dictionary
     return availableDicts
 
+  def getAvailableDicts(self):
+    return list(self.availableDicts.values())
+
+  def getSelectedDicts(self):
+    return list(self.selectedDicts.values())
+
   def getDefinitionsFromHtml(self,dictName, html):
-    definitionsList = self.availableDicts[dictName].getDefinitionsFromHtml(html)
+    definitionsList = self.selectedDicts[dictName].getDefinitionsFromHtml(html)
     return definitionsList
 
   def updateDictNames(self):
-    self.dictNamesUpdated.emit(getDictNames())
+    self.dictNamesUpdated.emit(list(self.selectedDicts.keys()))
   
   def getDictNames(self):
-    return list(self.availableDicts.keys())
+    return list(self.selectedDicts.keys())
 
   def load(self, word, dictName, externalLoad):
     url = self.availableDicts[dictName].createUrl(word,self.language)
@@ -159,7 +174,7 @@ class DefinitionDataModel(QObject):
   def saveData(self,output):
     saveToPickle(self.version, output)
     #version 0.02
-
+    saveToPickle(self.getDictNames(), output)
     
 
   def loadData(self,_input):
@@ -170,9 +185,14 @@ class DefinitionDataModel(QObject):
     #version 0.01
     if (version == 0.01):
       dictNames = loadFromPickle(_input)
+      self.selectDictsFromNames(dictNames)
       dictUrls = loadFromPickle(_input)
       stripAccents = loadFromPickle(_input)
     #version 0.02
+    if (version == 0.02):
+      pass
+      #dictNames = loadFromPickle(_input)
+      #self.selectDictsFromNames(dictNames)
 
 
   def toFile(self,file):

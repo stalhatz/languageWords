@@ -159,68 +159,120 @@ class WordDialog(QtWidgets.QDialog):
 
 #FIXME: Set size of QWidgetTable elements
 class DictionaryDialog(QtWidgets.QDialog):
-    
+
+  class DictionaryModel(QtCore.QAbstractTableModel):
+    dataChanged = QtCore.pyqtSignal(QtCore.QModelIndex,QtCore.QModelIndex)
+    def __init__(self,dictionaries,_id):
+      super(DictionaryDialog.DictionaryModel,self).__init__()    
+      self.dictionaries = dictionaries
+      self.numCols =2
+      self.currentIndex = 0
+      self._id = _id
+    def rowCount(self,index):
+      #print(self._id +" :: " + str( len(self.dictionaries) ))
+      return(len(self.dictionaries))
+    def columnCount(self,index):
+      return self.numCols
+    def data(self,index,role):
+      if not index.isValid() or not (0<=index.row()<len(self.dictionaries)) or not (0<=index.column()<self.numCols):
+        return QtCore.QVariant()
+      if role==QtCore.Qt.DisplayRole:
+        if index.column() == 0:
+          return self.dictionaries[index.row()].name
+        if index.column() == 1:
+          return str(self.dictionaries[index.row()].languages)
+    def selected(self, index , prevIndex):
+      self.currentIndex = index.row()
+    def getSelectedDict(self):
+      return self.dictionaries[self.currentIndex]
+    def addDict(self,_dict):
+      self.layoutAboutToBeChanged.emit()
+      self.dictionaries.append(_dict)
+      self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.dictionaries) , self.numCols ))
+      self.layoutChanged.emit()
+    def removeSelectedDict(self):
+      self.layoutAboutToBeChanged.emit()
+      self.dictionaries.remove(self.dictionaries[self.currentIndex])
+      self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.dictionaries) , self.numCols ))
+      self.layoutChanged.emit()
+    def getDictNames(self):
+      return [_dict.name for _dict in self.dictionaries]
   def __init__(self ,parent , defModel):
     super(DictionaryDialog,self).__init__(parent)
 
     vLayout     = QtWidgets.QVBoxLayout(self)
 
     #vLayout
-    self.dictTable  = QtWidgets.QTableWidget(self)
-    #self.dictTable.setMinimumSize(QtCore.QSize(500, 300))
-    self.dictTable.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows )
-    self.dictTable.setRowCount(len(defModel.getDictNames()))
-    self.dictTable.setColumnCount(3)
-    for i,dictName in enumerate(defModel.getDictNames()):
-      item = QtWidgets.QTableWidgetItem(dictName)
-      self.dictTable.setItem(i,0,item)
-    for i,dictUrl in enumerate(defModel.dictUrls):
-      item = QtWidgets.QTableWidgetItem(dictUrl)
-      #Does not work...
-      #item.setSizeHint(QtCore.QSize(150,30))
-      self.dictTable.setItem(i,1,item)
-    for i,stripAccents in enumerate(defModel.stripAccents):
-      item = QtWidgets.QTableWidgetItem(str(stripAccents))
-      self.dictTable.setItem(i,2,item)
-    self.dictTable.selectRow(0)
-
+    hHigherLayout   = QtWidgets.QHBoxLayout()
     hHighLayout     = QtWidgets.QHBoxLayout()
     hLowLayout      = QtWidgets.QHBoxLayout()
     self.statusBar  = QtWidgets.QStatusBar(self)
     
-    vLayout.addWidget(self.dictTable)
+    vLayout.addLayout(hHigherLayout)
     vLayout.addLayout(hHighLayout)
     vLayout.addLayout(hLowLayout)
     vLayout.addWidget(self.statusBar)
     
+    #hHigherLayout (vLayout)
+    
+    self.sDictTableView = QtWidgets.QTableView(self) #Selected
+    self.aDictTableView = QtWidgets.QTableView(self) # Available
+    self.sModel         = DictionaryDialog.DictionaryModel( defModel.getSelectedDicts() , "s") 
+    self.aModel         = DictionaryDialog.DictionaryModel( defModel.getAvailableDicts(), "a" ) 
+    self.sDictTableView.setModel(self.sModel)
+    self.aDictTableView.setModel(self.aModel)
+    self.sDictTableView.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows )
+    self.aDictTableView.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows )
+    self.sDictTableView.selectionModel().currentChanged.connect(self.sModel.selected)
+    self.aDictTableView.selectionModel().currentChanged.connect(self.aModel.selected)
+    self.aDictTableView.selectionModel().currentChanged.connect(self.validateSelection)
+    self.sModel.dataChanged.connect(self.sDictTableView.dataChanged)
+    
+    hHigherLayout.addWidget(self.sDictTableView)
+    hHigherLayout.addWidget(self.aDictTableView)
+
     #hHighLayout (vLayout)
     self.addDictButton    = QtWidgets.QPushButton(self)
     self.addDictButton.setText("Add Dictionary")
     self.addDictButton.clicked.connect(self.addDictionary)
-    self.editDictButton = QtWidgets.QPushButton(self)
-    self.editDictButton.setText("Edit Dictionary")
-    self.editDictButton.clicked.connect(self.editDictionary)
+    # self.editDictButton = QtWidgets.QPushButton(self)
+    # self.editDictButton.setText("Edit Dictionary")
+    # self.editDictButton.clicked.connect(self.editDictionary)
     self.removeDictButton = QtWidgets.QPushButton(self)
     self.removeDictButton.setText("Remove Dictionary")
     self.removeDictButton.clicked.connect(self.removeDictionary)
     
     hHighLayout.addWidget(self.addDictButton)
-    hHighLayout.addWidget(self.editDictButton)
+    #hHighLayout.addWidget(self.editDictButton)
     hHighLayout.addWidget(self.removeDictButton)
 
     #hLowLayout (vLayout)
     self.okButton    = QtWidgets.QPushButton(self)
     self.okButton.setText("&OK")
-    self.okButton.setEnabled(False)
+    #self.okButton.setEnabled(False)
     self.okButton.clicked.connect(self.accept)
     cancelButton = QtWidgets.QPushButton(self)
     cancelButton.setText("&Cancel")
     cancelButton.clicked.connect(self.reject)
     hLowLayout.addWidget(self.okButton)
     hLowLayout.addWidget(cancelButton)
-  def addDictionary():
-    pass
-  def editDictionary():
-    pass
-  def removeDictionary():
-    pass
+  def addDictionary(self,event):
+    _dict = self.aModel.getSelectedDict()
+    self.sModel.addDict(_dict)
+    self.sDictTableView.reset()
+    self.removeDictButton.setEnabled(True)
+    self.addDictButton.setEnabled(False)
+  def validateSelection(self, index , prevIndex):
+    self._validateSelection(index.row())
+  def _validateSelection(self, selectedID):
+    self.selectedID = selectedID
+    dictName = self.aModel.dictionaries[selectedID].name
+    if any(dictName == _dict.name for _dict in self.sModel.dictionaries):
+      self.addDictButton.setEnabled(False)
+    else:
+      self.addDictButton.setEnabled(True)
+  def removeDictionary(self,event):
+    self.sModel.removeSelectedDict()
+    if len(self.sModel.dictionaries) == 0:
+      self.removeDictButton.setEnabled(False)
+    self._validateSelection(self.selectedID)

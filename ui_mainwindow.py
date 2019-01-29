@@ -177,8 +177,8 @@ class Ui_MainWindow(object):
       self.editDictsDialog = DictionaryDialog(self.centralwidget,self.ddm)
       dialogCode = self.editDictsDialog.exec()
       if dialogCode == QtWidgets.QDialog.Accepted:
-        #go over the QTableWidget and rebuild the definitionsDataModel
-        pass
+        self.ddm.selectDictsFromNames(self.editDictsDialog.sModel.getDictNames())
+        
       elif dialogCode == QtWidgets.QDialog.Rejected:
         print('Rejected')
     

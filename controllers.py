@@ -79,7 +79,7 @@ class WordController(QAbstractListModel):
     super(WordController,self).__init__()
     self.wordModel = wordModel
     self.df_image = self.wordModel.wordTable
-    self.dict = "wiktionary"
+    self.dict = None
     self.url = None
     self.currentIndex = -1
     self.externalLoading = False
@@ -92,7 +92,10 @@ class WordController(QAbstractListModel):
       return str(self.df_image.iloc[index.row(),0])
   def selected(self, index , prevIndex):
     self.currentIndex = index.row()
-    self.loadDefinition.emit(str(self.df_image.iloc[index.row(),0]),self.dict , self.externalLoading)
+    if self.dict is None:
+      pass  
+    else:
+      self.loadDefinition.emit(str(self.df_image.iloc[index.row(),0]),self.dict , self.externalLoading)
   def updateWords(self,wordList):
     self.df_image = pd.merge(self.wordModel.wordTable, wordList, on=['text','text'])
     self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.df_image.index) , 0))

@@ -1,5 +1,5 @@
 name          = "larousse" 
-dictLanguages  = ["French"]
+languages  = ["French"]
 dictUrls      = ["https://www.larousse.fr/dictionnaires/francais/"]
 
 from bs4 import BeautifulSoup
@@ -7,9 +7,9 @@ import unidecode
 
 def createUrl(word,requestLang):
   word = unidecode.unidecode(word)
-  if requestLang == dictLanguages[0]:
+  if requestLang == languages[0]:
       return dictUrls[0] + word
-  raise ValueError("Could not find " + requestLang + " in " + name + "'s language list. Available langs : " + str(dictLanguages) )
+  raise ValueError("Could not find " + requestLang + " in " + name + "'s language list. Available langs : " + str(languages) )
 
 
 def getDefinitionsFromHtml(html):
