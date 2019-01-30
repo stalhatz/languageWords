@@ -115,7 +115,20 @@ class WordDialog(QtWidgets.QDialog):
     else:
       self.addTagButton.setEnabled(False)
       
-
+  def enableOKButton(self):
+    if (not self.wordSpelledCorrectly) or self.wordAlreadyExists or len(self.tagModel.stringList()) == 0:
+      self.okButton.setEnabled(False)
+    else:
+      self.okButton.setEnabled(True)
+      self.statusBar.showMessage("")
+    if self.wordAlreadyExists:
+      self.statusBar.showMessage("Word already exists")
+    elif not self.wordSpelledCorrectly:
+      self.statusBar.showMessage("Please check your spelling")  
+    elif len(self.tagModel.stringList()) == 0:
+      self.statusBar.showMessage("Need at least one tag to register word")  
+    
+    
   def wordTextChanged(self,text):
     correctlySpelled = False
     if text != "":
@@ -124,16 +137,15 @@ class WordDialog(QtWidgets.QDialog):
         if not self.dictionary.spell(word):
           correctlySpelled = False
           break
-    if correctlySpelled:
+    if correctlySpelled:      self.wordSpelledCorrectly = True
       if any(unidecode.unidecode(text.lower()) == s for s in self.words):
-        self.okButton.setEnabled(False)
-        self.statusBar.showMessage("Word already exists")
+        self.wordAlreadyExists = True
       else:
-        self.okButton.setEnabled(True)
-        self.statusBar.showMessage("")
+        self.wordAlreadyExists = False
     else:
-      self.okButton.setEnabled(False)
-      self.statusBar.showMessage("Please check your spelling")
+      self.wordSpelledCorrectly = False
+    self.enableOKButton()
+
       
   def addTag(self,event):
     stringList = self.tagModel.stringList()
@@ -141,6 +153,7 @@ class WordDialog(QtWidgets.QDialog):
     self.tagModel.setStringList(stringList)
     self.tLineEdit.clear()
     self.removeTagButton.setEnabled(True)
+    self.enableOKButton()
 
   def removeTag(self,event):
     stringList = self.tagModel.stringList()
@@ -150,6 +163,7 @@ class WordDialog(QtWidgets.QDialog):
       self.tagModel.setStringList(stringList)
       if len(stringList) == 0:
         self.removeTagButton.setEnabled(False)
+    self.enableOKButton()
 
   def getTags(self):
     return self.tagModel.stringList()
