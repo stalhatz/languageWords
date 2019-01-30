@@ -163,7 +163,7 @@ class Ui_MainWindow(QtCore.QObject):
   
   # TODO: Show dialogs for adding/editing words.
   def showAddWordDialog(self,event):
-    self.addWordDialog = WordDialog(self.centralwidget,self.wdm)
+    self.addWordDialog = WordDialog(self.centralwidget,self.wdm,self.ddm)
     dialogCode = self.addWordDialog.exec()
     if dialogCode == QtWidgets.QDialog.Accepted:
       newWord = self.addWordDialog.getWord()

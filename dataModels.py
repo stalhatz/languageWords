@@ -87,12 +87,13 @@ class WordDataModel(QObject):
     return list(words)
   
   def addWord(self,word,tags):
-    self.wordTable = self.wordTable.append({"text" : word}, ignore_index = True)
-    tagTableList = []
-    for tag in tags:
-      tagTableList.append({"tag":tag , "text" : word})
-    self.tagTable = self.tagTable.append(tagTableList)
-    self.dataChanged.emit()
+    if len(tags) > 0:
+      self.wordTable = self.wordTable.append({"text" : word}, ignore_index = True)
+      tagTableList = []
+      for tag in tags:
+        tagTableList.append({"tag":tag , "text" : word})
+      self.tagTable = self.tagTable.append(tagTableList)
+      self.dataChanged.emit()
 
   def updateData(self):
     self.dataChanged.emit()
@@ -213,3 +214,85 @@ class DefinitionDataModel(QObject):
     a = cls()
     a._fromFile(file)
     return a
+
+class TagDataModel():
+  def __init__(self):
+    self.tagNodes = {}
+  class Node():
+    #The tag works as a subject for its predicatives and as a predicative for its subjects
+    def __init__(self,tag):
+      self.predicatives  = []
+      self.subjects = []
+      self.tag = tag
+    def __str__(self):
+      return self.tag + " Pre: " + str(self.predicatives) + " | "
+    def __repr__(self):
+      return self.tag
+  #This is not a symmetrical relation
+  def tagToNode(self,tag):
+    if tag in self.tagNodes:
+      node = self.tagNodes[tag]
+    else:
+      node = TagDataModel.Node(tag)
+    return node
+
+  def getAllPredicatives(self,node):
+    #print(node)
+    predList = [] + node.predicatives
+    for n in node.predicatives:
+      if len(n.predicatives) > 0:
+        _predList = self.getAllPredicatives(n)
+        #print(_predList)
+        predList += _predList
+    return predList
+
+  def checkForCycles(self,subNode, predNode):
+    preds = self.getAllPredicatives(predNode)
+    #print("sub :: " +str(subNode)+ " preds :: " + str(preds) )
+    return subNode in preds
+  def connected(self, subNode, predNode):
+    return predNode in subNode.predicatives
+  def addRelation(self,subject,pred):
+    if subject == pred:
+      #print("Can't relate a tag to itself")
+      return
+    subNode = self.tagToNode(subject)
+    predNode = self.tagToNode(pred) 
+    if self.connected(subNode,predNode):
+      #print("Already connected!") 
+      return
+    #print("sNode :: " + str(subNode) + " pNode :: "+ str(predNode))  
+    if self.checkForCycles(subNode,predNode):
+      #print("Cycle found.")
+      return
+    #Given there are not cycles we can now add the new tagNodes to the graph
+    if subject not in self.tagNodes:
+      self.tagNodes[subject] = subNode
+    if pred not in self.tagNodes:
+      self.tagNodes[pred] = predNode
+    subNode.predicatives.append(predNode)
+    predNode.subjects.append(subNode)
+
+  def removeRelation(self,subject,pred):
+    subNode = self.tagNodes[subject]
+    predNode = self.tagNodes[pred]
+    subNode.predicatives.remove(predNode)
+    predNode.subjects.remove(subNode)
+
+import random
+#Test TagDataModel
+if __name__ == "__main__":
+  random.seed(1)
+  aModel = TagDataModel()
+  #tags = list("azertyuiopqsdfghjklmwxcvbn")
+  tags = list("abcdefg")
+  for i in range(10):
+    a = random.randint(0,len(tags)-1)
+    b = random.randint(0,len(tags)-1)
+    aTag = tags[a]
+    bTag = tags[b]
+    print("Adding relation :: " + bTag +" -> " + aTag )
+    aModel.addRelation(aTag,bTag)
+    print(i)
+  for n in aModel.tagNodes:
+    print (aModel.tagNodes[n])
