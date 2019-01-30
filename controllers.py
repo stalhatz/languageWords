@@ -71,7 +71,7 @@ class TagController(QAbstractListModel):
     self.tagIndex = self.tagIndex[self.tagIndex.tag.str.lower().str.contains(transfomedFilter)]
     self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.tagIndex.index) , 0))
     
-
+#FIXME: Load word definition when shown on screen not only when selected
 class WordController(QAbstractListModel):
   dataChanged = pyqtSignal(QModelIndex,QModelIndex)
   loadDefinition    = pyqtSignal(str, str, bool)

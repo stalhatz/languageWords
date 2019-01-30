@@ -159,7 +159,6 @@ class WordDialog(QtWidgets.QDialog):
 
 #FIXME: Set size of QWidgetTable elements
 class DictionaryDialog(QtWidgets.QDialog):
-
   class DictionaryModel(QtCore.QAbstractTableModel):
     dataChanged = QtCore.pyqtSignal(QtCore.QModelIndex,QtCore.QModelIndex)
     def __init__(self,dictionaries,_id):
