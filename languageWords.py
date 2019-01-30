@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow)
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='Process some integers.')
-  parser.add_argument('-l', nargs='?', const='french_test_3.pkl', default=None)
+  parser.add_argument('-l', nargs='?', const='french_test_4.pkl', default=None)
   parser.add_argument('-s', nargs='?', const='dictWords.pkl', default=None)
   args = parser.parse_args()
   

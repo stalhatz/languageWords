@@ -190,9 +190,8 @@ class DefinitionDataModel(QObject):
       stripAccents = loadFromPickle(_input)
     #version 0.02
     if (version == 0.02):
-      pass
-      #dictNames = loadFromPickle(_input)
-      #self.selectDictsFromNames(dictNames)
+      dictNames = loadFromPickle(_input)
+      self.selectDictsFromNames(dictNames)
 
 
   def toFile(self,file):
