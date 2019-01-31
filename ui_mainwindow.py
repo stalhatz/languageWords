@@ -126,7 +126,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.dictSelect.currentTextChanged.connect(self.wc.updateDict)
     self.tagFilter.textChanged.connect(self.tc.filterTags)
     #InterController signals
-    self.tc.tagChanged.connect(self.wc.updateWords)
+    self.tc.tagChanged.connect(self.wc.updateOnTag)
     #Connect signals to tab views
     self.wc.dataChanged.connect(self.wordview.dataChanged)
     self.dc.dataChanged.connect(self.definitionListView.dataChanged)

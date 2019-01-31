@@ -28,7 +28,7 @@ class WordDialog(QtWidgets.QDialog):
     self.wordModel = wordModel
     self.dictionary = HunSpell("/usr/share/hunspell/fr.dic", "/usr/share/hunspell/fr.aff")
     self.words = [unidecode.unidecode(x.lower()) for x in self.wordModel.getWords()]
-
+    self.wordSpelledCorrectly = False
     vLayout     = QtWidgets.QVBoxLayout(self)
 
     #vLayout
@@ -80,7 +80,7 @@ class WordDialog(QtWidgets.QDialog):
     self.tLineEdit = QtWidgets.QLineEdit(self)
     self.tLineEdit.setMaximumSize(QtCore.QSize(400, 50))
     self.tLineEdit.setPlaceholderText("Enter a new tag linked to the word")
-    self.tLineEdit.textChanged.connect(self.tagModel.filterTags)
+    self.tLineEdit.textChanged.connect(self.tagTextChanged)
     tagCompleter = QtWidgets.QCompleter(self.wordModel.getTags())
     tagCompleter.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
     self.tLineEdit.setCompleter(tagCompleter)
@@ -131,20 +131,18 @@ class WordDialog(QtWidgets.QDialog):
     
     
   def wordTextChanged(self,text):
-    correctlySpelled = False
+    self.wordSpelledCorrectly = False
     if text != "":
-      correctlySpelled = True
+      self.wordSpelledCorrectly = True
       for word in text.split():
         if not self.dictionary.spell(word):
-          correctlySpelled = False
+          self.wordSpelledCorrectly = False
           break
-    if correctlySpelled:   
+    if self.wordSpelledCorrectly:   
       if any(unidecode.unidecode(text.lower()) == s for s in self.words):
         self.wordAlreadyExists = True
       else:
         self.wordAlreadyExists = False
-    else:
-      self.wordSpelledCorrectly = False
     self.enableOKButton()
 
       

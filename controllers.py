@@ -32,7 +32,7 @@ class DefinitionController(QAbstractListModel):
 
 class TagController(QAbstractListModel):
   dataChanged = pyqtSignal(QModelIndex,QModelIndex)
-  tagChanged = pyqtSignal(pd.DataFrame, name='tagChanged')
+  tagChanged = pyqtSignal(str, name='tagChanged')
   def __init__(self, wordModel):
     super(TagController,self).__init__()
     self.wordModel = wordModel
@@ -51,8 +51,7 @@ class TagController(QAbstractListModel):
   def selected(self, index , prevIndex):
     self.selectedIndex = index
     selectedTag = self.getTag(index)
-    wordTable = self.wordModel.tagTable[self.wordModel.tagTable['tag'] == selectedTag]
-    self.tagChanged.emit(  wordTable )
+    self.tagChanged.emit(  selectedTag )
   def getTag(self,index):
     return str(self.tagIndex.iloc[index.row(),0])
   def getTagCount(self,index):
@@ -61,8 +60,7 @@ class TagController(QAbstractListModel):
     self.tagIndex = pd.pivot_table(self.wordModel.tagTable,values='text',index='tag',aggfunc=pd.Series.nunique).reset_index()
     self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.tagIndex.index) , 0))
     selectedTag = self.getTag(self.selectedIndex)
-    wordTable = self.wordModel.tagTable[self.wordModel.tagTable['tag'] == selectedTag]
-    self.tagChanged.emit(  wordTable )
+    self.tagChanged.emit(  selectedTag )
   # TODO: unidecode filter and pandas Series to match string with accents / no accents
   # TODO: use > = < filters to filter tags with certain number of corresponding words
   def filterTags(self,filter):
@@ -96,8 +94,9 @@ class WordController(QAbstractListModel):
       pass  
     else:
       self.loadDefinition.emit(str(self.df_image.iloc[index.row(),0]),self.dict , self.externalLoading)
-  def updateWords(self,wordList):
-    self.df_image = pd.merge(self.wordModel.wordTable, wordList, on=['text','text'])
+  def updateOnTag(self,tag):
+    tmpTable = self.wordModel.tagTable[self.wordModel.tagTable.tag == tag]
+    self.df_image = pd.merge(self.wordModel.wordTable, tmpTable, on=['text','text'])
     self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.df_image.index) , 0))
   def updateDict(self,dictName):
     self.dict = dictName
