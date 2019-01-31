@@ -1,7 +1,7 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from controllers import (DefinitionController, TagController, WordController)
-from dialogs import WordDialog,DictionaryDialog
-from dataModels import WordDataModel,DefinitionDataModel
+from dialogs import WordDialog,DictionaryDialog,TagEditDialog
+from dataModels import WordDataModel,DefinitionDataModel,TagDataModel
 import pickle
 # TODO : Setup keyboard shortcuts for easily navigating between ListViews/ListEdits etc.
 class Ui_MainWindow(QtCore.QObject):
@@ -23,10 +23,16 @@ class Ui_MainWindow(QtCore.QObject):
     self.editDictsButton.setMaximumSize(QtCore.QSize(150,50))
     self.editDictsButton.setText("Edit &Dictionaries")
     self.editDictsButton.clicked.connect(self.showEditDictsDialog)
+    self.editMetaTagsButton = QtWidgets.QPushButton(self.centralwidget)
+    self.editMetaTagsButton.setObjectName("editMTButton")
+    self.editMetaTagsButton.setMaximumSize(QtCore.QSize(150,50))
+    self.editMetaTagsButton.setText("Edit &MetaTags")
+    self.editMetaTagsButton.clicked.connect(self.showEditMetaTagsDialog)
 
     self.buttonHorizontalLayout.addWidget(self.addWordButton)
     self.buttonHorizontalLayout.addWidget(self.editWordButton)
     self.buttonHorizontalLayout.addWidget(self.editDictsButton)
+    self.buttonHorizontalLayout.addWidget(self.editMetaTagsButton)
   def addListViews(self):
 
     #outerVerticalLayout
@@ -107,6 +113,7 @@ class Ui_MainWindow(QtCore.QObject):
   def setupDataModels(self,wordDataModel,defDataModel):
     self.wdm = wordDataModel
     self.ddm = defDataModel
+    self.metaTagModel = TagDataModel()
     self.wc = WordController(wordDataModel)
     self.tc = TagController(wordDataModel)
     self.dc = DefinitionController()
@@ -183,6 +190,15 @@ class Ui_MainWindow(QtCore.QObject):
       
     elif dialogCode == QtWidgets.QDialog.Rejected:
       print('Rejected')
+  
+  def showEditMetaTagsDialog(self,event):
+    self.editMetaTagsDialog = TagEditDialog(self.centralwidget,self.wdm,self.metaTagModel)
+    dialogCode = self.editMetaTagsDialog.exec()
+    if dialogCode == QtWidgets.QDialog.Accepted:
+      print("Accepted")
+    elif dialogCode == QtWidgets.QDialog.Rejected:
+      print('Rejected')
+  
   
   @classmethod
   def defaultInit(cls,window):

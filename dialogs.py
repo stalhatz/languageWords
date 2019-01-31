@@ -1,6 +1,7 @@
 from hunspell import HunSpell
 from PyQt5 import QtCore, QtGui, QtWidgets
 import unidecode
+from controllers import TagController
 #TODO: Decide if the dialog should be recreated every time it needs to be shown or 
 #TODO: Lookup for hunspell dictionaries in usual directories
 #TODO: Implement dictionaries ListView. Show dictionary availability while typing the word.
@@ -79,7 +80,7 @@ class WordDialog(QtWidgets.QDialog):
     self.tLineEdit = QtWidgets.QLineEdit(self)
     self.tLineEdit.setMaximumSize(QtCore.QSize(400, 50))
     self.tLineEdit.setPlaceholderText("Enter a new tag linked to the word")
-    self.tLineEdit.textChanged.connect(self.tagTextChanged)
+    self.tLineEdit.textChanged.connect(self.tagModel.filterTags)
     tagCompleter = QtWidgets.QCompleter(self.wordModel.getTags())
     tagCompleter.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
     self.tLineEdit.setCompleter(tagCompleter)
@@ -137,7 +138,7 @@ class WordDialog(QtWidgets.QDialog):
         if not self.dictionary.spell(word):
           correctlySpelled = False
           break
-    if correctlySpelled:      self.wordSpelledCorrectly = True
+    if correctlySpelled:   
       if any(unidecode.unidecode(text.lower()) == s for s in self.words):
         self.wordAlreadyExists = True
       else:
@@ -289,3 +290,114 @@ class DictionaryDialog(QtWidgets.QDialog):
     if len(self.sModel.dictionaries) == 0:
       self.removeDictButton.setEnabled(False)
     self._validateSelection(self.selectedID)
+
+class TagEditDialog(QtWidgets.QDialog):
+  def __init__(self ,parent , wordModel , tagModel):
+    super(TagEditDialog,self).__init__(parent)
+    self.wordModel = wordModel
+    self.tagModel  = tagModel
+
+    vLayout     = QtWidgets.QVBoxLayout(self)
+    #vLayout
+    hHighLayout   = QtWidgets.QHBoxLayout()
+    hMiddleLayout     = QtWidgets.QHBoxLayout()
+    hLowLayout      = QtWidgets.QHBoxLayout()
+    self.statusBar  = QtWidgets.QStatusBar(self)
+    
+    vLayout.addLayout(hHighLayout)
+    vLayout.addLayout(hMiddleLayout)
+    vLayout.addLayout(hLowLayout)
+    vLayout.addWidget(self.statusBar)
+    
+    #hHighLayout (vLayout)
+    vLeftLayout         = QtWidgets.QVBoxLayout()
+    vRightLayout        = QtWidgets.QVBoxLayout()
+    hHighLayout.addLayout(vLeftLayout)
+    hHighLayout.addLayout(vRightLayout)
+    
+    #vLeftLayout ( hHighLayout (vLayout) )
+    self.tagView        = QtWidgets.QListView(self) 
+    self.tModel         = TagController(self.wordModel) 
+    self.tagView.setModel(self.tModel)
+    self.tagView.selectionModel().currentChanged.connect(self.tModel.selected)
+    self.tModel.dataChanged.connect(self.tagView.dataChanged)
+    self.tagFilter = QtWidgets.QLineEdit(self)
+    self.tagFilter.setObjectName("metaTagDialog.tagFilter")
+    self.tagFilter.setPlaceholderText("Enter text to filter tags")
+    self.tagFilter.setMaximumSize(QtCore.QSize(400, 30))
+    self.tagFilter.installEventFilter(self) #Catch Enter
+    self.tagFilter.textChanged.connect(self.tModel.filterTags)
+    vLeftLayout.addWidget(self.tagView)
+    vLeftLayout.addWidget(self.tagFilter)
+
+    #vRightLayout ( hHighLayout (vLayout) )
+    self.metaTagView    = QtWidgets.QListView(self) 
+    self.mtModel        = QtCore.QStringListModel()
+    self.metaTagView.setModel(self.mtModel)
+    self.mtLineEdit = QtWidgets.QLineEdit(self)
+    self.mtLineEdit.setMaximumSize(QtCore.QSize(400, 50))
+    self.mtLineEdit.setPlaceholderText("Enter metatag to be applied to selected tag")
+    self.mtLineEdit.textChanged.connect(self.tagTextChanged)
+    tagCompleter = QtWidgets.QCompleter(self.wordModel.getTags())
+    tagCompleter.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
+    self.mtLineEdit.setCompleter(tagCompleter)
+    self.metaTagView.selectionModel().currentChanged.connect(self.metaTagSelected)
+    vRightLayout.addWidget(self.metaTagView)
+    vRightLayout.addWidget(self.mtLineEdit)
+
+    #hMiddleLayout (vLayout)
+    self.addMetaTagButton    = QtWidgets.QPushButton(self)
+    self.addMetaTagButton.setText("Add Meta Tag")
+    self.addMetaTagButton.clicked.connect(self.addMetaTag)
+    # self.editDictButton = QtWidgets.QPushButton(self)
+    # self.editDictButton.setText("Edit Dictionary")
+    # self.editDictButton.clicked.connect(self.editDictionary)
+    self.removeMetaTagButton = QtWidgets.QPushButton(self)
+    self.removeMetaTagButton.setText("Remove Meta Tag")
+    self.removeMetaTagButton.clicked.connect(self.removeMetaTag)
+    
+    hMiddleLayout.addWidget(self.addMetaTagButton)
+    #hHighLayout.addWidget(self.editDictButton)
+    hMiddleLayout.addWidget(self.removeMetaTagButton)
+
+    #hLowLayout (vLayout)
+    self.okButton    = QtWidgets.QPushButton(self)
+    self.okButton.setText("&OK")
+    #self.okButton.setEnabled(False)
+    self.okButton.clicked.connect(self.accept)
+    cancelButton = QtWidgets.QPushButton(self)
+    cancelButton.setText("&Cancel")
+    cancelButton.clicked.connect(self.reject)
+    hLowLayout.addWidget(self.okButton)
+    hLowLayout.addWidget(cancelButton)
+    
+  def eventFilter(self,_object, event):
+    if _object == self.tagFilter:
+      if event.type() == QtCore.QEvent.KeyPress:
+        if (event.key() == QtCore.Qt.Key_Enter) or (event.key() == QtCore.Qt.Key_Return):
+          self.tagView.setFocus()
+          return True
+    return False
+
+  def tagTextChanged(self,text):
+    shouldEnable = False
+    if text != "":
+      if any(text == x for x in self.mtModel.stringList()):
+        shouldEnable = False
+        self.statusBar.showMessage("Tag already added")
+      else:
+        shouldEnable = True
+    if shouldEnable:
+      self.addTagButton.setEnabled(True)
+      self.statusBar.showMessage("")
+    else:
+      self.addTagButton.setEnabled(False)
+  
+  def metaTagSelected(self):
+    pass
+  
+  def addMetaTag(self,event):
+    pass
+  
+  def removeMetaTag(self, event):
+    pass
