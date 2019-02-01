@@ -26,6 +26,7 @@ def loadFromPickle(file):
     a = pickle.load(file)
   return a
 
+#TODO: Delete this
 def splitWordsTable(table):
   tagTable = table.drop(["hyperlink"],axis="columns")
   wordTable = table.drop(["tag"], axis="columns")
@@ -35,15 +36,13 @@ def splitWordsTable(table):
 #TODO: Add tags for tags. Transitive effect when applying a certain tag to a word.
 class WordDataModel(QObject):
   dataChanged         = pyqtSignal()
-  def __init__(self, data = None):
+  def __init__(self, wordTable = None):
     super(WordDataModel, self).__init__()
     self.version = 0.01
-    if data is None:
+    if wordTable is None:
       self.wordTable  = pd.DataFrame(columns = ["text" , "hyperlink"])
-      self.tagTable   = pd.DataFrame(columns = ["text" , "tag"])
     else:
-      self.wordTable  = data[0]
-      self.tagTable   = data[1]
+      self.wordTable  = wordTable
 
   def saveData(self,output):
     saveToPickle(self.version, output)
@@ -56,7 +55,6 @@ class WordDataModel(QObject):
     #It should not be stores to the object
     version = loadFromPickle(_input)
     self.wordTable = loadFromPickle(_input)
-    self.tagTable  = loadFromPickle(_input)
 
   def toFile(self,file):
     if isinstance(file,str):
@@ -78,10 +76,6 @@ class WordDataModel(QObject):
     a._fromFile(file)
     return a
   
-  def getTags(self):
-    tagIndex = pd.pivot_table(self.tagTable,values='text',index='tag',aggfunc=pd.Series.nunique).reset_index()
-    return list(tagIndex['tag'])
-  
   def getWords(self):
     words = self.wordTable.iloc[:,0]
     return list(words)
@@ -89,19 +83,9 @@ class WordDataModel(QObject):
   def addWord(self,word,tags):
     if len(tags) > 0:
       self.wordTable = self.wordTable.append({"text" : word}, ignore_index = True)
-      tagTableList = []
-      for tag in tags:
-        tagTableList.append({"tag":tag , "text" : word})
-      self.tagTable = self.tagTable.append(tagTableList)
       self.dataChanged.emit()
-
-  def getWordsFromTagList(self,tagList):
-    tableList = []
-    for tag in tagList:
-      tableList.append(self.tagTable[self.tagTable.tag == tag])
-    tagWordTable = pd.concat(tableList, axis=0)
-    wordTable = pd.merge(self.wordTable, tagWordTable, on=['text','text'])
-    return wordTable
+    else:
+      raise ValueError("A word must be tagged at least once")
 
   def updateData(self):
     self.dataChanged.emit()
@@ -133,7 +117,7 @@ class DefinitionDataModel(QObject):
     package = dictionaries
     prefix = package.__name__ + "."
     for importer, modname, ispkg in pkgutil.iter_modules(package.__path__, prefix):
-      print ("Found submodule %s (is a package: %s)" % (modname, ispkg))
+      #print ("Found submodule %s (is a package: %s)" % (modname, ispkg))
       dictionary = import_module(modname)
       availableDicts[dictionary.name] = dictionary
     return availableDicts
@@ -223,9 +207,66 @@ class DefinitionDataModel(QObject):
     a._fromFile(file)
     return a
 
+#FIXME: Decorrelate the use of the word "Words" to mean indexes in tagTable (They don't have to be words, they could be imageIDs)
 class TagDataModel():
-  def __init__(self):
+  def __init__(self , tagTable = None):
+    self.version = 0.01
     self.tagNodes = {}
+    if tagTable is None:
+      self.tagTable   = pd.DataFrame(columns = ["text" , "tag"])
+    else:
+      self.tagTable   = tagTable
+
+  def getTags(self):
+    tagIndex = pd.pivot_table(self.tagTable,values='text',index='tag',aggfunc=pd.Series.nunique).reset_index()
+    return list(tagIndex['tag'])
+
+  def addTagging(self,word,tags):
+    if len(tags) > 0:
+      tagTableList = []
+      for tag in tags:
+        tagTableList.append({"tag":tag , "text" : word})
+      self.tagTable = self.tagTable.append(tagTableList, ignore_index = True)
+
+  def getIndexesFromTagList(self,tagList):
+    print(tagList)
+    tableList = []
+    for tag in tagList:
+      tableList.append(self.tagTable[self.tagTable.tag == tag])
+    tagIndexTable = pd.concat(tableList, axis=0)
+    return tagIndexTable
+
+  def saveData(self,output):
+    #version 0.01
+    saveToPickle(self.tagTable, output)
+  
+  def loadData(self,_input):
+    #The version variable is only for backwards compatibility with the class version.
+    #It should not be stores to the object
+    #version 0.01
+    #version = loadFromPickle(_input)
+    self.tagTable = loadFromPickle(_input)
+
+  def toFile(self,file):
+    if isinstance(file,str):
+      with open(file, 'wb') as output:
+        self.saveData(output)
+    else:
+      self.saveData(file)
+
+  def _fromFile(self,file):
+    if isinstance(file,str):
+      with open(file, 'rb') as _input: 
+        self.loadData(_input)
+    else:
+      self.loadData(file)
+  
+  @classmethod
+  def fromFile(cls,file):
+    a = cls()
+    a._fromFile(file)
+    return a
+
   class Node():
     #The tag works as a subject for its predicatives and as a predicative for its subjects
     def __init__(self,tag):
@@ -254,6 +295,7 @@ class TagDataModel():
     node = self.tagToNode(tag)
     preds = self.getAllSubjects(node)
     metaTags = [n.tag for n in preds]
+    metaTags = list(set(metaTags))
     return metaTags
 
   def getAllSubjects(self,node):

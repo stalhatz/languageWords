@@ -110,12 +110,12 @@ class Ui_MainWindow(QtCore.QObject):
     self.statusBar.setObjectName("statusbar")
     MainWindow.setStatusBar(self.statusBar)
   
-  def setupDataModels(self,wordDataModel,defDataModel):
+  def setupDataModels(self,wordDataModel,tagDataModel,defDataModel):
     self.wdm = wordDataModel
     self.ddm = defDataModel
-    self.metaTagModel = TagDataModel()
+    self.metaTagModel = tagDataModel
     self.wc = WordController(wordDataModel,self.metaTagModel)
-    self.tc = TagController(wordDataModel,self.metaTagModel)
+    self.tc = TagController(self.metaTagModel)
     self.dc = DefinitionController()
     #Set signals/slots views to controllers
     self.definitionListView.setModel(self.dc)
@@ -170,12 +170,13 @@ class Ui_MainWindow(QtCore.QObject):
   
   # TODO: Show dialogs for adding/editing words.
   def showAddWordDialog(self,event):
-    self.addWordDialog = WordDialog(self.centralwidget,self.wdm,self.ddm)
+    self.addWordDialog = WordDialog(self.centralwidget,self.wdm,self.metaTagModel,self.ddm)
     dialogCode = self.addWordDialog.exec()
     if dialogCode == QtWidgets.QDialog.Accepted:
       newWord = self.addWordDialog.getWord()
       tags    = self.addWordDialog.getTags()
       self.wdm.addWord(newWord,tags)
+      self.metaTagModel.addTagging(newWord,tags)
       print('Accepted. New Word:' + newWord)
       print("Tags: " + str(tags))
     elif dialogCode == QtWidgets.QDialog.Rejected:
@@ -215,12 +216,13 @@ class Ui_MainWindow(QtCore.QObject):
       version = pickle.load(_input)
       language = pickle.load(_input)
       wordDataModel = WordDataModel.fromFile(_input)
+      tagDataModel = TagDataModel.fromFile(_input)
       defDataModel = DefinitionDataModel.fromFile(_input)
       wordDataModel.language = language
       defDataModel.language = language
       obj = cls()
       obj.setupUi(window)
-      obj.setupDataModels(wordDataModel, defDataModel)
+      obj.setupDataModels(wordDataModel,tagDataModel,defDataModel)
       return obj
   
   def openFile(self):

@@ -33,11 +33,10 @@ class DefinitionController(QAbstractListModel):
 class TagController(QAbstractListModel):
   dataChanged = pyqtSignal(QModelIndex,QModelIndex)
   tagChanged = pyqtSignal(str, name='tagChanged')
-  def __init__(self, wordModel,tagModel):
+  def __init__(self,tagModel):
     super(TagController,self).__init__()
-    self.wordModel = wordModel
     self.tagModel = tagModel
-    if self.wordModel.tagTable.empty:
+    if self.tagModel.tagTable.empty:
       self.tagIndex  = pd.DataFrame(columns=["tag","text"])
     else:
       self.updateTagIndexFromModel()
@@ -63,7 +62,7 @@ class TagController(QAbstractListModel):
   def getSelectedTag(self):
     return self.getTag(self.selectedIndex)
   def updateTagIndexFromModel(self):
-    self.tagIndex = pd.pivot_table(self.wordModel.tagTable,values='text',index='tag',aggfunc=pd.Series.nunique).reset_index()
+    self.tagIndex = pd.pivot_table(self.tagModel.tagTable,values='text',index='tag',aggfunc=pd.Series.nunique).reset_index()
     self.tagIndex.loc[:,'MetaTagWordCount'] = self.tagIndex.text
     newTagsList = []
     for tag in self.tagModel.tagNodes:
@@ -97,12 +96,12 @@ class WordController(QAbstractListModel):
   def __init__(self, wordModel ,tagModel):
     super(WordController,self).__init__()
     self.wordModel = wordModel
+    self.tagModel = tagModel
     self.df_image = self.wordModel.wordTable
     self.dict = None
     self.url = None
     self.currentIndex = -1
     self.externalLoading = False
-    self.tagModel = tagModel
   def rowCount(self, modelIndex):
     return len(self.df_image.index)
   def data(self, index, role):
@@ -117,10 +116,10 @@ class WordController(QAbstractListModel):
     else:
       self.loadDefinition.emit(str(self.df_image.iloc[index.row(),0]),self.dict , self.externalLoading)
   def updateOnTag(self,tag):
-    #tmpTable = self.wordModel.tagTable[self.wordModel.tagTable.tag == tag]
     tagList = self.tagModel.getAllChildTags(tag)
     tagList.append(tag)
-    self.df_image = self.wordModel.getWordsFromTagList(tagList)
+    tagIndexTable = self.tagModel.getIndexesFromTagList(tagList)
+    self.df_image = pd.merge(self.wordModel.wordTable, tagIndexTable, on=['text','text'])
     self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.df_image.index) , 0))
   def updateDict(self,dictName):
     self.dict = dictName

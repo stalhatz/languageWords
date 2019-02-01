@@ -23,12 +23,14 @@ class WordDialog(QtWidgets.QDialog):
         return QtGui.QIcon.fromTheme("edit-undo")
       
 
-  def __init__(self, parent, wordModel, defModel):
+  def __init__(self, parent, wordModel,tagDataModel, defModel):
     super(WordDialog,self).__init__(parent)
     self.wordModel = wordModel
+    self.tagDataModel = tagDataModel
     self.dictionary = HunSpell("/usr/share/hunspell/fr.dic", "/usr/share/hunspell/fr.aff")
     self.words = [unidecode.unidecode(x.lower()) for x in self.wordModel.getWords()]
     self.wordSpelledCorrectly = False
+    self.wordAlreadyExists    = False
     vLayout     = QtWidgets.QVBoxLayout(self)
 
     #vLayout
@@ -81,7 +83,7 @@ class WordDialog(QtWidgets.QDialog):
     self.tLineEdit.setMaximumSize(QtCore.QSize(400, 50))
     self.tLineEdit.setPlaceholderText("Enter a new tag linked to the word")
     self.tLineEdit.textChanged.connect(self.tagTextChanged)
-    tagCompleter = QtWidgets.QCompleter(self.wordModel.getTags())
+    tagCompleter = QtWidgets.QCompleter(self.tagDataModel.getTags())
     tagCompleter.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
     self.tLineEdit.setCompleter(tagCompleter)
 
@@ -315,7 +317,7 @@ class TagEditDialog(QtWidgets.QDialog):
     
     #vLeftLayout ( hHighLayout (vLayout) )
     self.tagView        = QtWidgets.QListView(self) 
-    self.tModel         = TagController(self.wordModel,self.tagDataModel) 
+    self.tModel         = TagController(self.tagDataModel) 
     self.tagView.setModel(self.tModel)
     self.tagView.selectionModel().currentChanged.connect(self.tModel.selected)
     self.tModel.dataChanged.connect(self.tagView.dataChanged)
@@ -337,7 +339,7 @@ class TagEditDialog(QtWidgets.QDialog):
     self.mtLineEdit.setMaximumSize(QtCore.QSize(400, 50))
     self.mtLineEdit.setPlaceholderText("Enter metatag to be applied to selected tag")
     self.mtLineEdit.textChanged.connect(self.tagTextChanged)
-    tagCompleter = QtWidgets.QCompleter(self.wordModel.getTags())
+    tagCompleter = QtWidgets.QCompleter(self.tagDataModel.getTags())
     tagCompleter.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
     self.mtLineEdit.setCompleter(tagCompleter)
     self.metaTagView.selectionModel().currentChanged.connect(self.metaTagSelected)
