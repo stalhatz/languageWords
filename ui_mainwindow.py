@@ -114,8 +114,8 @@ class Ui_MainWindow(QtCore.QObject):
     self.wdm = wordDataModel
     self.ddm = defDataModel
     self.metaTagModel = TagDataModel()
-    self.wc = WordController(wordDataModel)
-    self.tc = TagController(wordDataModel)
+    self.wc = WordController(wordDataModel,self.metaTagModel)
+    self.tc = TagController(wordDataModel,self.metaTagModel)
     self.dc = DefinitionController()
     #Set signals/slots views to controllers
     self.definitionListView.setModel(self.dc)
@@ -195,7 +195,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.editMetaTagsDialog = TagEditDialog(self.centralwidget,self.wdm,self.metaTagModel)
     dialogCode = self.editMetaTagsDialog.exec()
     if dialogCode == QtWidgets.QDialog.Accepted:
-      print("Accepted")
+      self.tc.updateTags()
     elif dialogCode == QtWidgets.QDialog.Rejected:
       print('Rejected')
   

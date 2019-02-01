@@ -290,10 +290,10 @@ class DictionaryDialog(QtWidgets.QDialog):
     self._validateSelection(self.selectedID)
 
 class TagEditDialog(QtWidgets.QDialog):
-  def __init__(self ,parent , wordModel , tagModel):
+  def __init__(self ,parent , wordModel , tagDataModel):
     super(TagEditDialog,self).__init__(parent)
     self.wordModel = wordModel
-    self.tagModel  = tagModel
+    self.tagDataModel  = tagDataModel
 
     vLayout     = QtWidgets.QVBoxLayout(self)
     #vLayout
@@ -315,10 +315,11 @@ class TagEditDialog(QtWidgets.QDialog):
     
     #vLeftLayout ( hHighLayout (vLayout) )
     self.tagView        = QtWidgets.QListView(self) 
-    self.tModel         = TagController(self.wordModel) 
+    self.tModel         = TagController(self.wordModel,self.tagDataModel) 
     self.tagView.setModel(self.tModel)
     self.tagView.selectionModel().currentChanged.connect(self.tModel.selected)
     self.tModel.dataChanged.connect(self.tagView.dataChanged)
+    self.tModel.tagChanged.connect(self.updateMetaTags)
     self.tagFilter = QtWidgets.QLineEdit(self)
     self.tagFilter.setObjectName("metaTagDialog.tagFilter")
     self.tagFilter.setPlaceholderText("Enter text to filter tags")
@@ -345,23 +346,18 @@ class TagEditDialog(QtWidgets.QDialog):
 
     #hMiddleLayout (vLayout)
     self.addMetaTagButton    = QtWidgets.QPushButton(self)
-    self.addMetaTagButton.setText("Add Meta Tag")
+    self.addMetaTagButton.setText("Add MetaTag")
     self.addMetaTagButton.clicked.connect(self.addMetaTag)
-    # self.editDictButton = QtWidgets.QPushButton(self)
-    # self.editDictButton.setText("Edit Dictionary")
-    # self.editDictButton.clicked.connect(self.editDictionary)
     self.removeMetaTagButton = QtWidgets.QPushButton(self)
-    self.removeMetaTagButton.setText("Remove Meta Tag")
+    self.removeMetaTagButton.setText("Remove MetaTag")
     self.removeMetaTagButton.clicked.connect(self.removeMetaTag)
     
     hMiddleLayout.addWidget(self.addMetaTagButton)
-    #hHighLayout.addWidget(self.editDictButton)
     hMiddleLayout.addWidget(self.removeMetaTagButton)
 
     #hLowLayout (vLayout)
     self.okButton    = QtWidgets.QPushButton(self)
     self.okButton.setText("&OK")
-    #self.okButton.setEnabled(False)
     self.okButton.clicked.connect(self.accept)
     cancelButton = QtWidgets.QPushButton(self)
     cancelButton.setText("&Cancel")
@@ -381,21 +377,49 @@ class TagEditDialog(QtWidgets.QDialog):
     shouldEnable = False
     if text != "":
       if any(text == x for x in self.mtModel.stringList()):
-        shouldEnable = False
         self.statusBar.showMessage("Tag already added")
       else:
-        shouldEnable = True
+        if (text == self.tModel.getSelectedTag()):
+          self.statusBar.showMessage("A tag can't apply to itself")
+        else:
+          shouldEnable = True
     if shouldEnable:
-      self.addTagButton.setEnabled(True)
+      self.addMetaTagButton.setEnabled(True)
       self.statusBar.showMessage("")
     else:
-      self.addTagButton.setEnabled(False)
+      self.addMetaTagButton.setEnabled(False)
   
   def metaTagSelected(self):
     pass
-  
+  # def updateMetaTags(self):
+  #   metaTags = self.mtModel.stringList()
+  #   selectedTag = self.tModel.getSelectedTag()
+  #   for tag in metaTags:
+      
   def addMetaTag(self,event):
-    pass
+    stringList = self.mtModel.stringList()
+    metaTag = self.mtLineEdit.text()
+    stringList.append(metaTag)
+    self.mtModel.setStringList(stringList)
+    self.mtLineEdit.clear()
+    self.removeMetaTagButton.setEnabled(True)
+    selectedTag = self.tModel.getSelectedTag()
+    self.tagDataModel.addRelation(selectedTag,metaTag)
+    #self.enableOKButton()
   
   def removeMetaTag(self, event):
-    pass
+    stringList = self.mtModel.stringList()
+    if len(stringList) > 0:
+      index = self.metaTagView.currentIndex().row()
+      selectedTag = self.tModel.getSelectedTag()
+      metaTag = stringList[index]
+      self.tagDataModel.removeRelation(selectedTag,metaTag)
+      del stringList[index]
+      self.mtModel.setStringList(stringList)
+      if len(stringList) == 0:
+        self.removeMetaTagButton.setEnabled(False)
+    #self.enableOKButton()
+  #TODO: Show indirect parent tags as non editable elements in the listview
+  def updateMetaTags(self,tag):
+    metaTags = self.tagDataModel.getDirectParentTags(tag)
+    self.mtModel.setStringList(metaTags)

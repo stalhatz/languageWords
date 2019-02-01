@@ -95,6 +95,14 @@ class WordDataModel(QObject):
       self.tagTable = self.tagTable.append(tagTableList)
       self.dataChanged.emit()
 
+  def getWordsFromTagList(self,tagList):
+    tableList = []
+    for tag in tagList:
+      tableList.append(self.tagTable[self.tagTable.tag == tag])
+    tagWordTable = pd.concat(tableList, axis=0)
+    wordTable = pd.merge(self.wordTable, tagWordTable, on=['text','text'])
+    return wordTable
+
   def updateData(self):
     self.dataChanged.emit()
 
@@ -236,8 +244,27 @@ class TagDataModel():
       node = TagDataModel.Node(tag)
     return node
 
+  def getDirectParentTags(self,tag):
+    node = self.tagToNode(tag)
+    preds = node.predicatives
+    metaTags = [n.tag for n in preds]
+    return metaTags
+  
+  def getAllChildTags(self,tag):
+    node = self.tagToNode(tag)
+    preds = self.getAllSubjects(node)
+    metaTags = [n.tag for n in preds]
+    return metaTags
+
+  def getAllSubjects(self,node):
+    subjectList = [] + node.subjects
+    for n in node.subjects:
+      if len(n.subjects) > 0:
+        _subjectList = self.getAllSubjects(n)
+        subjectList += _subjectList
+    return subjectList
+
   def getAllPredicatives(self,node):
-    #print(node)
     predList = [] + node.predicatives
     for n in node.predicatives:
       if len(n.predicatives) > 0:
@@ -252,6 +279,7 @@ class TagDataModel():
     return subNode in preds
   def connected(self, subNode, predNode):
     return predNode in subNode.predicatives
+
   def addRelation(self,subject,pred):
     if subject == pred:
       #print("Can't relate a tag to itself")
