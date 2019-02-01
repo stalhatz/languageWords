@@ -34,7 +34,6 @@ class Ui_MainWindow(QtCore.QObject):
     self.buttonHorizontalLayout.addWidget(self.editDictsButton)
     self.buttonHorizontalLayout.addWidget(self.editMetaTagsButton)
   def addListViews(self):
-
     #outerVerticalLayout
     self.horizontalLayout = QtWidgets.QHBoxLayout()
     self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
@@ -69,8 +68,6 @@ class Ui_MainWindow(QtCore.QObject):
     self.verticalLayout.addWidget(self.wordview)
     self.verticalLayout.addWidget(self.tagview)
     self.verticalLayout.addWidget(self.tagFilter)
-    
-    
 
     self.tabwidget = QtWidgets.QTabWidget(self.centralwidget)
     self.tabwidget.setObjectName("tabwidget")
@@ -87,7 +84,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.tabwidget.addTab(self.webView , "Webview")
 
     #self.horizontalLayout.addWidget(self.webView)
-  def addMenuBar(self,MainWindow):
+  def adefDataModelenuBar(self,MainWindow):
     self.menubar = QtWidgets.QMenuBar(MainWindow)
     self.menubar.setGeometry(QtCore.QRect(0, 0, 728, 30))
     self.menubar.setObjectName("menubar")
@@ -111,34 +108,34 @@ class Ui_MainWindow(QtCore.QObject):
     MainWindow.setStatusBar(self.statusBar)
   
   def setupDataModels(self,wordDataModel,tagDataModel,defDataModel):
-    self.wdm = wordDataModel
-    self.ddm = defDataModel
-    self.metaTagModel = tagDataModel
-    self.wc = WordController(wordDataModel,self.metaTagModel)
-    self.tc = TagController(self.metaTagModel)
-    self.dc = DefinitionController()
+    self.wordDataModel = wordDataModel
+    self.defDataModel = defDataModel
+    self.tagDataModel = tagDataModel
+    self.wordController = WordController(wordDataModel,self.tagDataModel)
+    self.tagController = TagController(self.tagDataModel)
+    self.defController = DefinitionController()
     #Set signals/slots views to controllers
-    self.definitionListView.setModel(self.dc)
-    self.tagview.setModel(self.tc)
-    self.tagview.selectionModel().currentChanged.connect(self.tc.selected)
-    self.wordview.setModel(self.wc)
-    self.wordview.selectionModel().currentChanged.connect(self.wc.selected)
-    self.dictSelect.currentTextChanged.connect(self.wc.updateDict)
-    self.tagFilter.textChanged.connect(self.tc.filterTags)
+    self.definitionListView.setModel(self.defController)
+    self.tagview.setModel(self.tagController)
+    self.tagview.selectionModel().currentChanged.connect(self.tagController.selected)
+    self.wordview.setModel(self.wordController)
+    self.wordview.selectionModel().currentChanged.connect(self.wordController.selected)
+    self.dictSelect.currentTextChanged.connect(self.wordController.updateDict)
+    self.tagFilter.textChanged.connect(self.tagController.filterTags)
     #InterController signals
-    self.tc.tagChanged.connect(self.wc.updateOnTag)
+    self.tagController.tagChanged.connect(self.wordController.updateOnTag)
     #Connect signals to tab views
-    self.wc.dataChanged.connect(self.wordview.dataChanged)
-    self.dc.dataChanged.connect(self.definitionListView.dataChanged)
-    self.tc.dataChanged.connect(self.tagview.dataChanged)
-    self.dc.setEnabledView.connect(self.definitionListView.setEnabled)
-    self.tabwidget.currentChanged.connect(self.wc.setDefinitionLoadingSource)
+    self.wordController.dataChanged.connect(self.wordview.dataChanged)
+    self.defController.dataChanged.connect(self.definitionListView.dataChanged)
+    self.tagController.dataChanged.connect(self.tagview.dataChanged)
+    self.defController.setEnabledView.connect(self.definitionListView.setEnabled)
+    self.tabwidget.currentChanged.connect(self.wordController.setDefinitionLoadingSource)
     #Connect signals to data models
-    self.ddm.dictNamesUpdated.connect(self.updateDictNames)
-    self.wdm.dataChanged.connect(self.tc.updateTags)
-    self.wc.loadDefinition.connect(defDataModel.load)
-    self.wc.loadDefinition.connect(self.dc.loadingInitiated)
-    defDataModel.definitionsUpdated.connect(self.dc.updateDefinition)
+    self.defDataModel.dictNamesUpdated.connect(self.updateDictNames)
+    self.wordDataModel.dataChanged.connect(self.tagController.updateTags)
+    self.wordController.loadDefinition.connect(defDataModel.load)
+    self.wordController.loadDefinition.connect(self.defController.loadingInitiated)
+    defDataModel.definitionsUpdated.connect(self.defController.updateDefinition)
     defDataModel.externalPageLoad.connect(self.webView.load)
     defDataModel.showMessage.connect(self.statusBar.showMessage)
 
@@ -156,7 +153,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.addTopButtons()
     self.addListViews()
     MainWindow.setCentralWidget(self.centralwidget)
-    self.addMenuBar(MainWindow)            
+    self.adefDataModelenuBar(MainWindow)            
     self.addStatusBar(MainWindow)
     self.retranslateUi(MainWindow)
     QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -170,13 +167,13 @@ class Ui_MainWindow(QtCore.QObject):
   
   # TODO: Show dialogs for adding/editing words.
   def showAddWordDialog(self,event):
-    self.addWordDialog = WordDialog(self.centralwidget,self.wdm,self.metaTagModel,self.ddm)
+    self.addWordDialog = WordDialog(self.centralwidget,self.wordDataModel,self.tagDataModel,self.defDataModel)
     dialogCode = self.addWordDialog.exec()
     if dialogCode == QtWidgets.QDialog.Accepted:
       newWord = self.addWordDialog.getWord()
       tags    = self.addWordDialog.getTags()
-      self.wdm.addWord(newWord,tags)
-      self.metaTagModel.addTagging(newWord,tags)
+      self.wordDataModel.addWord(newWord,tags)
+      self.tagDataModel.addTagging(newWord,tags)
       print('Accepted. New Word:' + newWord)
       print("Tags: " + str(tags))
     elif dialogCode == QtWidgets.QDialog.Rejected:
@@ -184,19 +181,19 @@ class Ui_MainWindow(QtCore.QObject):
   def showEditWordDialog(self,event):
     pass
   def showEditDictsDialog(self,event):
-    self.editDictsDialog = DictionaryDialog(self.centralwidget,self.ddm)
+    self.editDictsDialog = DictionaryDialog(self.centralwidget,self.defDataModel)
     dialogCode = self.editDictsDialog.exec()
     if dialogCode == QtWidgets.QDialog.Accepted:
-      self.ddm.selectDictsFromNames(self.editDictsDialog.sModel.getDictNames())
+      self.defDataModel.selectDictsFromNames(self.editDictsDialog.sModel.getDictNames())
       
     elif dialogCode == QtWidgets.QDialog.Rejected:
       print('Rejected')
   
   def showEditMetaTagsDialog(self,event):
-    self.editMetaTagsDialog = TagEditDialog(self.centralwidget,self.wdm,self.metaTagModel)
+    self.editMetaTagsDialog = TagEditDialog(self.centralwidget,self.wordDataModel,self.tagDataModel)
     dialogCode = self.editMetaTagsDialog.exec()
     if dialogCode == QtWidgets.QDialog.Accepted:
-      self.tc.updateTags()
+      self.tagController.updateTags()
     elif dialogCode == QtWidgets.QDialog.Rejected:
       print('Rejected')
   
@@ -233,12 +230,12 @@ class Ui_MainWindow(QtCore.QObject):
       with open(fileName, 'rb') as _input:
         version = pickle.load(_input)
         language = pickle.load(_input)
-        self.wdm.language = language
-        self.ddm.language = language
-        self.wdm._fromFile(_input)
-        self.ddm._fromFile(_input)
-        self.wdm.updateData()
-        self.ddm.updateDictNames()
+        self.wordDataModel.language = language
+        self.defDataModel.language = language
+        self.wordDataModel._fromFile(_input)
+        self.defDataModel._fromFile(_input)
+        self.wordDataModel.updateData()
+        self.defDataModel.updateDictNames()
 
   def saveFile(self):
     fileName,fileType = QtWidgets.QFileDialog.getSaveFileName(self.centralwidget,"Save File",".","Pickle Files (*.pkl)")
@@ -248,8 +245,8 @@ class Ui_MainWindow(QtCore.QObject):
       with open(fileName, 'wb') as output:
         pickle.dump(self.version, output, pickle.HIGHEST_PROTOCOL) #Version
         pickle.dump("French", output , pickle.HIGHEST_PROTOCOL) #Language
-        self.wdm.toFile(output)
-        self.ddm.toFile(output)
+        self.wordDataModel.toFile(output)
+        self.defDataModel.toFile(output)
 
   def updateDictNames(self,dictNames):
     self.dictSelect.clear()

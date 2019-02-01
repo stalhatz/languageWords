@@ -23,12 +23,12 @@ class WordDialog(QtWidgets.QDialog):
         return QtGui.QIcon.fromTheme("edit-undo")
       
 
-  def __init__(self, parent, wordModel,tagDataModel, defModel):
+  def __init__(self, parent, wordDataModel,tagDataModel, defModel):
     super(WordDialog,self).__init__(parent)
-    self.wordModel = wordModel
+    self.wordDataModel = wordDataModel
     self.tagDataModel = tagDataModel
     self.dictionary = HunSpell("/usr/share/hunspell/fr.dic", "/usr/share/hunspell/fr.aff")
-    self.words = [unidecode.unidecode(x.lower()) for x in self.wordModel.getWords()]
+    self.words = [unidecode.unidecode(x.lower()) for x in self.wordDataModel.getWords()]
     self.wordSpelledCorrectly = False
     self.wordAlreadyExists    = False
     vLayout     = QtWidgets.QVBoxLayout(self)
@@ -62,9 +62,9 @@ class WordDialog(QtWidgets.QDialog):
 
     #vLeftLayout (hHighLayout)
     #verticalSpacer = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Expanding) 
-    dictListView  = QtWidgets.QListView(self)
-    dictModel     = self.DictDialogListModel(defModel)
-    dictListView.setModel(dictModel)
+    dictListView    = QtWidgets.QListView(self)
+    dictController  = self.DictDialogListModel(defModel)
+    dictListView.setModel(dictController)
 
     self.wLineEdit = QtWidgets.QLineEdit(self)
     self.wLineEdit.setMaximumSize(QtCore.QSize(400, 25))
@@ -76,8 +76,8 @@ class WordDialog(QtWidgets.QDialog):
     
     #vRightLayout (hHighLayout) 
     self.tagView = QtWidgets.QListView(self)
-    self.tagModel = QtCore.QStringListModel()
-    self.tagView.setModel(self.tagModel)    
+    self.tagController = QtCore.QStringListModel()
+    self.tagView.setModel(self.tagController)    
     #self.tagView.setSelectionBehavior(QtWidgets.QAbstractItemView.)
     self.tLineEdit = QtWidgets.QLineEdit(self)
     self.tLineEdit.setMaximumSize(QtCore.QSize(400, 50))
@@ -107,7 +107,7 @@ class WordDialog(QtWidgets.QDialog):
   def tagTextChanged(self,text):
     shouldEnable = False
     if text != "":
-      if any(text == x for x in self.tagModel.stringList()):
+      if any(text == x for x in self.tagController.stringList()):
         shouldEnable = False
         self.statusBar.showMessage("Tag already added")
       else:
@@ -119,7 +119,7 @@ class WordDialog(QtWidgets.QDialog):
       self.addTagButton.setEnabled(False)
       
   def enableOKButton(self):
-    if (not self.wordSpelledCorrectly) or self.wordAlreadyExists or len(self.tagModel.stringList()) == 0:
+    if (not self.wordSpelledCorrectly) or self.wordAlreadyExists or len(self.tagController.stringList()) == 0:
       self.okButton.setEnabled(False)
     else:
       self.okButton.setEnabled(True)
@@ -128,7 +128,7 @@ class WordDialog(QtWidgets.QDialog):
       self.statusBar.showMessage("Word already exists")
     elif not self.wordSpelledCorrectly:
       self.statusBar.showMessage("Please check your spelling")  
-    elif len(self.tagModel.stringList()) == 0:
+    elif len(self.tagController.stringList()) == 0:
       self.statusBar.showMessage("Need at least one tag to register word")  
     
     
@@ -149,25 +149,25 @@ class WordDialog(QtWidgets.QDialog):
 
       
   def addTag(self,event):
-    stringList = self.tagModel.stringList()
+    stringList = self.tagController.stringList()
     stringList.append(self.tLineEdit.text())
-    self.tagModel.setStringList(stringList)
+    self.tagController.setStringList(stringList)
     self.tLineEdit.clear()
     self.removeTagButton.setEnabled(True)
     self.enableOKButton()
 
   def removeTag(self,event):
-    stringList = self.tagModel.stringList()
+    stringList = self.tagController.stringList()
     if len(stringList) > 0:
       index = self.tagView.currentIndex().row()
       del stringList[index]
-      self.tagModel.setStringList(stringList)
+      self.tagController.setStringList(stringList)
       if len(stringList) == 0:
         self.removeTagButton.setEnabled(False)
     self.enableOKButton()
 
   def getTags(self):
-    return self.tagModel.stringList()
+    return self.tagController.stringList()
 
   def getWord(self):
     return self.wLineEdit.text()
@@ -231,16 +231,16 @@ class DictionaryDialog(QtWidgets.QDialog):
     
     self.sDictTableView = QtWidgets.QTableView(self) #Selected
     self.aDictTableView = QtWidgets.QTableView(self) # Available
-    self.sModel         = DictionaryDialog.DictionaryModel( defModel.getSelectedDicts() , "s") 
-    self.aModel         = DictionaryDialog.DictionaryModel( defModel.getAvailableDicts(), "a" ) 
-    self.sDictTableView.setModel(self.sModel)
-    self.aDictTableView.setModel(self.aModel)
+    self.sController         = DictionaryDialog.DictionaryModel( defModel.getSelectedDicts() , "s") 
+    self.aController         = DictionaryDialog.DictionaryModel( defModel.getAvailableDicts(), "a" ) 
+    self.sDictTableView.setModel(self.sController)
+    self.aDictTableView.setModel(self.aController)
     self.sDictTableView.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows )
     self.aDictTableView.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows )
-    self.sDictTableView.selectionModel().currentChanged.connect(self.sModel.selected)
-    self.aDictTableView.selectionModel().currentChanged.connect(self.aModel.selected)
+    self.sDictTableView.selectionModel().currentChanged.connect(self.sController.selected)
+    self.aDictTableView.selectionModel().currentChanged.connect(self.aController.selected)
     self.aDictTableView.selectionModel().currentChanged.connect(self.validateSelection)
-    self.sModel.dataChanged.connect(self.sDictTableView.dataChanged)
+    self.sController.dataChanged.connect(self.sDictTableView.dataChanged)
     
     hHigherLayout.addWidget(self.sDictTableView)
     hHigherLayout.addWidget(self.aDictTableView)
@@ -271,8 +271,8 @@ class DictionaryDialog(QtWidgets.QDialog):
     hLowLayout.addWidget(self.okButton)
     hLowLayout.addWidget(cancelButton)
   def addDictionary(self,event):
-    _dict = self.aModel.getSelectedDict()
-    self.sModel.addDict(_dict)
+    _dict = self.aController.getSelectedDict()
+    self.sController.addDict(_dict)
     self.sDictTableView.reset()
     self.removeDictButton.setEnabled(True)
     self.addDictButton.setEnabled(False)
@@ -280,21 +280,21 @@ class DictionaryDialog(QtWidgets.QDialog):
     self._validateSelection(index.row())
   def _validateSelection(self, selectedID):
     self.selectedID = selectedID
-    dictName = self.aModel.dictionaries[selectedID].name
-    if any(dictName == _dict.name for _dict in self.sModel.dictionaries):
+    dictName = self.aController.dictionaries[selectedID].name
+    if any(dictName == _dict.name for _dict in self.sController.dictionaries):
       self.addDictButton.setEnabled(False)
     else:
       self.addDictButton.setEnabled(True)
   def removeDictionary(self,event):
-    self.sModel.removeSelectedDict()
-    if len(self.sModel.dictionaries) == 0:
+    self.sController.removeSelectedDict()
+    if len(self.sController.dictionaries) == 0:
       self.removeDictButton.setEnabled(False)
     self._validateSelection(self.selectedID)
 
 class TagEditDialog(QtWidgets.QDialog):
-  def __init__(self ,parent , wordModel , tagDataModel):
+  def __init__(self ,parent , wordDataModel , tagDataModel):
     super(TagEditDialog,self).__init__(parent)
-    self.wordModel = wordModel
+    self.wordDataModel = wordDataModel
     self.tagDataModel  = tagDataModel
 
     vLayout     = QtWidgets.QVBoxLayout(self)
@@ -317,29 +317,29 @@ class TagEditDialog(QtWidgets.QDialog):
     
     #vLeftLayout ( hHighLayout (vLayout) )
     self.tagView        = QtWidgets.QListView(self) 
-    self.tModel         = TagController(self.tagDataModel) 
-    self.tagView.setModel(self.tModel)
-    self.tagView.selectionModel().currentChanged.connect(self.tModel.selected)
-    self.tModel.dataChanged.connect(self.tagView.dataChanged)
-    self.tModel.tagChanged.connect(self.updateMetaTags)
-    self.tagFilter = QtWidgets.QLineEdit(self)
+    self.tagController  = TagController(self.tagDataModel) 
+    self.tagView.setModel(self.tagController)
+    self.tagView.selectionModel().currentChanged.connect(self.tagController.selected)
+    self.tagController.dataChanged.connect(self.tagView.dataChanged)
+    self.tagController.tagChanged.connect(self.updateMetaTags)
+    self.tagFilter      = QtWidgets.QLineEdit(self)
     self.tagFilter.setObjectName("metaTagDialog.tagFilter")
     self.tagFilter.setPlaceholderText("Enter text to filter tags")
     self.tagFilter.setMaximumSize(QtCore.QSize(400, 30))
     self.tagFilter.installEventFilter(self) #Catch Enter
-    self.tagFilter.textChanged.connect(self.tModel.filterTags)
+    self.tagFilter.textChanged.connect(self.tagController.filterTags)
     vLeftLayout.addWidget(self.tagView)
     vLeftLayout.addWidget(self.tagFilter)
 
     #vRightLayout ( hHighLayout (vLayout) )
-    self.metaTagView    = QtWidgets.QListView(self) 
-    self.mtModel        = QtCore.QStringListModel()
-    self.metaTagView.setModel(self.mtModel)
-    self.mtLineEdit = QtWidgets.QLineEdit(self)
+    self.metaTagView        = QtWidgets.QListView(self) 
+    self.metaTagController  = QtCore.QStringListModel()
+    self.metaTagView.setModel(self.metaTagController)
+    self.mtLineEdit         = QtWidgets.QLineEdit(self)
     self.mtLineEdit.setMaximumSize(QtCore.QSize(400, 50))
     self.mtLineEdit.setPlaceholderText("Enter metatag to be applied to selected tag")
     self.mtLineEdit.textChanged.connect(self.tagTextChanged)
-    tagCompleter = QtWidgets.QCompleter(self.tagDataModel.getTags())
+    tagCompleter            = QtWidgets.QCompleter(self.tagDataModel.getTags())
     tagCompleter.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
     self.mtLineEdit.setCompleter(tagCompleter)
     self.metaTagView.selectionModel().currentChanged.connect(self.metaTagSelected)
@@ -358,10 +358,10 @@ class TagEditDialog(QtWidgets.QDialog):
     hMiddleLayout.addWidget(self.removeMetaTagButton)
 
     #hLowLayout (vLayout)
-    self.okButton    = QtWidgets.QPushButton(self)
+    self.okButton = QtWidgets.QPushButton(self)
     self.okButton.setText("&OK")
     self.okButton.clicked.connect(self.accept)
-    cancelButton = QtWidgets.QPushButton(self)
+    cancelButton  = QtWidgets.QPushButton(self)
     cancelButton.setText("&Cancel")
     cancelButton.clicked.connect(self.reject)
     hLowLayout.addWidget(self.okButton)
@@ -378,10 +378,10 @@ class TagEditDialog(QtWidgets.QDialog):
   def tagTextChanged(self,text):
     shouldEnable = False
     if text != "":
-      if any(text == x for x in self.mtModel.stringList()):
+      if any(text == x for x in self.metaTagController.stringList()):
         self.statusBar.showMessage("Tag already added")
       else:
-        if (text == self.tModel.getSelectedTag()):
+        if (text == self.tagController.getSelectedTag()):
           self.statusBar.showMessage("A tag can't apply to itself")
         else:
           shouldEnable = True
@@ -394,34 +394,34 @@ class TagEditDialog(QtWidgets.QDialog):
   def metaTagSelected(self):
     pass
   # def updateMetaTags(self):
-  #   metaTags = self.mtModel.stringList()
+  #   metaTags = self.metaTagController.stringList()
   #   selectedTag = self.tModel.getSelectedTag()
   #   for tag in metaTags:
       
   def addMetaTag(self,event):
-    stringList = self.mtModel.stringList()
+    stringList = self.metaTagController.stringList()
     metaTag = self.mtLineEdit.text()
     stringList.append(metaTag)
-    self.mtModel.setStringList(stringList)
+    self.metaTagController.setStringList(stringList)
     self.mtLineEdit.clear()
     self.removeMetaTagButton.setEnabled(True)
-    selectedTag = self.tModel.getSelectedTag()
+    selectedTag = self.tagController.getSelectedTag()
     self.tagDataModel.addRelation(selectedTag,metaTag)
     #self.enableOKButton()
   
   def removeMetaTag(self, event):
-    stringList = self.mtModel.stringList()
+    stringList = self.metaTagController.stringList()
     if len(stringList) > 0:
       index = self.metaTagView.currentIndex().row()
-      selectedTag = self.tModel.getSelectedTag()
+      selectedTag = self.tagController.getSelectedTag()
       metaTag = stringList[index]
       self.tagDataModel.removeRelation(selectedTag,metaTag)
       del stringList[index]
-      self.mtModel.setStringList(stringList)
+      self.metaTagController.setStringList(stringList)
       if len(stringList) == 0:
         self.removeMetaTagButton.setEnabled(False)
     #self.enableOKButton()
   #TODO: Show indirect parent tags as non editable elements in the listview
   def updateMetaTags(self,tag):
     metaTags = self.tagDataModel.getDirectParentTags(tag)
-    self.mtModel.setStringList(metaTags)
+    self.metaTagController.setStringList(metaTags)
