@@ -65,9 +65,11 @@ class Ui_MainWindow(QtCore.QObject):
     self.tagFilter.setMaximumSize(QtCore.QSize(400, 30))
     self.tagFilter.installEventFilter(self) #Catch Enter
     self.verticalLayout.addWidget(self.dictSelect)
-    self.verticalLayout.addWidget(self.wordview)
     self.verticalLayout.addWidget(self.tagview)
     self.verticalLayout.addWidget(self.tagFilter)
+    self.verticalLayout.addWidget(self.wordview)
+    
+    
 
     self.tabwidget = QtWidgets.QTabWidget(self.centralwidget)
     self.tabwidget.setObjectName("tabwidget")
@@ -233,6 +235,7 @@ class Ui_MainWindow(QtCore.QObject):
         self.wordDataModel.language = language
         self.defDataModel.language = language
         self.wordDataModel._fromFile(_input)
+        self.tagDataModel._fromFile(_input)
         self.defDataModel._fromFile(_input)
         self.wordDataModel.updateData()
         self.defDataModel.updateDictNames()
@@ -246,6 +249,7 @@ class Ui_MainWindow(QtCore.QObject):
         pickle.dump(self.version, output, pickle.HIGHEST_PROTOCOL) #Version
         pickle.dump("French", output , pickle.HIGHEST_PROTOCOL) #Language
         self.wordDataModel.toFile(output)
+        self.tagDataModel.toFile(output)
         self.defDataModel.toFile(output)
 
   def updateDictNames(self,dictNames):

@@ -48,7 +48,6 @@ class WordDataModel(QObject):
     saveToPickle(self.version, output)
     #version 0.01
     saveToPickle(self.wordTable, output)
-    saveToPickle(self.tagTable, output)
   
   def loadData(self,_input):
     #The version variable is only for backwards compatibility with the class version.
@@ -238,14 +237,22 @@ class TagDataModel():
 
   def saveData(self,output):
     #version 0.01
+    #saveToPickle(self.tagTable, output)
+    #version 0.02
+    saveToPickle(self.version, output)
     saveToPickle(self.tagTable, output)
-  
+    saveToPickle(self.tagNodes, output)
+
+
   def loadData(self,_input):
     #The version variable is only for backwards compatibility with the class version.
     #It should not be stores to the object
-    #version 0.01
-    #version = loadFromPickle(_input)
-    self.tagTable = loadFromPickle(_input)
+    #version 0.02
+    version = loadFromPickle(_input)
+    if version == 0.01:
+      self.tagTable = loadFromPickle(_input)  
+      self.tagNodes = loadFromPickle(_input)  
+    #self.tagTable = loadFromPickle(_input)
 
   def toFile(self,file):
     if isinstance(file,str):
