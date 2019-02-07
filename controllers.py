@@ -41,6 +41,7 @@ class TagController(QAbstractListModel):
     else:
       self.updateTagIndexFromModel()
     self.selectedIndex = self.createIndex(0,0)
+    self.currentFilter = ""
   def rowCount(self, modelIndex):
     return len(self.tagIndex.index)
   def data(self, index, role):
@@ -77,13 +78,15 @@ class TagController(QAbstractListModel):
       self.tagIndex = self.tagIndex.append(newTagsList,ignore_index = True)
     
   def updateTags(self):
-    self.updateTagIndexFromModel()
-    self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.tagIndex.index) , 0))
+    #self.updateTagIndexFromModel()
+    #self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.tagIndex.index) , 0))
+    self.filterTags(self.currentFilter)
     selectedTag = self.getTag(self.selectedIndex)
     self.tagChanged.emit(  selectedTag )
   # TODO: unidecode filter and pandas Series to match string with accents / no accents
   # TODO: use > = < filters to filter tags with certain number of corresponding words
   def filterTags(self,filter):
+    self.currentFilter = filter
     transfomedFilter = unidecode.unidecode(filter).lower()
     self.updateTagIndexFromModel()
     self.tagIndex = self.tagIndex[self.tagIndex.tag.str.lower().str.contains(transfomedFilter)]

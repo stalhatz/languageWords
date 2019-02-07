@@ -176,6 +176,7 @@ class Ui_MainWindow(QtCore.QObject):
       tags    = self.addWordDialog.getTags()
       self.wordDataModel.addWord(newWord,tags)
       self.tagDataModel.addTagging(newWord,tags)
+      self.tagController.updateTags()
       print('Accepted. New Word:' + newWord)
       print("Tags: " + str(tags))
     elif dialogCode == QtWidgets.QDialog.Rejected:
