@@ -3,6 +3,8 @@ from controllers import (DefinitionController, TagController, WordController)
 from dialogs import WordDialog,DictionaryDialog,TagEditDialog
 from dataModels import WordDataModel,DefinitionDataModel,TagDataModel
 import pickle
+import os
+from hunspell import HunSpell
 # TODO : Setup keyboard shortcuts for easily navigating between ListViews/ListEdits etc.
 class Ui_MainWindow(QtCore.QObject):
   def addTopButtons(self):
@@ -169,7 +171,7 @@ class Ui_MainWindow(QtCore.QObject):
   
   # TODO: Show dialogs for adding/editing words.
   def showAddWordDialog(self,event):
-    self.addWordDialog = WordDialog(self.centralwidget,self.wordDataModel,self.tagDataModel,self.defDataModel)
+    self.addWordDialog = WordDialog(self.centralwidget,self.wordDataModel,self.tagDataModel,self.defDataModel,self.dictionary)
     dialogCode = self.addWordDialog.exec()
     if dialogCode == QtWidgets.QDialog.Accepted:
       newWord = self.addWordDialog.getWord()
@@ -210,6 +212,20 @@ class Ui_MainWindow(QtCore.QObject):
     obj.setupDataModels(wordDataModel, defDataModel)
     return obj
 
+  def loadDictionary(self,dicFilename, affFilename):
+    dictionary = HunSpell(dicFilename,affFilename)
+    return dictionary
+    
+  def findDictionary(self,dicPath,language):
+    codes = {"French":"fr_fr","English":"en_us"}
+    files = os.listdir(dicPath)
+    dicFiles = [f for f in files if f.endswith(".dic")]
+    affFiles = [f for f in files if f.endswith(".aff")]
+    code = codes[language]
+    dicFile = [f for f in dicFiles if code.lower() in f.lower()]
+    affFile = [f for f in affFiles if code.lower() in f.lower()]
+    return os.path.join(dicPath,dicFile[0]), os.path.join(dicPath,affFile[0])
+
   @classmethod 
   def fromFile(cls, file, window):
     with open(file , "rb") as _input:
@@ -223,6 +239,10 @@ class Ui_MainWindow(QtCore.QObject):
       obj = cls()
       obj.setupUi(window)
       obj.setupDataModels(wordDataModel,tagDataModel,defDataModel)
+      obj.language = language
+      obj.dicPath       = "/usr/share/hunspell/"
+      dicPath,affPath   = obj.findDictionary(obj.dicPath,obj.language)
+      obj.dictionary    = obj.loadDictionary(dicPath, affPath)
       return obj
   
   def openFile(self):
@@ -232,14 +252,17 @@ class Ui_MainWindow(QtCore.QObject):
     else:
       with open(fileName, 'rb') as _input:
         version = pickle.load(_input)
-        language = pickle.load(_input)
-        self.wordDataModel.language = language
-        self.defDataModel.language = language
+        self.language = pickle.load(_input)
+        self.wordDataModel.language = self.language
+        self.defDataModel.language = self.language
         self.wordDataModel._fromFile(_input)
         self.tagDataModel._fromFile(_input)
         self.defDataModel._fromFile(_input)
         self.wordDataModel.updateData()
         self.defDataModel.updateDictNames()
+        self.dicPath    = "/usr/share/hunspell/"
+        dicPath,affPath = self.findDictionary(obj.dicPath,obj.language)
+        self.dictionary = self.loadDictionary(dicPath, affPath)
 
   def saveFile(self):
     fileName,fileType = QtWidgets.QFileDialog.getSaveFileName(self.centralwidget,"Save File",".","Pickle Files (*.pkl)")
@@ -248,7 +271,7 @@ class Ui_MainWindow(QtCore.QObject):
     else:
       with open(fileName, 'wb') as output:
         pickle.dump(self.version, output, pickle.HIGHEST_PROTOCOL) #Version
-        pickle.dump("French", output , pickle.HIGHEST_PROTOCOL) #Language
+        pickle.dump(self.language, output , pickle.HIGHEST_PROTOCOL) #Language
         self.wordDataModel.toFile(output)
         self.tagDataModel.toFile(output)
         self.defDataModel.toFile(output)

@@ -84,7 +84,7 @@ class TagController(QAbstractListModel):
     selectedTag = self.getTag(self.selectedIndex)
     self.tagChanged.emit(  selectedTag )
   # TODO: unidecode filter and pandas Series to match string with accents / no accents
-  # TODO: use > = < filters to filter tags with certain number of corresponding words
+  # TODO: [FEATURE] use > = < filters to filter tags with certain number of corresponding words
   def filterTags(self,filter):
     self.currentFilter = filter
     transfomedFilter = unidecode.unidecode(filter).lower()

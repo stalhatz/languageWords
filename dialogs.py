@@ -1,8 +1,8 @@
-from hunspell import HunSpell
 from PyQt5 import QtCore, QtGui, QtWidgets
 import unidecode
 from controllers import TagController
-#TODO: Decide if the dialog should be recreated every time it needs to be shown or 
+import os
+#TODO: [DESIGN] Decide if the dialog should be recreated every time it needs to be shown or 
 #TODO: Lookup for hunspell dictionaries in usual directories
 #TODO: Implement dictionaries ListView. Show dictionary availability while typing the word.
 #TODO: Edit Dialog
@@ -21,14 +21,15 @@ class WordDialog(QtWidgets.QDialog):
         return self.dictNames[index.row()]
       if role==QtCore.Qt.DecorationRole:
         return QtGui.QIcon.fromTheme("edit-undo")
-      
+  
 
-  def __init__(self, parent, wordDataModel,tagDataModel, defModel):
+
+  def __init__(self, parent, wordDataModel,tagDataModel, defModel,dictionary):
     super(WordDialog,self).__init__(parent)
-    self.wordDataModel = wordDataModel
-    self.tagDataModel = tagDataModel
-    self.dictionary = HunSpell("/usr/share/hunspell/fr.dic", "/usr/share/hunspell/fr.aff")
-    self.words = [unidecode.unidecode(x.lower()) for x in self.wordDataModel.getWords()]
+    self.wordDataModel  = wordDataModel
+    self.tagDataModel   = tagDataModel
+    self.words          = [unidecode.unidecode(x.lower()) for x in self.wordDataModel.getWords()]
+    self.dictionary           = dictionary
     self.wordSpelledCorrectly = False
     self.wordAlreadyExists    = False
     vLayout     = QtWidgets.QVBoxLayout(self)

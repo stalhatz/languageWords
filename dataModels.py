@@ -1,4 +1,3 @@
-#TODO: Pickled object versioning: insert a version number to change whenever the serialized representation changes
 from importlib import import_module
 import pkgutil
 import dictionaries
@@ -25,15 +24,7 @@ def loadFromPickle(file):
   else:
     a = pickle.load(file)
   return a
-
-#TODO: Delete this
-def splitWordsTable(table):
-  tagTable = table.drop(["hyperlink"],axis="columns")
-  wordTable = table.drop(["tag"], axis="columns")
-  return wordTable, tagTable
-
-#TODO: Store and load language from the project file
-#TODO: Add tags for tags. Transitive effect when applying a certain tag to a word.
+  
 class WordDataModel(QObject):
   dataChanged         = pyqtSignal()
   def __init__(self, wordTable = None):
