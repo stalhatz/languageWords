@@ -169,7 +169,6 @@ class Ui_MainWindow(QtCore.QObject):
     self.actionOpen.setText(_translate("MainWindow", "Open..."))
     self.actionSave.setText(_translate("MainWindow", "Save..."))
   
-  # TODO: Show dialogs for adding/editing words.
   def showAddWordDialog(self,event):
     self.addWordDialog = WordDialog(self.centralwidget,self.wordDataModel,self.tagDataModel,self.defDataModel,self.dictionary)
     dialogCode = self.addWordDialog.exec()

@@ -422,7 +422,7 @@ class TagEditDialog(QtWidgets.QDialog):
       if len(stringList) == 0:
         self.removeMetaTagButton.setEnabled(False)
     #self.enableOKButton()
-  #TODO: Show indirect parent tags as non editable elements in the listview
+  #TODO: [FEATURE] Show indirect parent tags as non editable elements in the listview
   def updateMetaTags(self,tag):
     metaTags = self.tagDataModel.getDirectParentTags(tag)
     self.metaTagController.setStringList(metaTags)
