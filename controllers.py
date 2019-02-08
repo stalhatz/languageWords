@@ -60,21 +60,19 @@ class TagController(QAbstractListModel):
     else:
       return str(self.tagIndex.iloc[index.row(),0])
   def getTagCount(self,index):
-    return self.tagIndex.iloc[index.row(),2]
+    return self.tagIndex.iloc[index.row(),1]
   def getSelectedTag(self):
     return self.getTag(self.selectedIndex)
   def updateTagIndexFromModel(self):
     self.tagIndex = pd.pivot_table(self.tagModel.tagTable,values='text',index='tag',aggfunc=pd.Series.nunique).reset_index()
-    self.tagIndex.loc[:,'MetaTagWordCount'] = self.tagIndex.text
+    self.tagIndex.rename(columns={"text":"indexCount"},inplace = True)
     newTagsList = []
     for tag in self.tagModel.tagNodes:
       tagList = self.tagModel.getAllChildTags(tag)
-      tagList.append(tag)
-      metaTagWordCount = self.tagIndex[self.tagIndex.tag.isin(tagList)].text.sum()
-      if tag in self.tagIndex.tag.values:
-        self.tagIndex.loc[ self.tagIndex.tag[self.tagIndex.tag == tag].index , "MetaTagWordCount"] = metaTagWordCount
-      else:
-        newTagsList.append({"tag":tag,"text":0,"MetaTagWordCount":metaTagWordCount})
+      if len(tagList) > 0:
+        tagList.append(tag)
+        indCount = len( self.tagModel.getIndexesFromTagList(tagList).index )
+        newTagsList.append({"tag":tag,"indexCount":indCount})
     if len(newTagsList) > 0:
       self.tagIndex = self.tagIndex.append(newTagsList,ignore_index = True)
     

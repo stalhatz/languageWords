@@ -14,10 +14,10 @@ if __name__ == "__main__":
   if args.s is None and args.l is not None:
     args.s = args.l
   
-  if args.l is not None:
-    ui = Ui_MainWindow.fromFile(args.l, window)
-  else:
-    ui = Ui_MainWindow.defaultInit(window)
+  # if args.l is not None:
+  #   ui = Ui_MainWindow.fromFile(args.l, window)
+  # else:
+  ui = Ui_MainWindow.defaultInit(window)
 
   stylesheet="stylesheet1.css"
   with open(stylesheet,"r") as fh:

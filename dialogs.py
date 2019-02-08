@@ -138,9 +138,10 @@ class WordDialog(QtWidgets.QDialog):
     if text != "":
       self.wordSpelledCorrectly = True
       for word in text.split():
-        if not self.dictionary.spell(word):
-          self.wordSpelledCorrectly = False
-          break
+        if self.dictionary is not None:
+          if not self.dictionary.spell(word):
+            self.wordSpelledCorrectly = False
+            break
     if self.wordSpelledCorrectly:   
       if any(unidecode.unidecode(text.lower()) == s for s in self.words):
         self.wordAlreadyExists = True

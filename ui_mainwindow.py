@@ -112,6 +112,7 @@ class Ui_MainWindow(QtCore.QObject):
     MainWindow.setStatusBar(self.statusBar)
   
   def setupDataModels(self,wordDataModel,tagDataModel,defDataModel):
+
     self.wordDataModel = wordDataModel
     self.defDataModel = defDataModel
     self.tagDataModel = tagDataModel
@@ -175,8 +176,8 @@ class Ui_MainWindow(QtCore.QObject):
     if dialogCode == QtWidgets.QDialog.Accepted:
       newWord = self.addWordDialog.getWord()
       tags    = self.addWordDialog.getTags()
-      self.wordDataModel.addWord(newWord,tags)
       self.tagDataModel.addTagging(newWord,tags)
+      self.wordDataModel.addWord(newWord,tags)
       self.tagController.updateTags()
       print('Accepted. New Word:' + newWord)
       print("Tags: " + str(tags))
@@ -206,9 +207,13 @@ class Ui_MainWindow(QtCore.QObject):
   def defaultInit(cls,window):
     wordDataModel = WordDataModel()
     defDataModel = DefinitionDataModel()
+    tagDataModel = TagDataModel()
     obj = cls()
     obj.setupUi(window)
-    obj.setupDataModels(wordDataModel, defDataModel)
+    obj.setupDataModels(wordDataModel,tagDataModel, defDataModel)
+    obj.dictionary  = None
+    obj.language    = None
+    #self.activeConnections = []
     return obj
 
   def loadDictionary(self,dicFilename, affFilename):
@@ -225,43 +230,53 @@ class Ui_MainWindow(QtCore.QObject):
     affFile = [f for f in affFiles if code.lower() in f.lower()]
     return os.path.join(dicPath,dicFile[0]), os.path.join(dicPath,affFile[0])
 
+
   @classmethod 
-  def fromFile(cls, file, window):
-    with open(file , "rb") as _input:
-      version = pickle.load(_input)
-      language = pickle.load(_input)
+  def fromFile(cls, file, window=None , obj = None):
+    if isinstance(file,str):
+      with open(file, 'rb') as _input:
+        obj = cls._fromFile(_input, window , obj)
+    else:
+      obj = cls._fromFile(file, window , obj)
+    return obj
+
+
+  @classmethod 
+  def _fromFile(cls, _input, window=None,obj=None):
+    version = pickle.load(_input)
+    language = pickle.load(_input)
+    if obj is None:
+      obj = cls()
       wordDataModel = WordDataModel.fromFile(_input)
       tagDataModel = TagDataModel.fromFile(_input)
       defDataModel = DefinitionDataModel.fromFile(_input)
-      wordDataModel.language = language
-      defDataModel.language = language
-      obj = cls()
       obj.setupUi(window)
       obj.setupDataModels(wordDataModel,tagDataModel,defDataModel)
-      obj.language = language
+    else:
+      obj.wordDataModel._fromFile(_input)
+      obj.tagDataModel._fromFile(_input)
+      obj.defDataModel._fromFile(_input)
+    
+    obj.wordDataModel.language  = language
+    obj.defDataModel.language   = language
+    obj.language                = language
+    obj.dictionary              = None
+    obj.activeConnections       = []
+    if language is not None:
       obj.dicPath       = "/usr/share/hunspell/"
       dicPath,affPath   = obj.findDictionary(obj.dicPath,obj.language)
       obj.dictionary    = obj.loadDictionary(dicPath, affPath)
-      return obj
+    return obj
   
   def openFile(self):
     fileName,fileType = QtWidgets.QFileDialog.getOpenFileName(self.centralwidget,"Open File", ".", "Pickle Files (*.pkl)")
     if fileName == "":
       return
     else:
-      with open(fileName, 'rb') as _input:
-        version = pickle.load(_input)
-        self.language = pickle.load(_input)
-        self.wordDataModel.language = self.language
-        self.defDataModel.language = self.language
-        self.wordDataModel._fromFile(_input)
-        self.tagDataModel._fromFile(_input)
-        self.defDataModel._fromFile(_input)
-        self.wordDataModel.updateData()
-        self.defDataModel.updateDictNames()
-        self.dicPath    = "/usr/share/hunspell/"
-        dicPath,affPath = self.findDictionary(obj.dicPath,obj.language)
-        self.dictionary = self.loadDictionary(dicPath, affPath)
+      Ui_MainWindow.fromFile(fileName,None,self)
+      self.wordDataModel.updateData()
+      self.tagController.updateTags()
+
 
   def saveFile(self):
     fileName,fileType = QtWidgets.QFileDialog.getSaveFileName(self.centralwidget,"Save File",".","Pickle Files (*.pkl)")

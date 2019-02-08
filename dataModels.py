@@ -24,7 +24,7 @@ def loadFromPickle(file):
   else:
     a = pickle.load(file)
   return a
-  
+
 class WordDataModel(QObject):
   dataChanged         = pyqtSignal()
   def __init__(self, wordTable = None):
@@ -223,7 +223,8 @@ class TagDataModel():
     tableList = []
     for tag in tagList:
       tableList.append(self.tagTable[self.tagTable.tag == tag])
-    tagIndexTable = pd.concat(tableList, axis=0)
+    tagIndexTable = pd.concat(tableList, axis=0).drop(["tag"] , axis = "columns")
+    tagIndexTable = tagIndexTable.drop_duplicates()
     return tagIndexTable
 
   def saveData(self,output):
