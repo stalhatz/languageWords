@@ -5,7 +5,6 @@ import os
 #TODO: [DESIGN] Decide if the dialog should be recreated every time it needs to be shown or 
 #TODO: Lookup for hunspell dictionaries in usual directories
 #TODO: Implement dictionaries ListView. Show dictionary availability while typing the word.
-#TODO: Edit Dialog
 # whether it should be hidden and shown thus constucted only once (responsiveness benefits?)
 class WordDialog(QtWidgets.QDialog):
   class DictDialogListModel(QtCore.QAbstractListModel):
@@ -22,9 +21,10 @@ class WordDialog(QtWidgets.QDialog):
       if role==QtCore.Qt.DecorationRole:
         return QtGui.QIcon.fromTheme("edit-undo")
   
+  CREATE_DIALOG = 0
+  EDIT_DIALOG = 1
 
-
-  def __init__(self, parent, wordDataModel,tagDataModel, defModel,dictionary):
+  def __init__(self, parent, wordDataModel,tagDataModel, defModel,dictionary,dialogType, existingWord = None , existingTags = None):
     super(WordDialog,self).__init__(parent)
     self.wordDataModel  = wordDataModel
     self.tagDataModel   = tagDataModel
@@ -32,6 +32,9 @@ class WordDialog(QtWidgets.QDialog):
     self.dictionary           = dictionary
     self.wordSpelledCorrectly = False
     self.wordAlreadyExists    = False
+    self.existingWord         = existingWord
+    self.dialogType           = dialogType
+    self.existingTags         = existingTags
     vLayout     = QtWidgets.QVBoxLayout(self)
 
     #vLayout
@@ -69,7 +72,10 @@ class WordDialog(QtWidgets.QDialog):
 
     self.wLineEdit = QtWidgets.QLineEdit(self)
     self.wLineEdit.setMaximumSize(QtCore.QSize(400, 25))
-    self.wLineEdit.setPlaceholderText("Enter a new word")
+    if self.dialogType == self.CREATE_DIALOG:
+      self.wLineEdit.setPlaceholderText("Enter a new word")
+    if self.dialogType == self.EDIT_DIALOG:
+      self.wLineEdit.setPlaceholderText("Leave this blank to delete the word")
     self.wLineEdit.textChanged.connect(self.wordTextChanged)
     vLeftLayout.addStretch()
     vLeftLayout.addWidget(dictListView)
@@ -78,6 +84,8 @@ class WordDialog(QtWidgets.QDialog):
     #vRightLayout (hHighLayout) 
     self.tagView = QtWidgets.QListView(self)
     self.tagController = QtCore.QStringListModel()
+    if self.dialogType == self.EDIT_DIALOG:
+      self.tagController.setStringList(self.existingTags)
     self.tagView.setModel(self.tagController)    
     #self.tagView.setSelectionBehavior(QtWidgets.QAbstractItemView.)
     self.tLineEdit = QtWidgets.QLineEdit(self)
@@ -105,6 +113,9 @@ class WordDialog(QtWidgets.QDialog):
     tagHLayout.addWidget(self.addTagButton)
     tagHLayout.addWidget(self.removeTagButton)
   
+    if self.dialogType == self.EDIT_DIALOG:
+      self.wLineEdit.setText(self.existingWord)
+
   def tagTextChanged(self,text):
     shouldEnable = False
     if text != "":
@@ -134,19 +145,23 @@ class WordDialog(QtWidgets.QDialog):
     
     
   def wordTextChanged(self,text):
-    self.wordSpelledCorrectly = False
-    if text != "":
-      self.wordSpelledCorrectly = True
-      for word in text.split():
-        if self.dictionary is not None:
-          if not self.dictionary.spell(word):
-            self.wordSpelledCorrectly = False
-            break
-    if self.wordSpelledCorrectly:   
-      if any(unidecode.unidecode(text.lower()) == s for s in self.words):
-        self.wordAlreadyExists = True
-      else:
+    if self.dialogType == self.EDIT_DIALOG and (text == self.existingWord or text == ""):
+        self.wordSpelledCorrectly = True
         self.wordAlreadyExists = False
+    else:
+      self.wordSpelledCorrectly = False
+      if text != "":
+        self.wordSpelledCorrectly = True
+        for word in text.split():
+          if self.dictionary is not None:
+            if not self.dictionary.spell(word):
+              self.wordSpelledCorrectly = False
+              break
+      if self.wordSpelledCorrectly:   
+        if any(unidecode.unidecode(text.lower()) == s for s in self.words):
+          self.wordAlreadyExists = True
+        else:
+          self.wordAlreadyExists = False
     self.enableOKButton()
 
       

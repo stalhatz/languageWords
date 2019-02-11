@@ -26,7 +26,6 @@ def loadFromPickle(file):
   return a
 
 class WordDataModel(QObject):
-  dataChanged         = pyqtSignal()
   def __init__(self, wordTable = None):
     super(WordDataModel, self).__init__()
     self.version = 0.01
@@ -70,15 +69,12 @@ class WordDataModel(QObject):
     words = self.wordTable.iloc[:,0]
     return list(words)
   
-  def addWord(self,word,tags):
-    if len(tags) > 0:
-      self.wordTable = self.wordTable.append({"text" : word}, ignore_index = True)
-      self.dataChanged.emit()
-    else:
-      raise ValueError("A word must be tagged at least once")
+  def addWord(self,word):
+    self.wordTable = self.wordTable.append({"text" : word}, ignore_index = True)
 
-  def updateData(self):
-    self.dataChanged.emit()
+  def removeWord(self,word):
+    self.wordTable = self.wordTable.append({"text" : word}, ignore_index = True)
+    self.wordTable.drop_duplicates(keep=False,inplace = True)
 
 class DefinitionDataModel(QObject):
   dictNamesUpdated    = pyqtSignal(list)
@@ -197,8 +193,14 @@ class DefinitionDataModel(QObject):
     a._fromFile(file)
     return a
 
+
+
 #FIXME: Decorrelate the use of the word "Words" to mean indexes in tagTable (They don't have to be words, they could be imageIDs)
 class TagDataModel():
+  """ TagDataModel separates between taggings which refers to tags attributed to indexes and relations which refers
+  to tags attributed to tags. Through the transitive property tags related to other tags also apply to indexes but there is no way to
+  directly remove a tag related transitively to an index because by design this information is not captured"""
+
   def __init__(self , tagTable = None):
     self.version = 0.01
     self.tagNodes = {}
@@ -206,6 +208,11 @@ class TagDataModel():
       self.tagTable   = pd.DataFrame(columns = ["text" , "tag"])
     else:
       self.tagTable   = tagTable
+
+  def getTagsFromIndex(self,word):
+    a =  self.tagTable[self.tagTable.text == word]
+    a = list(a.tag)
+    return a
 
   def getTags(self):
     tagIndex = pd.pivot_table(self.tagTable,values='text',index='tag',aggfunc=pd.Series.nunique).reset_index()
@@ -217,6 +224,14 @@ class TagDataModel():
       for tag in tags:
         tagTableList.append({"tag":tag , "text" : word})
       self.tagTable = self.tagTable.append(tagTableList, ignore_index = True)
+
+  def removeTagging(self,word,tags):
+    if len(tags) > 0:
+      tagTableList = []
+      for tag in tags:
+        tagTableList.append({"tag":tag , "text" : word})
+      self.tagTable = self.tagTable.append(tagTableList, ignore_index = True)
+      self.tagTable.drop_duplicates(keep=False, inplace = True)
 
   def getIndexesFromTagList(self,tagList):
     print(tagList)

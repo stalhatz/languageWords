@@ -7,7 +7,7 @@ import pandas as pd
 from dataModels import DefinitionDataModel
 import unidecode
 
-# TODO : Animation while loading using QMovie
+# TODO : [FEATURE] Animation while loading using QMovie
 # TODO : [FEATURE] Enable help through tooltip messages
 # (Racing condition? Is the server blocking us?).
 # QNetworkAccessManager (which would be the easiest way to do this) not working due to QTBUG-68156

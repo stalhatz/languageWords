@@ -98,11 +98,13 @@ class Ui_MainWindow(QtCore.QObject):
     self.actionOpen.setObjectName("actionOpen")
     self.menuFile.addAction(self.actionOpen)
     self.actionOpen.triggered.connect(self.openFile)
+    self.actionOpen.setShortcut("Ctrl+O")
 
     self.actionSave = QtWidgets.QAction(MainWindow)
     self.actionSave.setObjectName("actionSave")
     self.menuFile.addAction(self.actionSave)
     self.actionSave.triggered.connect(self.saveFile)
+    self.actionSave.setShortcut("Ctrl+S")
 
     self.menubar.addAction(self.menuFile.menuAction())
     MainWindow.setMenuBar(self.menubar)
@@ -125,6 +127,9 @@ class Ui_MainWindow(QtCore.QObject):
     self.tagview.selectionModel().currentChanged.connect(self.tagController.selected)
     self.wordview.setModel(self.wordController)
     self.wordview.selectionModel().currentChanged.connect(self.wordController.selected)
+    
+    #self.wordview.selectionModel().currentChanged.connect(self.setEnabledEditButton.selected)
+    
     self.dictSelect.currentTextChanged.connect(self.wordController.updateDict)
     self.tagFilter.textChanged.connect(self.tagController.filterTags)
     #InterController signals
@@ -137,7 +142,6 @@ class Ui_MainWindow(QtCore.QObject):
     self.tabwidget.currentChanged.connect(self.wordController.setDefinitionLoadingSource)
     #Connect signals to data models
     self.defDataModel.dictNamesUpdated.connect(self.updateDictNames)
-    self.wordDataModel.dataChanged.connect(self.tagController.updateTags)
     self.wordController.loadDefinition.connect(defDataModel.load)
     self.wordController.loadDefinition.connect(self.defController.loadingInitiated)
     defDataModel.definitionsUpdated.connect(self.defController.updateDefinition)
@@ -171,20 +175,47 @@ class Ui_MainWindow(QtCore.QObject):
     self.actionSave.setText(_translate("MainWindow", "Save..."))
   
   def showAddWordDialog(self,event):
-    self.addWordDialog = WordDialog(self.centralwidget,self.wordDataModel,self.tagDataModel,self.defDataModel,self.dictionary)
+    self.addWordDialog = WordDialog(self.centralwidget,self.wordDataModel,self.tagDataModel,self.defDataModel,self.dictionary,
+                                    WordDialog.CREATE_DIALOG)
     dialogCode = self.addWordDialog.exec()
     if dialogCode == QtWidgets.QDialog.Accepted:
       newWord = self.addWordDialog.getWord()
       tags    = self.addWordDialog.getTags()
       self.tagDataModel.addTagging(newWord,tags)
-      self.wordDataModel.addWord(newWord,tags)
+      self.wordDataModel.addWord(newWord)
       self.tagController.updateTags()
       print('Accepted. New Word:' + newWord)
       print("Tags: " + str(tags))
     elif dialogCode == QtWidgets.QDialog.Rejected:
       print('Rejected')
+
   def showEditWordDialog(self,event):
-    pass
+    wordIndex = self.wordview.currentIndex()
+    word      = self.wordview.model().data(wordIndex,QtCore.Qt.DisplayRole)
+    if isinstance(word,QtCore.QVariant):
+      return
+    tags      = self.tagDataModel.getTagsFromIndex(word)
+    self.editWordDialog = WordDialog(self.centralwidget,self.wordDataModel,self.tagDataModel,self.defDataModel,self.dictionary,
+                                      WordDialog.EDIT_DIALOG , word, tags)
+    dialogCode = self.editWordDialog.exec()
+    if dialogCode == QtWidgets.QDialog.Accepted:
+      #Remove word and tags
+      self.tagDataModel.removeTagging(word,tags)
+      self.wordDataModel.removeWord(word)
+      #Add new word and tags
+      editedWord = self.editWordDialog.getWord()
+      if editedWord != "":
+        newTags    = self.editWordDialog.getTags()
+        self.tagDataModel.addTagging(editedWord,newTags)
+        self.wordDataModel.addWord(editedWord)
+        print('Accepted. Existing word:' + editedWord)
+        print("Tags: " + str(newTags))
+      else:
+        print('Accepted. Deleted word')
+      self.tagController.updateTags()
+    elif dialogCode == QtWidgets.QDialog.Rejected:
+      print('Rejected')
+
   def showEditDictsDialog(self,event):
     self.editDictsDialog = DictionaryDialog(self.centralwidget,self.defDataModel)
     dialogCode = self.editDictsDialog.exec()
@@ -274,7 +305,6 @@ class Ui_MainWindow(QtCore.QObject):
       return
     else:
       Ui_MainWindow.fromFile(fileName,None,self)
-      self.wordDataModel.updateData()
       self.tagController.updateTags()
 
 
