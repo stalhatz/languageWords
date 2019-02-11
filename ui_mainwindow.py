@@ -20,6 +20,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.editWordButton.setMaximumSize(QtCore.QSize(100,50))
     self.editWordButton.setText("&Edit Word")
     self.editWordButton.clicked.connect(self.showEditWordDialog)
+    self.editWordButton.setEnabled(False)
     self.editDictsButton = QtWidgets.QPushButton(self.centralwidget)
     self.editDictsButton.setObjectName("editDictButton")
     self.editDictsButton.setMaximumSize(QtCore.QSize(150,50))
@@ -126,7 +127,9 @@ class Ui_MainWindow(QtCore.QObject):
     self.tagview.setModel(self.tagController)
     self.tagview.selectionModel().currentChanged.connect(self.tagController.selected)
     self.wordview.setModel(self.wordController)
+    self.wordController.addView(self.wordview)
     self.wordview.selectionModel().currentChanged.connect(self.wordController.selected)
+    self.wordview.selectionModel().currentChanged.connect(self.enableEditWordButton)
     
     #self.wordview.selectionModel().currentChanged.connect(self.setEnabledEditButton.selected)
     
@@ -135,7 +138,9 @@ class Ui_MainWindow(QtCore.QObject):
     #InterController signals
     self.tagController.tagChanged.connect(self.wordController.updateOnTag)
     #Connect signals to tab views
-    self.wordController.dataChanged.connect(self.wordview.dataChanged)
+    #self.wordController.dataChanged.connect(self.wordview.dataChanged)
+    #self.wordController.clearSelection.connect(self.wordview.clearSelection)
+    self.wordController.clearSelection.connect(self.disableEditWordButton)
     self.defController.dataChanged.connect(self.definitionListView.dataChanged)
     self.tagController.dataChanged.connect(self.tagview.dataChanged)
     self.defController.setEnabledView.connect(self.definitionListView.setEnabled)
@@ -233,7 +238,12 @@ class Ui_MainWindow(QtCore.QObject):
     elif dialogCode == QtWidgets.QDialog.Rejected:
       print('Rejected')
   
-  
+  def disableEditWordButton(self):
+    self.editWordButton.setEnabled(False)
+  def enableEditWordButton(self, wordIndex,*_):
+    if wordIndex.isValid():
+      self.editWordButton.setEnabled(True)
+
   @classmethod
   def defaultInit(cls,window):
     wordDataModel = WordDataModel()

@@ -93,8 +93,9 @@ class TagController(QAbstractListModel):
     
 #FIXME: Load word definition when shown on screen not only when selected
 class WordController(QAbstractListModel):
-  dataChanged = pyqtSignal(QModelIndex,QModelIndex)
+  dataChanged       = pyqtSignal(QModelIndex,QModelIndex)
   loadDefinition    = pyqtSignal(str, str, bool)
+  clearSelection    = pyqtSignal()
   def __init__(self, wordModel ,tagModel):
     super(WordController,self).__init__()
     self.wordModel = wordModel
@@ -104,6 +105,10 @@ class WordController(QAbstractListModel):
     self.url = None
     self.currentIndex = -1
     self.externalLoading = False
+    self.viewList = []
+
+  def addView(self,view):
+    self.viewList.append(view)
   def rowCount(self, modelIndex):
     return len(self.df_image.index)
   def data(self, index, role):
@@ -121,8 +126,15 @@ class WordController(QAbstractListModel):
     tagList = self.tagModel.getAllChildTags(tag)
     tagList.append(tag)
     tagIndexTable = self.tagModel.getIndexesFromTagList(tagList)
+    self.currentIndex = -1
+    self.clearSelection.emit()
+    for view in self.viewList:
+      view.clearSelection()
+      view.setCurrentIndex(QModelIndex())
     self.df_image = pd.merge(self.wordModel.wordTable, tagIndexTable, on=['text','text'])
-    self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.df_image.index) , 0))
+    for view in self.viewList:
+      view.dataChanged(self.createIndex(0,0) , self.createIndex(len(self.df_image.index) , 0))
+    #self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.df_image.index) , 0))
   def updateDict(self,dictName):
     self.dict = dictName
     if self.currentIndex > 0:
