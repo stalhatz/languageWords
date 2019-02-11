@@ -89,7 +89,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.tabwidget.addTab(self.webView , "Webview")
 
     #self.horizontalLayout.addWidget(self.webView)
-  def adefDataModelenuBar(self,MainWindow):
+  def addMenuBar(self,MainWindow):
     self.menubar = QtWidgets.QMenuBar(MainWindow)
     self.menubar.setGeometry(QtCore.QRect(0, 0, 728, 30))
     self.menubar.setObjectName("menubar")
@@ -158,8 +158,11 @@ class Ui_MainWindow(QtCore.QObject):
   def setupUi(self, MainWindow):
     MainWindow.setObjectName("MainWindow")
     MainWindow.resize(728, 521)
+    self.mainWindow = MainWindow
     self.version = 0.01
-
+    self.language = "N/A"
+    self.programName = "LanguageWords"
+    self.setWindowTitle("Untitled")
     self.centralwidget = QtWidgets.QWidget(MainWindow)
     self.centralwidget.setObjectName("centralwidget")
     self.outerVerticalLayout = QtWidgets.QVBoxLayout(self.centralwidget)
@@ -167,14 +170,13 @@ class Ui_MainWindow(QtCore.QObject):
     self.addTopButtons()
     self.addListViews()
     MainWindow.setCentralWidget(self.centralwidget)
-    self.adefDataModelenuBar(MainWindow)            
+    self.addMenuBar(MainWindow)            
     self.addStatusBar(MainWindow)
     self.retranslateUi(MainWindow)
     QtCore.QMetaObject.connectSlotsByName(MainWindow)
       
   def retranslateUi(self, MainWindow):
     _translate = QtCore.QCoreApplication.translate
-    MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
     self.menuFile.setTitle(_translate("MainWindow", "Fi&le"))
     self.actionOpen.setText(_translate("MainWindow", "Open..."))
     self.actionSave.setText(_translate("MainWindow", "Save..."))
@@ -311,12 +313,15 @@ class Ui_MainWindow(QtCore.QObject):
   
   def openFile(self):
     fileName,fileType = QtWidgets.QFileDialog.getOpenFileName(self.centralwidget,"Open File", ".", "Pickle Files (*.pkl)")
-    if fileName == "":
+    if fileName == "" or fileName is None:
       return
     else:
       Ui_MainWindow.fromFile(fileName,None,self)
+      self.setWindowTitle(os.path.basename(fileName))
       self.tagController.updateTags()
 
+  def setWindowTitle(self,projectName):
+    self.mainWindow.setWindowTitle(projectName + " - " + "(" + str(self.language) + ")" + " - " + str(self.programName) )
 
   def saveFile(self):
     fileName,fileType = QtWidgets.QFileDialog.getSaveFileName(self.centralwidget,"Save File",".","Pickle Files (*.pkl)")
@@ -326,6 +331,7 @@ class Ui_MainWindow(QtCore.QObject):
       with open(fileName, 'wb') as output:
         pickle.dump(self.version, output, pickle.HIGHEST_PROTOCOL) #Version
         pickle.dump(self.language, output , pickle.HIGHEST_PROTOCOL) #Language
+        self.set
         self.wordDataModel.toFile(output)
         self.tagDataModel.toFile(output)
         self.defDataModel.toFile(output)
