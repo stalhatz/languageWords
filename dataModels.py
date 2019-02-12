@@ -108,6 +108,9 @@ class DefinitionDataModel(QObject):
       availableDicts[dictionary.name] = dictionary
     return availableDicts
 
+  def getAvailableLanguages(self):
+    return list ( set( [l for d in self.availableDicts.values() for l in d.languages] ) )
+
   def getAvailableDicts(self):
     return list(self.availableDicts.values())
 

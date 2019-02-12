@@ -1,6 +1,6 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from controllers import (DefinitionController, TagController, WordController)
-from dialogs import WordDialog,DictionaryDialog,TagEditDialog
+from dialogs import WordDialog,DictionaryDialog,TagEditDialog,WelcomeDialog
 from dataModels import WordDataModel,DefinitionDataModel,TagDataModel
 import pickle
 import os
@@ -95,6 +95,13 @@ class Ui_MainWindow(QtCore.QObject):
     self.menubar.setObjectName("menubar")
     self.menuFile = QtWidgets.QMenu(self.menubar)
     self.menuFile.setObjectName("menuFile")
+
+    self.actionNew = QtWidgets.QAction(MainWindow)
+    self.actionNew.setObjectName("actionNew")
+    self.menuFile.addAction(self.actionNew)
+    self.actionNew.triggered.connect(self.newProject)
+    self.actionNew.setShortcut("Ctrl+N")
+
     self.actionOpen = QtWidgets.QAction(MainWindow)
     self.actionOpen.setObjectName("actionOpen")
     self.menuFile.addAction(self.actionOpen)
@@ -159,10 +166,11 @@ class Ui_MainWindow(QtCore.QObject):
     MainWindow.setObjectName("MainWindow")
     MainWindow.resize(728, 521)
     self.mainWindow = MainWindow
-    self.version = 0.01
+    self.version = 0.02
     self.language = "N/A"
+    self.projectName = "Untitled"
     self.programName = "LanguageWords"
-    self.setWindowTitle("Untitled")
+    self.setWindowTitle()
     self.centralwidget = QtWidgets.QWidget(MainWindow)
     self.centralwidget.setObjectName("centralwidget")
     self.outerVerticalLayout = QtWidgets.QVBoxLayout(self.centralwidget)
@@ -178,6 +186,7 @@ class Ui_MainWindow(QtCore.QObject):
   def retranslateUi(self, MainWindow):
     _translate = QtCore.QCoreApplication.translate
     self.menuFile.setTitle(_translate("MainWindow", "Fi&le"))
+    self.actionNew.setText(_translate("MainWindow", "New project"))
     self.actionOpen.setText(_translate("MainWindow", "Open..."))
     self.actionSave.setText(_translate("MainWindow", "Save..."))
   
@@ -240,6 +249,20 @@ class Ui_MainWindow(QtCore.QObject):
     elif dialogCode == QtWidgets.QDialog.Rejected:
       print('Rejected')
   
+  def showWelcomeDialog(self):
+    availableLanguages = self.defDataModel.getAvailableLanguages()
+    self.welcomeDialog = WelcomeDialog(self.centralwidget,self.actionOpen, self.actionNew , 
+                                        self.programName , self.version , availableLanguages)
+    dialogCode = self.welcomeDialog.exec()
+    if dialogCode == QtWidgets.QDialog.Accepted:
+      if not self.welcomeDialog.loadedFile: #New Project
+        self.language     = self.welcomeDialog.languageComboBox.currentText()
+        self.projectName  = self.welcomeDialog.nameLineEdit.text()
+        self.setWindowTitle()
+      print('Accepted')
+    elif dialogCode == QtWidgets.QDialog.Rejected:
+      print('Rejected')
+
   def disableEditWordButton(self):
     self.editWordButton.setEnabled(False)
   def enableEditWordButton(self, wordIndex,*_):
@@ -286,7 +309,10 @@ class Ui_MainWindow(QtCore.QObject):
 
   @classmethod 
   def _fromFile(cls, _input, window=None,obj=None):
+    projectName = "Untitled"
     version = pickle.load(_input)
+    if version > 0.01:
+      projectName = pickle.load(_input)
     language = pickle.load(_input)
     if obj is None:
       obj = cls()
@@ -303,6 +329,7 @@ class Ui_MainWindow(QtCore.QObject):
     obj.wordDataModel.language  = language
     obj.defDataModel.language   = language
     obj.language                = language
+    obj.projectName             = projectName
     obj.dictionary              = None
     obj.activeConnections       = []
     if language is not None:
@@ -317,11 +344,16 @@ class Ui_MainWindow(QtCore.QObject):
       return
     else:
       Ui_MainWindow.fromFile(fileName,None,self)
-      self.setWindowTitle(os.path.basename(fileName))
+      self.setWindowTitle()
       self.tagController.updateTags()
+      if self.welcomeDialog.isVisible():
+        self.welcomeDialog.loadedFile = True
+        self.welcomeDialog.accept()
+  def newProject(self):
+    pass
 
-  def setWindowTitle(self,projectName):
-    self.mainWindow.setWindowTitle(projectName + " - " + "(" + str(self.language) + ")" + " - " + str(self.programName) )
+  def setWindowTitle(self):
+    self.mainWindow.setWindowTitle(self.projectName + " - " + "(" + str(self.language) + ")" + " - " + str(self.programName) )
 
   def saveFile(self):
     fileName,fileType = QtWidgets.QFileDialog.getSaveFileName(self.centralwidget,"Save File",".","Pickle Files (*.pkl)")
@@ -330,8 +362,8 @@ class Ui_MainWindow(QtCore.QObject):
     else:
       with open(fileName, 'wb') as output:
         pickle.dump(self.version, output, pickle.HIGHEST_PROTOCOL) #Version
+        pickle.dump(self.projectName, output, pickle.HIGHEST_PROTOCOL) #ProjectName
         pickle.dump(self.language, output , pickle.HIGHEST_PROTOCOL) #Language
-        self.set
         self.wordDataModel.toFile(output)
         self.tagDataModel.toFile(output)
         self.defDataModel.toFile(output)

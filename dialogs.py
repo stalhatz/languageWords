@@ -442,3 +442,68 @@ class TagEditDialog(QtWidgets.QDialog):
   def updateMetaTags(self,tag):
     metaTags = self.tagDataModel.getDirectParentTags(tag)
     self.metaTagController.setStringList(metaTags)
+
+
+class WelcomeDialog(QtWidgets.QDialog):
+  def __init__(self ,parent, loadAction , newAction , programName, version ,languages):
+    super(WelcomeDialog,self).__init__(parent)
+    self.loadAction = loadAction
+    self.newAction  = newAction
+    self.loadedFile = False
+    vLayout     = QtWidgets.QVBoxLayout(self)
+    #vLayout
+    hHighLayout   = QtWidgets.QHBoxLayout()
+    hMiddleLayout     = QtWidgets.QHBoxLayout()
+    hLowLayout      = QtWidgets.QHBoxLayout()
+    
+    welcomeMessageLabel = QtWidgets.QLabel(self)
+    welcomeMessage = "Welcome to " + programName + " version " + str(version)
+    welcomeMessageLabel.setText(welcomeMessage)
+
+    vLayout.addWidget(welcomeMessageLabel)
+    vLayout.addLayout(hHighLayout)
+    vLayout.addLayout(hMiddleLayout)
+    vLayout.addLayout(hLowLayout)
+        
+    #hMiddleLayout (vLayout)
+    self.newProjectButton      = QtWidgets.QPushButton(self)
+    self.newProjectButton.setText("New project")
+    self.newProjectButton.setObjectName("welcomeDialog.newProjectButton")
+    self.newProjectButton.setMinimumSize(QtCore.QSize(100, 50))
+    self.newProjectButton.clicked.connect(self.accept)
+    self.newProjectButton.setEnabled(False)
+
+    self.loadProjectButton      = QtWidgets.QPushButton(self)
+    self.loadProjectButton.setText("Load existing project...")
+    self.loadProjectButton.setObjectName("welcomeDialog.loadProjectButton")
+    self.loadProjectButton.setMinimumSize(QtCore.QSize(100, 50))
+    self.loadProjectButton.clicked.connect(self.loadAction.trigger)
+
+    hMiddleLayout.addWidget(self.newProjectButton)
+    hMiddleLayout.addWidget(self.loadProjectButton)
+    
+
+    #hLowLayout (vLayout)
+    self.nameLineEdit     = QtWidgets.QLineEdit(self)
+    self.nameLineEdit.setObjectName("welcomeDialog.nameLineEdit")
+    self.nameLineEdit.setPlaceholderText("Enter name for new project")
+    self.nameLineEdit.setMinimumSize(QtCore.QSize(100, 20))
+    #self.nameLineEdit.installEventFilter(self) #Catch Enter
+    self.nameLineEdit.textChanged.connect(self.nameTextChanged)
+
+    self.languageComboBox = QtWidgets.QComboBox(self)
+    self.languageComboBox.insertItems(0,languages)
+    self.languageComboBox.setMaximumSize(QtCore.QSize(100, 20))
+
+    hLowLayout.addWidget(self.nameLineEdit)
+    hLowLayout.addWidget(self.languageComboBox)
+    
+  def eventFilter(self,_object, event):
+    pass
+    
+  def nameTextChanged(self,text):
+    shouldEnable = False
+    if len(text) > 3:
+      self.newProjectButton.setEnabled(True)
+    else:
+      self.newProjectButton.setEnabled(False)
