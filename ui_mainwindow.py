@@ -238,7 +238,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.editDictsDialog = DictionaryDialog(self.centralwidget,self.defDataModel)
     dialogCode = self.editDictsDialog.exec()
     if dialogCode == QtWidgets.QDialog.Accepted:
-      self.defDataModel.selectDictsFromNames(self.editDictsDialog.sModel.getDictNames())
+      self.defDataModel.selectDictsFromNames(self.editDictsDialog.sController.getDictNames())
       
     elif dialogCode == QtWidgets.QDialog.Rejected:
       print('Rejected')
@@ -259,6 +259,8 @@ class Ui_MainWindow(QtCore.QObject):
     if dialogCode == QtWidgets.QDialog.Accepted:
       if not self.welcomeDialog.loadedFile: #New Project
         self.language     = self.welcomeDialog.languageComboBox.currentText()
+        self.wordDataModel.language  = self.language
+        self.defDataModel.language   = self.language
         self.projectName  = self.welcomeDialog.nameLineEdit.text()
         self.setWindowTitle()
       print('Accepted')
