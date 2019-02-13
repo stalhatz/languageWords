@@ -73,8 +73,10 @@ class WordDataModel(QObject):
     self.wordTable = self.wordTable.append({"text" : word}, ignore_index = True)
 
   def removeWord(self,word):
-    self.wordTable = self.wordTable.append({"text" : word}, ignore_index = True)
-    self.wordTable.drop_duplicates(keep=False,inplace = True)
+    self.wordTable.set_index("text",inplace = True)
+    self.wordTable.drop(word , inplace = True)
+    self.wordTable.reset_index(inplace = True)
+    
 
 class DefinitionDataModel(QObject):
   dictNamesUpdated    = pyqtSignal(list)

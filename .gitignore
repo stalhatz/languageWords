@@ -10,3 +10,4 @@
 languageWords.code-workspace
 .~lock.Signals_Slots.odp#
 Signals_Slots.odp
+.pytest_cache
