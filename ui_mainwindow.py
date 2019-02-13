@@ -6,6 +6,8 @@ import pickle
 import os
 from hunspell import HunSpell
 # TODO : Setup keyboard shortcuts for easily navigating between ListViews/ListEdits etc.
+#TODO : [FEATURE] TagWordView showing tags corresponding to a word. Optimally it should be done without introducing an extra Controller, just by filtering TagController
+#TODO : [FEATURE] Store information (definitions / examples) provided in the definitionsModel: Copy items from definitions to a per word structure. In this way we can better contextualize each word with definitions that seem pertinant to the user.
 class Ui_MainWindow(QtCore.QObject):
   def addTopButtons(self):
     self.buttonHorizontalLayout = QtWidgets.QHBoxLayout()
