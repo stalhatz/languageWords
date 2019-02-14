@@ -31,6 +31,8 @@ class DefinitionController(QAbstractListModel):
     if not index.isValid() or not (0<=index.row()<len(self.definitionsList)):  return QVariant()
     if role==Qt.DisplayRole:      return self.definitionsList[index.row()]
 
+# TODO: [FEATURE] [LOW PRIORITY] unidecode filter and pandas Series to match string with accents / no accents
+# TODO: [FEATURE] [LOW PRIORITY] use > = < filters to filter tags with certain number of corresponding words
 class TagController(QAbstractListModel):
   dataChanged = pyqtSignal(QModelIndex,QModelIndex)
   tagChanged = pyqtSignal(str, name='tagChanged')
@@ -64,6 +66,7 @@ class TagController(QAbstractListModel):
   def getSelectedTag(self):
     return self.getTag(self.selectedIndex)
   def updateTagIndexFromModel(self):
+    self.layoutAboutToBeChanged.emit()
     self.tagIndex = pd.pivot_table(self.tagModel.tagTable,values='text',index='tag',aggfunc=pd.Series.nunique).reset_index()
     self.tagIndex.rename(columns={"text":"indexCount"},inplace = True)
     newTagsList = []
@@ -75,21 +78,13 @@ class TagController(QAbstractListModel):
         newTagsList.append({"tag":tag,"indexCount":indCount})
     if len(newTagsList) > 0:
       self.tagIndex = self.tagIndex.append(newTagsList,ignore_index = True)
+    self.layoutChanged.emit()
     
   def updateTags(self):
-    #self.updateTagIndexFromModel()
+    self.updateTagIndexFromModel()
     #self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.tagIndex.index) , 0))
-    self.filterTags(self.currentFilter)
     selectedTag = self.getTag(self.selectedIndex)
     self.tagChanged.emit(  selectedTag )
-  # TODO: unidecode filter and pandas Series to match string with accents / no accents
-  # TODO: [FEATURE] use > = < filters to filter tags with certain number of corresponding words
-  def filterTags(self,filter):
-    self.currentFilter = filter
-    transfomedFilter = unidecode.unidecode(filter).lower()
-    self.updateTagIndexFromModel()
-    self.tagIndex = self.tagIndex[self.tagIndex.tag.str.lower().str.contains(transfomedFilter)]
-    self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.tagIndex.index) , 0))
     
 #FIXME: Load word definition when shown on screen not only when selected
 class WordController(QAbstractListModel):

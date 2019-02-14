@@ -130,10 +130,13 @@ class Ui_MainWindow(QtCore.QObject):
     self.tagDataModel = tagDataModel
     self.wordController = WordController(wordDataModel,self.tagDataModel)
     self.tagController = TagController(self.tagDataModel)
+    self.filterController = QtCore.QSortFilterProxyModel()
+    self.filterController.setSourceModel(self.tagController)
+    self.filterController.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
     self.defController = DefinitionController()
     #Set signals/slots views to controllers
     self.definitionListView.setModel(self.defController)
-    self.tagview.setModel(self.tagController)
+    self.tagview.setModel(self.filterController)
     self.tagview.selectionModel().currentChanged.connect(self.tagController.selected)
     self.wordview.setModel(self.wordController)
     self.wordController.addView(self.wordview)
@@ -143,7 +146,7 @@ class Ui_MainWindow(QtCore.QObject):
     #self.wordview.selectionModel().currentChanged.connect(self.setEnabledEditButton.selected)
     
     self.dictSelect.currentTextChanged.connect(self.wordController.updateDict)
-    self.tagFilter.textChanged.connect(self.tagController.filterTags)
+    self.tagFilter.textChanged.connect(self.filterTags)
     #InterController signals
     self.tagController.tagChanged.connect(self.wordController.updateOnTag)
     #Connect signals to tab views
@@ -389,5 +392,6 @@ class Ui_MainWindow(QtCore.QObject):
           self.wordview.setFocus()
           return True
     return False
-
+  def filterTags(self,text):
+    self.filterController.setFilterFixedString(text)
 from PyQt5 import QtWebEngineWidgets 
