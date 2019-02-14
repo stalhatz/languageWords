@@ -30,7 +30,7 @@ class WordDataModel(QObject):
     super(WordDataModel, self).__init__()
     self.version = 0.01
     if wordTable is None:
-      self.wordTable  = pd.DataFrame(columns = ["text" , "hyperlink"])
+      self.wordTable  = pd.DataFrame(columns = ["text" , "timestamp"])
     else:
       self.wordTable  = wordTable
 
@@ -70,7 +70,7 @@ class WordDataModel(QObject):
     return list(words)
   
   def addWord(self,word):
-    self.wordTable = self.wordTable.append({"text" : word}, ignore_index = True)
+    self.wordTable = self.wordTable.append({"text" : word , "timestamp": pd.Timestamp.now()}, ignore_index = True)
 
   def removeWord(self,word):
     self.wordTable.set_index("text",inplace = True)
@@ -229,6 +229,7 @@ class TagDataModel():
       for tag in tags:
         tagTableList.append({"tag":tag , "text" : word})
       self.tagTable = self.tagTable.append(tagTableList, ignore_index = True)
+      self.tagTable.drop_duplicates(inplace = True)
 
   def removeTagging(self,word,tags):
     if len(tags) > 0:
@@ -310,10 +311,23 @@ class TagDataModel():
     metaTags = [n.tag for n in preds]
     return metaTags
   
+  def getDirectChildTags(self,tag):
+    node = self.tagToNode(tag)
+    subjects = node.subjects
+    metaTags = [n.tag for n in subjects]
+    return metaTags
+
+  def getAllParentTags(self,tag):
+    node = self.tagToNode(tag)
+    preds = self.getAllPredicatives(node)
+    metaTags = [n.tag for n in preds]
+    metaTags = list(set(metaTags))
+    return metaTags
+
   def getAllChildTags(self,tag):
     node = self.tagToNode(tag)
-    preds = self.getAllSubjects(node)
-    metaTags = [n.tag for n in preds]
+    subjects = self.getAllSubjects(node)
+    metaTags = [n.tag for n in subjects]
     metaTags = list(set(metaTags))
     return metaTags
 
