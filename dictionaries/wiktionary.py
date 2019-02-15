@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 def createUrl(word,requestLang):
   for i,lang in enumerate(languages):
     if requestLang == lang:
-      return dictUrls[i] + word
+      return dictUrls[i] + word.lower()
   raise ValueError("Could not find " + requestLang + " in " + name + "'s language list. Available langs : " + str(languages) )
 
 def getDefinitionsFromHtml(html):
