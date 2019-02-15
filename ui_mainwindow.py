@@ -1,5 +1,5 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
-from controllers import (DefinitionController, TagController, WordController)
+from controllers import (DefinitionController, TagController, WordController,ElementTagController)
 from dialogs import WordDialog,DictionaryDialog,TagEditDialog,WelcomeDialog
 from dataModels import WordDataModel,DefinitionDataModel,TagDataModel
 import pickle
@@ -43,8 +43,6 @@ class Ui_MainWindow(QtCore.QObject):
     self.horizontalLayout = QtWidgets.QHBoxLayout()
     self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
     self.horizontalLayout.setObjectName("horizontalLayout")  
-    #self.statusBar = QtWidgets.QStatusBar(self.centralwidget)
-    #self.statusBar.setObjectName("statusBar")
     self.outerVerticalLayout.addLayout(self.buttonHorizontalLayout)
     self.outerVerticalLayout.addLayout(self.horizontalLayout)
     #self.outerVerticalLayout.addWidget(self.statusBar)
@@ -69,13 +67,17 @@ class Ui_MainWindow(QtCore.QObject):
     self.tagFilter.setPlaceholderText("Enter text to filter tags")
     self.tagFilter.setMaximumSize(QtCore.QSize(400, 30))
     self.tagFilter.installEventFilter(self) #Catch Enter
+    self.elementTagview = QtWidgets.QListView(self.centralwidget)
+    self.elementTagview.setMaximumSize(QtCore.QSize(400, 400))
+    self.elementTagview.setObjectName("elementTagview")
+    self.elementTagview.installEventFilter(self)
+
     self.verticalLayout.addWidget(self.dictSelect)
     self.verticalLayout.addWidget(self.tagview)
     self.verticalLayout.addWidget(self.tagFilter)
     self.verticalLayout.addWidget(self.wordview)
+    self.verticalLayout.addWidget(self.elementTagview)
     
-    
-
     self.tabwidget = QtWidgets.QTabWidget(self.centralwidget)
     self.tabwidget.setObjectName("tabwidget")
     self.horizontalLayout.addWidget(self.tabwidget)
@@ -124,7 +126,6 @@ class Ui_MainWindow(QtCore.QObject):
     MainWindow.setStatusBar(self.statusBar)
   
   def setupDataModels(self,wordDataModel,tagDataModel,defDataModel):
-
     self.wordDataModel = wordDataModel
     self.defDataModel = defDataModel
     self.tagDataModel = tagDataModel
@@ -134,19 +135,23 @@ class Ui_MainWindow(QtCore.QObject):
     self.filterController.setSourceModel(self.tagController)
     self.filterController.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
     self.defController = DefinitionController()
+    self.elementController = ElementTagController(tagDataModel)
     #Set signals/slots views to controllers
+    self.elementTagview.setModel(self.elementController)
     self.definitionListView.setModel(self.defController)
     self.tagview.setModel(self.filterController)
     self.tagview.selectionModel().currentChanged.connect(self.tagController.selected)
     self.wordview.setModel(self.wordController)
     self.wordController.addView(self.wordview)
+    
     self.wordview.selectionModel().currentChanged.connect(self.wordController.selected)
     self.wordview.selectionModel().currentChanged.connect(self.enableEditWordButton)
+    self.wordController.currentChanged.connect(self.elementController.updateOnWord)
     
     #self.wordview.selectionModel().currentChanged.connect(self.setEnabledEditButton.selected)
     
     self.dictSelect.currentTextChanged.connect(self.wordController.updateDict)
-    self.tagFilter.textChanged.connect(self.filterTags)
+    self.tagFilter.textChanged.connect(self.filterController.setFilterFixedString)
     #InterController signals
     self.tagController.tagChanged.connect(self.wordController.updateOnTag)
     #Connect signals to tab views
@@ -169,7 +174,7 @@ class Ui_MainWindow(QtCore.QObject):
 
   def setupUi(self, MainWindow):
     MainWindow.setObjectName("MainWindow")
-    MainWindow.resize(728, 521)
+    MainWindow.resize(720, 1024)
     self.mainWindow = MainWindow
     self.version = 0.02
     self.language = "N/A"
@@ -392,6 +397,4 @@ class Ui_MainWindow(QtCore.QObject):
           self.wordview.setFocus()
           return True
     return False
-  def filterTags(self,text):
-    self.filterController.setFilterFixedString(text)
 from PyQt5 import QtWebEngineWidgets 

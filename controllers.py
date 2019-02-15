@@ -91,6 +91,7 @@ class WordController(QAbstractListModel):
   dataChanged       = pyqtSignal(QModelIndex,QModelIndex)
   loadDefinition    = pyqtSignal(str, str, bool)
   clearSelection    = pyqtSignal()
+  currentChanged    = pyqtSignal(str)
   def __init__(self, wordModel ,tagModel):
     super(WordController,self).__init__()
     self.wordModel = wordModel
@@ -113,10 +114,12 @@ class WordController(QAbstractListModel):
       return str(self.df_image.iloc[index.row(),0])
   def selected(self, index , prevIndex):
     self.currentIndex = index.row()
+    word = str(self.df_image.iloc[index.row(),0])
+    self.currentChanged.emit(word)
     if self.dict is None:
       pass  
     else:
-      self.loadDefinition.emit(str(self.df_image.iloc[index.row(),0]),self.dict , self.externalLoading)
+      self.loadDefinition.emit(word,self.dict , self.externalLoading)
   def updateOnTag(self,tag):
     tagList = self.tagModel.getAllChildTags(tag)
     tagList.append(tag)
@@ -142,3 +145,80 @@ class WordController(QAbstractListModel):
     if self.currentIndex >= 0:
       self.loadDefinition.emit(str(self.df_image.iloc[self.currentIndex,0]),self.dict , self.externalLoading)
 
+class ElementTagController(QAbstractListModel):
+  dataChanged       = pyqtSignal(QModelIndex,QModelIndex)
+  def __init__(self,tagModel):
+    super(ElementTagController,self).__init__()
+    self.tagModel = tagModel
+    self.currentIndex = -1
+    self.tagList  = []
+    self.directTagList = []
+    self.currentElement = None
+    self.spliterText = "------------Inherited Tags-----------"
+  def rowCount(self, modelIndex):
+    return self.dataSize()
+  def dataSize(self):
+    if len(self.tagList) - len(self.directTagList) > 0:
+      return len(self.tagList) + 1 # + spliterText
+    else:
+      return len(self.tagList)
+
+  def data(self, index, role):
+    if not index.isValid() or not (0<=index.row()<self.dataSize()):
+      return QVariant()
+    if role==Qt.DisplayRole:
+      print (index.row())
+      if index.row() < len(self.directTagList):
+        return str(self.tagList[index.row()])
+      elif index.row() == len(self.directTagList):
+        return self.spliterText
+      else:
+        return str(self.tagList[index.row() - 1])
+      
+  def selected(self, index , prevIndex):
+    self.currentIndex = index.row()
+
+  def updateOnTag(self,tag):
+    self.updatesOnTag = True
+    self.currentElement = tag
+    self.layoutAboutToBeChanged.emit()
+    self.tagList = self.tagModel.getAllParentTags(tag)
+    self.directTagList = self.tagModel.getDirectParentTags(tag)
+    self.orderTagLists()
+    self.layoutChanged.emit()
+    
+  def updateOnWord(self,word):
+    self.updatesOnTag = False
+    self.currentElement = word
+    self.layoutAboutToBeChanged.emit()
+    self.directTagList = self.tagModel.getTagsFromIndex(word)
+    self.tagList = []
+    for tag in self.directTagList:
+      self.tagList += self.tagModel.getAllParentTags(tag)
+    self.tagList = list(set(self.tagList))
+    self.orderTagLists()
+    self.layoutChanged.emit()
+
+
+
+  def update(self):
+    if self.updatesOnTag:
+      self.updateOnTag(self.currentElement)
+    else:
+      self.updateOnWord(self.currentElement)
+
+  def orderTagLists(self):
+    self.tagList = [x for x in self.tagList if x not in self.directTagList]
+    self.tagList = self.directTagList + self.tagList
+
+  def flags(self,index):
+    flags = super(ElementTagController,self).flags(index)
+    if index.row() >= len(self.directTagList):
+      if flags & Qt.ItemIsEnabled != 0: # If is enabled
+        flags = flags ^ Qt.ItemIsEnabled
+      if flags & Qt.ItemIsSelectable != 0: # If is selectable
+        flags = flags ^ Qt.ItemIsSelectable
+    return flags
+  
+  def __len__(self):
+    return len(self.tagList)
