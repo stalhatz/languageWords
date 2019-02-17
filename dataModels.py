@@ -85,12 +85,30 @@ class DefinitionDataModel(QObject):
   showMessage         = pyqtSignal(str)
   def __init__(self, dictNames = []):
     super(DefinitionDataModel, self).__init__()
-    self.version      = 0.02
+    self.version      = 0.03
     self.session      = FuturesSession(max_workers=1)
     self.lastRequest  = None
     self.url          = None
     self.availableDicts = self.findModules("./dictionaries")
     self.selectDictsFromNames(dictNames)
+    self.savedDefinitionsTable = pd.DataFrame(columns = ["text" , "definition", "timestamp" , "dictionary"])
+
+  def definitionCondition(self,word,definition):
+    return (self.savedDefinitionsTable.text == word) & (self.savedDefinitionsTable.definition == definition)
+  def definitionExists(self,word,definition):
+    return self.definitionCondition(word,definition).any()
+
+  def addDefinition(self, word, definition, dictionary):
+    record = {"text" : word ,"definition":definition, "timestamp": pd.Timestamp.now() , "dictionary": dictionary}
+    self.savedDefinitionsTable = self.savedDefinitionsTable.append(record, ignore_index = True)
+  
+  def getSavedDefinitions(self,word):
+    return self.savedDefinitionsTable[ self.savedDefinitionsTable.text == word]
+
+  def removeDefinition(self,word,definition):
+    condition = self.definitionCondition(word,definition)
+    index = self.savedDefinitionsTable[condition].index
+    self.savedDefinitionsTable.drop(index, inplace = True)
 
   def selectDictsFromNames(self,dictNames):
     #We will silently ignore all names not corresponding to available dictionaries
@@ -153,19 +171,19 @@ class DefinitionDataModel(QObject):
       html =  request.text
       self.definitionsList = self.getDefinitionsFromHtml(dictName, html)
       self.definitionsUpdated.emit(self.definitionsList)
-  
 
   def saveData(self,output):
     saveToPickle(self.version, output)
     #version 0.02
     saveToPickle(self.getDictNames(), output)
-    
+    #version 0.03
+    saveToPickle(self.savedDefinitionsTable, output)
 
   def loadData(self,_input):
     #The version variable is only for backwards compatibility with the class version.
     #It should not be stores to the object
     version = loadFromPickle(_input)
-    print("DefinitionsVersion :: " + str(version))
+    #print("DefinitionsVersion :: " + str(version))
     #version 0.01
     if (version == 0.01):
       dictNames = loadFromPickle(_input)
@@ -176,6 +194,10 @@ class DefinitionDataModel(QObject):
     if (version == 0.02):
       dictNames = loadFromPickle(_input)
       self.selectDictsFromNames(dictNames)
+    if (version == 0.03):
+      dictNames = loadFromPickle(_input)
+      self.selectDictsFromNames(dictNames)
+      self.savedDefinitionsTable = loadFromPickle(_input)
 
 
   def toFile(self,file):
@@ -240,7 +262,7 @@ class TagDataModel():
       self.tagTable.drop_duplicates(keep=False, inplace = True)
 
   def getIndexesFromTagList(self,tagList):
-    print(tagList)
+    #print(tagList)
     tableList = []
     for tag in tagList:
       tableList.append(self.tagTable[self.tagTable.tag == tag])
@@ -381,21 +403,3 @@ class TagDataModel():
     predNode = self.tagNodes[pred]
     subNode.predicatives.remove(predNode)
     predNode.subjects.remove(subNode)
-
-import random
-#Test TagDataModel
-if __name__ == "__main__":
-  random.seed(1)
-  aModel = TagDataModel()
-  #tags = list("azertyuiopqsdfghjklmwxcvbn")
-  tags = list("abcdefg")
-  for i in range(10):
-    a = random.randint(0,len(tags)-1)
-    b = random.randint(0,len(tags)-1)
-    aTag = tags[a]
-    bTag = tags[b]
-    print("Adding relation :: " + bTag +" -> " + aTag )
-    aModel.addRelation(aTag,bTag)
-    print(i)
-  for n in aModel.tagNodes:
-    print (aModel.tagNodes[n])

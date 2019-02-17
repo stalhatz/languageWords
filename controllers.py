@@ -25,11 +25,15 @@ class DefinitionController(QAbstractListModel):
     self.definitionsList = definitionsList
     self.setEnabledView.emit(True)
     self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.definitionsList) , 0))
+  def selected(self, index , prevIndex):
+    self.selectedIndex = index
   def rowCount(self, modelIndex):
     return len(self.definitionsList)
   def data(self, index, role):
     if not index.isValid() or not (0<=index.row()<len(self.definitionsList)):  return QVariant()
     if role==Qt.DisplayRole:      return self.definitionsList[index.row()]
+  def getSelectedDefinition(self):
+    return self.definitionsList[self.selectedIndex.row()]
 
 # TODO: [FEATURE] [LOW PRIORITY] unidecode filter and pandas Series to match string with accents / no accents
 # TODO: [FEATURE] [LOW PRIORITY] use > = < filters to filter tags with certain number of corresponding words
@@ -144,7 +148,8 @@ class WordController(QAbstractListModel):
       self.externalLoading = False
     if self.currentIndex >= 0:
       self.loadDefinition.emit(str(self.df_image.iloc[self.currentIndex,0]),self.dict , self.externalLoading)
-
+  def getSelectedWord(self):
+    return str(self.df_image.iloc[self.currentIndex,0])
 class ElementTagController(QAbstractListModel):
   dataChanged       = pyqtSignal(QModelIndex,QModelIndex)
   def __init__(self,tagModel):
@@ -167,7 +172,6 @@ class ElementTagController(QAbstractListModel):
     if not index.isValid() or not (0<=index.row()<self.dataSize()):
       return QVariant()
     if role==Qt.DisplayRole:
-      print (index.row())
       if index.row() < len(self.directTagList):
         return str(self.tagList[index.row()])
       elif index.row() == len(self.directTagList):
@@ -222,3 +226,37 @@ class ElementTagController(QAbstractListModel):
   
   def __len__(self):
     return len(self.tagList)
+
+class SavedDefinitionsController(QAbstractListModel):
+  dataChanged       = pyqtSignal(QModelIndex,QModelIndex)
+  def __init__(self,defModel):
+    super(SavedDefinitionsController,self).__init__()
+    self.defModel = defModel
+    self.currentIndex = -1
+    self.definitionsTable  = self.defModel.getSavedDefinitions("")
+    self.currentElement = None
+  def rowCount(self, modelIndex):
+    return len(self.definitionsTable.index)
+
+  def data(self, index, role):
+    if not index.isValid() or not (0<=index.row()<len(self.definitionsTable.index)):
+      return QVariant()
+    if role==Qt.DisplayRole:
+      return self.definitionsTable.iloc[index.row(),:].loc["definition"]
+
+  def selected(self, index , prevIndex):
+    self.currentIndex = index.row()
+    
+
+  def updateOnWord(self,word):
+    self.currentElement = word
+    self.layoutAboutToBeChanged.emit()
+    self.definitionsTable = self.defModel.getSavedDefinitions(word)
+    self.layoutChanged.emit()
+
+  def update(self):
+    self.updateOnWord(self.currentElement)
+
+  def getSelectedDefinition(self):
+     selectedDefinition = self.definitionsTable.iloc[self.currentIndex,:].loc["definition"]
+     return selectedDefinition

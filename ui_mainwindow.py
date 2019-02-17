@@ -1,5 +1,5 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
-from controllers import (DefinitionController, TagController, WordController,ElementTagController)
+from controllers import (DefinitionController, TagController, WordController,ElementTagController,SavedDefinitionsController)
 from dialogs import WordDialog,DictionaryDialog,TagEditDialog,WelcomeDialog
 from dataModels import WordDataModel,DefinitionDataModel,TagDataModel
 import pickle
@@ -78,6 +78,11 @@ class Ui_MainWindow(QtCore.QObject):
     self.verticalLayout.addWidget(self.wordview)
     self.verticalLayout.addWidget(self.elementTagview)
     
+    self.savedDefinitionsView = QtWidgets.QListView(self.centralwidget)
+    self.savedDefinitionsView.setObjectName("savedDefinitionsView")
+    self.savedDefinitionsView.setWordWrap(True)
+    self.horizontalLayout.addWidget(self.savedDefinitionsView)
+
     self.tabwidget = QtWidgets.QTabWidget(self.centralwidget)
     self.tabwidget.setObjectName("tabwidget")
     self.horizontalLayout.addWidget(self.tabwidget)
@@ -126,19 +131,26 @@ class Ui_MainWindow(QtCore.QObject):
     MainWindow.setStatusBar(self.statusBar)
   
   def setupDataModels(self,wordDataModel,tagDataModel,defDataModel):
-    self.wordDataModel = wordDataModel
-    self.defDataModel = defDataModel
-    self.tagDataModel = tagDataModel
-    self.wordController = WordController(wordDataModel,self.tagDataModel)
-    self.tagController = TagController(self.tagDataModel)
-    self.filterController = QtCore.QSortFilterProxyModel()
+    self.wordDataModel      = wordDataModel
+    self.defDataModel       = defDataModel
+    self.tagDataModel       = tagDataModel
+    self.wordController     = WordController(wordDataModel,self.tagDataModel)
+    self.tagController      = TagController(self.tagDataModel)
+    self.filterController   = QtCore.QSortFilterProxyModel()
     self.filterController.setSourceModel(self.tagController)
     self.filterController.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
-    self.defController = DefinitionController()
-    self.elementController = ElementTagController(tagDataModel)
+    self.defController      = DefinitionController()
+    self.elementController  = ElementTagController(tagDataModel)
+    self.savedDefController = SavedDefinitionsController(defDataModel)
     #Set signals/slots views to controllers
+    self.savedDefinitionsView.setModel(self.savedDefController)
+    self.savedDefinitionsView.doubleClicked.connect(self.removeDefinition)
+    self.savedDefinitionsView.selectionModel().currentChanged.connect(self.savedDefController.selected)
     self.elementTagview.setModel(self.elementController)
+    self.elementTagview.selectionModel().currentChanged.connect(self.elementController.selected)
     self.definitionListView.setModel(self.defController)
+    self.definitionListView.doubleClicked.connect(self.saveDefinition)
+    self.definitionListView.selectionModel().currentChanged.connect(self.defController.selected)
     self.tagview.setModel(self.filterController)
     self.tagview.selectionModel().currentChanged.connect(self.tagController.selected)
     self.wordview.setModel(self.wordController)
@@ -147,6 +159,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.wordview.selectionModel().currentChanged.connect(self.wordController.selected)
     self.wordview.selectionModel().currentChanged.connect(self.enableEditWordButton)
     self.wordController.currentChanged.connect(self.elementController.updateOnWord)
+    self.wordController.currentChanged.connect(self.savedDefController.updateOnWord)
     
     #self.wordview.selectionModel().currentChanged.connect(self.setEnabledEditButton.selected)
     
@@ -397,4 +410,19 @@ class Ui_MainWindow(QtCore.QObject):
           self.wordview.setFocus()
           return True
     return False
+
+  def saveDefinition(self):
+    definition  = self.defController.getSelectedDefinition()
+    word        = self.wordController.getSelectedWord()
+    if not self.defDataModel.definitionExists(word,definition):
+      dictionary  = self.dictSelect.currentText()
+      self.defDataModel.addDefinition(word,definition,dictionary)
+      self.savedDefController.update()
+  
+  def removeDefinition(self):
+    definition  = self.savedDefController.getSelectedDefinition()
+    word        = self.wordController.getSelectedWord()
+    self.defDataModel.removeDefinition(word,definition)
+    self.savedDefController.update()
+
 from PyQt5 import QtWebEngineWidgets 
