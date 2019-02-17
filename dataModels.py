@@ -85,13 +85,19 @@ class DefinitionDataModel(QObject):
   showMessage         = pyqtSignal(str)
   def __init__(self, dictNames = []):
     super(DefinitionDataModel, self).__init__()
-    self.version      = 0.03
-    self.session      = FuturesSession(max_workers=1)
-    self.lastRequest  = None
-    self.url          = None
-    self.availableDicts = self.findModules("./dictionaries")
-    self.selectDictsFromNames(dictNames)
-    self.savedDefinitionsTable = pd.DataFrame(columns = ["text" , "definition", "timestamp" , "dictionary"])
+
+
+  @classmethod
+  def getInstance(cls,modulePath = "./dictionaries" , columns = ["text" , "definition", "timestamp" , "dictionary"]):
+    obj = cls()
+    obj.version      = 0.03
+    obj.session      = FuturesSession(max_workers=1)
+    obj.lastRequest  = None
+    obj.url          = None
+    obj.availableDicts = obj.findModules(modulePath)
+    obj.selectedDicts = {}
+    obj.savedDefinitionsTable = pd.DataFrame(columns = columns)
+    return obj
 
   def definitionCondition(self,word,definition):
     return (self.savedDefinitionsTable.text == word) & (self.savedDefinitionsTable.definition == definition)
@@ -216,7 +222,7 @@ class DefinitionDataModel(QObject):
   
   @classmethod
   def fromFile(cls,file):
-    a = cls()
+    a = cls.getInstance()
     a._fromFile(file)
     return a
 

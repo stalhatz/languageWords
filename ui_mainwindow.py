@@ -300,7 +300,7 @@ class Ui_MainWindow(QtCore.QObject):
   @classmethod
   def defaultInit(cls,window):
     wordDataModel = WordDataModel()
-    defDataModel = DefinitionDataModel()
+    defDataModel = DefinitionDataModel.getInstance()
     tagDataModel = TagDataModel()
     obj = cls()
     obj.setupUi(window)
