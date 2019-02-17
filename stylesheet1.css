@@ -1,4 +1,12 @@
 /* FIXME:QLineEdit colors not legible (not enough contrast) */
+
+#widgetLabel{
+  margin-top: 10px;
+  font-weight: bold;
+  border-bottom: 0.5px solid #C2C7CB;
+  background-color: #C2C7CB;
+}
+
 QWidget{
   background: #5B5B5B;
 }

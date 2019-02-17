@@ -5,9 +5,11 @@ from dataModels import WordDataModel,DefinitionDataModel,TagDataModel
 import pickle
 import os
 from hunspell import HunSpell
+import uiUtils
 # TODO : Setup keyboard shortcuts for easily navigating between ListViews/ListEdits etc.
 #TODO : [FEATURE] TagWordView showing tags corresponding to a word. Optimally it should be done without introducing an extra Controller, just by filtering TagController
 #TODO : [FEATURE] Store information (definitions / examples) provided in the definitionsModel: Copy items from definitions to a per word structure. In this way we can better contextualize each word with definitions that seem pertinant to the user.
+#TODO : [UI] Move tabs to the right/left of QTabWidget with horizontal text. Calling setTabPosition(QtWidgets.QTabWidget.West) produces vertical text
 class Ui_MainWindow(QtCore.QObject):
   def addTopButtons(self):
     self.buttonHorizontalLayout = QtWidgets.QHBoxLayout()
@@ -73,31 +75,32 @@ class Ui_MainWindow(QtCore.QObject):
     self.elementTagview.installEventFilter(self)
 
     self.verticalLayout.addWidget(self.dictSelect)
-    self.verticalLayout.addWidget(self.tagview)
+    uiUtils.addLabeledWidget("Tag List", self.tagview,self.verticalLayout)
     self.verticalLayout.addWidget(self.tagFilter)
-    self.verticalLayout.addWidget(self.wordview)
-    self.verticalLayout.addWidget(self.elementTagview)
+    uiUtils.addLabeledWidget("Phrases by tag", self.wordview,self.verticalLayout)
+    
+    uiUtils.addLabeledWidget("Tags by Phrase", self.elementTagview,self.verticalLayout)
     
     self.savedDefinitionsView = QtWidgets.QListView(self.centralwidget)
     self.savedDefinitionsView.setObjectName("savedDefinitionsView")
     self.savedDefinitionsView.setWordWrap(True)
-    self.horizontalLayout.addWidget(self.savedDefinitionsView)
+    uiUtils.addLabeledWidget("Saved Definitions", self.savedDefinitionsView,self.horizontalLayout)
 
     self.tabwidget = QtWidgets.QTabWidget(self.centralwidget)
+    self.tabwidget.setTabPosition(QtWidgets.QTabWidget.South)
     self.tabwidget.setObjectName("tabwidget")
-    self.horizontalLayout.addWidget(self.tabwidget)
-
+    uiUtils.addLabeledWidget("Online Definitions", self.tabwidget,self.horizontalLayout)
+    
     self.definitionListView = QtWidgets.QListView(self.tabwidget)
     self.definitionListView.setObjectName("definitionListView")
     self.definitionListView.setWordWrap(True)
-    self.tabwidget.addTab(self.definitionListView , "Custom view")
+    self.tabwidget.addTab(self.definitionListView , "List")
 
     self.webView = QtWebEngineWidgets.QWebEngineView(self.tabwidget)
     self.webView.setUrl(QtCore.QUrl("about:blank"))
     self.webView.setObjectName("webView")
-    self.tabwidget.addTab(self.webView , "Webview")
+    self.tabwidget.addTab(self.webView , "Web page")
 
-    #self.horizontalLayout.addWidget(self.webView)
   def addMenuBar(self,MainWindow):
     self.menubar = QtWidgets.QMenuBar(MainWindow)
     self.menubar.setGeometry(QtCore.QRect(0, 0, 728, 30))

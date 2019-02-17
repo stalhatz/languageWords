@@ -1,7 +1,9 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 import unidecode
 from controllers import TagController,ElementTagController
+import uiUtils
 import os
+
 #TODO: [DESIGN] Decide if the dialog should be recreated every time it needs to be shown or 
 #TODO: Lookup for hunspell dictionaries in usual directories
 #TODO: Implement dictionaries ListView. Show dictionary availability while typing the word.
@@ -78,7 +80,8 @@ class WordDialog(QtWidgets.QDialog):
       self.wLineEdit.setPlaceholderText("Leave this blank to delete the word")
     self.wLineEdit.textChanged.connect(self.wordTextChanged)
     vLeftLayout.addStretch()
-    vLeftLayout.addWidget(dictListView)
+
+    uiUtils.addLabeledWidget("Available dictionaries", dictListView , vLeftLayout)
     vLeftLayout.addWidget(self.wLineEdit)
     
     #vRightLayout (hHighLayout) 
@@ -96,7 +99,7 @@ class WordDialog(QtWidgets.QDialog):
     tagCompleter.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
     self.tLineEdit.setCompleter(tagCompleter)
 
-    vRightLayout.addWidget(self.tagView)
+    uiUtils.addLabeledWidget("Tags attributed to word", self.tagView , vRightLayout)
     vRightLayout.addWidget(self.tLineEdit)
     tagHLayout = QtWidgets.QHBoxLayout()
     vRightLayout.addLayout(tagHLayout)
@@ -259,8 +262,8 @@ class DictionaryDialog(QtWidgets.QDialog):
     self.aDictTableView.selectionModel().currentChanged.connect(self.validateSelection)
     self.sController.dataChanged.connect(self.sDictTableView.dataChanged)
     
-    hHigherLayout.addWidget(self.sDictTableView)
-    hHigherLayout.addWidget(self.aDictTableView)
+    uiUtils.addLabeledWidget("Selected Dictionaries", self.sDictTableView , hHigherLayout)
+    uiUtils.addLabeledWidget("Available Dictionaries", self.aDictTableView , hHigherLayout)
 
     #hHighLayout (vLayout)
     self.addDictButton    = QtWidgets.QPushButton(self)
@@ -347,7 +350,8 @@ class TagEditDialog(QtWidgets.QDialog):
     self.tagFilter.setMaximumSize(QtCore.QSize(400, 30))
     self.tagFilter.installEventFilter(self) #Catch Enter
     self.tagFilter.textChanged.connect(self.filterController.setFilterFixedString)
-    vLeftLayout.addWidget(self.tagView)
+    
+    uiUtils.addLabeledWidget("Available Tags", self.tagView , vLeftLayout)
     vLeftLayout.addWidget(self.tagFilter)
 
     #vRightLayout ( hHighLayout (vLayout) )
@@ -362,7 +366,7 @@ class TagEditDialog(QtWidgets.QDialog):
     tagCompleter.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
     self.mtLineEdit.setCompleter(tagCompleter)
     self.metaTagView.selectionModel().currentChanged.connect(self.metaTagSelected)
-    vRightLayout.addWidget(self.metaTagView)
+    uiUtils.addLabeledWidget("Metatags applied to tag", self.metaTagView , vRightLayout)
     vRightLayout.addWidget(self.mtLineEdit)
 
     self.tagController.tagChanged.connect(self.metaTagController.updateOnTag)
