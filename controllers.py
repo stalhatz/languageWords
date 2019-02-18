@@ -31,7 +31,7 @@ class DefinitionController(QAbstractListModel):
     return len(self.definitionsList)
   def data(self, index, role):
     if not index.isValid() or not (0<=index.row()<len(self.definitionsList)):  return QVariant()
-    if role==Qt.DisplayRole:      return self.definitionsList[index.row()]
+    if role==Qt.DisplayRole:      return self.definitionsList[index.row()].text
   def getSelectedDefinition(self):
     return self.definitionsList[self.selectedIndex.row()]
 

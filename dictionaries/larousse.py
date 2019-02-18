@@ -3,6 +3,7 @@ languages  = ["French"]
 dictUrls      = ["https://www.larousse.fr/dictionnaires/francais/"]
 
 from bs4 import BeautifulSoup
+from collections import namedtuple
 import unidecode
 
 def createUrl(word,requestLang):
@@ -13,8 +14,9 @@ def createUrl(word,requestLang):
 
 
 def getDefinitionsFromHtml(html):
+  Definition = namedtuple('definition', ('text', 'type'))
   definitionsList = []
   s = BeautifulSoup(html,"html.parser")
   for element in s.find_all("li",class_ = "DivisionDefinition"):
-    definitionsList.append(str(element.find(text=True, recursive=False)))
+    definitionsList.append(Definition(str(element.find(text=True, recursive=False)),"definition") )
   return definitionsList

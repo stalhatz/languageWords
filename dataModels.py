@@ -88,7 +88,7 @@ class DefinitionDataModel(QObject):
 
 
   @classmethod
-  def getInstance(cls,modulePath = "./dictionaries" , columns = ["text" , "definition", "timestamp" , "dictionary"]):
+  def getInstance(cls,modulePath = "./dictionaries" , columns = ["text" , "definition", "timestamp" , "dictionary","type"]):
     obj = cls()
     obj.version      = 0.03
     obj.session      = FuturesSession(max_workers=1)
@@ -104,8 +104,8 @@ class DefinitionDataModel(QObject):
   def definitionExists(self,word,definition):
     return self.definitionCondition(word,definition).any()
 
-  def addDefinition(self, word, definition, dictionary):
-    record = {"text" : word ,"definition":definition, "timestamp": pd.Timestamp.now() , "dictionary": dictionary}
+  def addDefinition(self, word, definition, dictionary,_type):
+    record = {"text" : word ,"definition":definition, "timestamp": pd.Timestamp.now() , "dictionary": dictionary , "type":_type}
     self.savedDefinitionsTable = self.savedDefinitionsTable.append(record, ignore_index = True)
   
   def getSavedDefinitions(self,word):
