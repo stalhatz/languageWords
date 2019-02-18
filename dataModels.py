@@ -1,8 +1,8 @@
 from importlib import import_module
 import pkgutil
-import dictionaries
 import os
-
+import importlib
+import sys
 from PyQt5.QtCore import (QObject,pyqtSignal,QUrl)
 import pandas as pd
 import pickle
@@ -124,9 +124,11 @@ class DefinitionDataModel(QObject):
         self.selectedDicts[name] = self.availableDicts[name]
     self.updateDictNames()
 
-  def findModules(self,directory):
+  def findModules(self,directory= None,packageName = "dictionaries"):
     availableDicts = {}
-    package = dictionaries
+    if directory is not None:
+      sys.path.insert(0,str(directory))
+    package  = importlib.import_module(packageName)
     prefix = package.__name__ + "."
     for importer, modname, ispkg in pkgutil.iter_modules(package.__path__, prefix):
       #print ("Found submodule %s (is a package: %s)" % (modname, ispkg))
