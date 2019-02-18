@@ -3,6 +3,13 @@ from ui_mainwindow import Ui_MainWindow
 from PyQt5.QtWidgets import (QApplication, QMainWindow)
 from PyQt5.QtCore import QTimer
 
+#TODO: [FEATURE_1] Scrape google news for extracts containing words
+#TODO: [FEATURE_1] Create categories for definitions (examples, links)
+#TODO: [FEATURE_2] Show word in bold when found in example
+#TODO: [FEATURE_0] Training mode where a category is selected and examples are shown for the user to fill the gaps.
+#TODO: [FEATURE_0] Use word embeddings to propose new words given a tag
+#TODO: [FEATURE_0] Use word embeddings to propose tags for new words
+
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='Process some integers.')
   parser.add_argument('-l', nargs='?', const='french_test_5.pkl', default=None)
