@@ -3,9 +3,9 @@ from ui_mainwindow import Ui_MainWindow
 from PyQt5.QtWidgets import (QApplication, QMainWindow)
 from PyQt5.QtCore import QTimer
 
-#TODO: [FEATURE_1] Scrape google news for extracts containing words
-#TODO: [FEATURE_1] Create categories for definitions (examples, links)
-#TODO: [FEATURE_2] Show word in bold when found in example
+#TODO: [FEATURE_2] Add custom (user provided) examples
+#TODO: [FEATURE_1] Add context menus(right click) to fluidify navigation and control
+#TODO: [FEATURE_2] Show word in bold when found in example (impossible currently without implementing the paint function of a delegate)
 #TODO: [FEATURE_0] Training mode where a category is selected and examples are shown for the user to fill the gaps.
 #TODO: [FEATURE_0] Use word embeddings to propose new words given a tag
 #TODO: [FEATURE_0] Use word embeddings to propose tags for new words
