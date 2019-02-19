@@ -168,6 +168,8 @@ class WordController(QAbstractListModel):
       view.dataChanged(self.createIndex(0,0) , self.createIndex(len(self.df_image.index) , 0))
     #self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.df_image.index) , 0))
   def updateDict(self,dictName):
+    if dictName == "":
+      return
     self.dict = dictName
     if self.currentIndex > 0:
       self.selected(self.createIndex(self.currentIndex, 0) , self.createIndex(0 , 0))

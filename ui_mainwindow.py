@@ -399,6 +399,7 @@ class Ui_MainWindow(QtCore.QObject):
   def updateDictNames(self,dictNames):
     self.dictSelect.clear()
     self.dictSelect.insertItems(0,dictNames)
+    
   # def showEditWordDialog(self,event):
 
   def eventFilter(self,_object, event):
