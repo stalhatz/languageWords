@@ -7,6 +7,8 @@ import pandas as pd
 from dataModels import DefinitionDataModel
 import unidecode
 
+from collections import Counter
+from operator import attrgetter
 # TODO : [FEATURE] Animation while loading using QMovie
 # TODO : [FEATURE] Enable help through tooltip messages
 # (Racing condition? Is the server blocking us?).
@@ -23,6 +25,7 @@ class DefinitionController(QAbstractListModel):
       self.setEnabledView.emit(False)
   def updateDefinition(self,definitionsList):
     self.definitionsList = definitionsList
+    self.sortDefList()
     self.setEnabledView.emit(True)
     self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.definitionsList) , 0))
   def selected(self, index , prevIndex):
@@ -31,9 +34,36 @@ class DefinitionController(QAbstractListModel):
     return len(self.definitionsList)
   def data(self, index, role):
     if not index.isValid() or not (0<=index.row()<len(self.definitionsList)):  return QVariant()
-    if role==Qt.DisplayRole:      return self.definitionsList[index.row()].text
+    if role==Qt.DisplayRole:  
+      if isinstance(self.definitionsList[index.row()] , str):
+        return self.definitionsList[index.row()].upper()
+      else:
+        return self.definitionsList[index.row()].text 
+  def flags(self,index):
+    flags = super(DefinitionController,self).flags(index)
+    if isinstance(self.definitionsList[index.row()] , str):
+      if flags & Qt.ItemIsEnabled != 0: # If is enabled
+        flags = flags ^ Qt.ItemIsEnabled
+      if flags & Qt.ItemIsSelectable != 0: # If is selectable
+        flags = flags ^ Qt.ItemIsSelectable
+    return flags
+
   def getSelectedDefinition(self):
     return self.definitionsList[self.selectedIndex.row()]
+  def sortDefList(self):
+    self.definitionsList.sort(key=attrgetter('type'))
+    positions = []
+    numTypes = 1
+    positions.append((0,self.definitionsList[0].type))
+    for i,element in enumerate(self.definitionsList):
+      if i>0:
+        if element.type != self.definitionsList[i-1].type:
+          positions.append((i+numTypes,element.type))
+          numTypes+=1
+    for position in positions:
+      self.definitionsList.insert(position[0] , position[1])
+
+    
 
 # TODO: [FEATURE] [LOW PRIORITY] unidecode filter and pandas Series to match string with accents / no accents
 # TODO: [FEATURE] [LOW PRIORITY] use > = < filters to filter tags with certain number of corresponding words
@@ -150,6 +180,8 @@ class WordController(QAbstractListModel):
       self.loadDefinition.emit(str(self.df_image.iloc[self.currentIndex,0]),self.dict , self.externalLoading)
   def getSelectedWord(self):
     return str(self.df_image.iloc[self.currentIndex,0])
+
+#TODO: Augment internal list with non-selectable elements ("INHERITED TAGS") to simplify indexing
 class ElementTagController(QAbstractListModel):
   dataChanged       = pyqtSignal(QModelIndex,QModelIndex)
   def __init__(self,tagModel):
@@ -159,7 +191,7 @@ class ElementTagController(QAbstractListModel):
     self.tagList  = []
     self.directTagList = []
     self.currentElement = None
-    self.spliterText = "------------Inherited Tags-----------"
+    self.spliterText = " INHERITED TAGS"
   def rowCount(self, modelIndex):
     return self.dataSize()
   def dataSize(self):
@@ -227,36 +259,67 @@ class ElementTagController(QAbstractListModel):
   def __len__(self):
     return len(self.tagList)
 
+#TODO: Merge with DefinitionController
 class SavedDefinitionsController(QAbstractListModel):
   dataChanged       = pyqtSignal(QModelIndex,QModelIndex)
   def __init__(self,defModel):
     super(SavedDefinitionsController,self).__init__()
     self.defModel = defModel
     self.currentIndex = -1
-    self.definitionsTable  = self.defModel.getSavedDefinitions("")
+    self.definitionsList  = []
     self.currentElement = None
   def rowCount(self, modelIndex):
-    return len(self.definitionsTable.index)
+    return len(self.definitionsList)
 
   def data(self, index, role):
-    if not index.isValid() or not (0<=index.row()<len(self.definitionsTable.index)):
+    if not index.isValid() or not (0<=index.row()<len(self.definitionsList)):  
       return QVariant()
-    if role==Qt.DisplayRole:
-      return self.definitionsTable.iloc[index.row(),:].loc["definition"]
+    if role==Qt.DisplayRole:  
+      if isinstance(self.definitionsList[index.row()] , str):
+        return self.definitionsList[index.row()].upper()
+      else:
+        return self.definitionsList[index.row()].definition 
+  
+  def flags(self,index):
+    flags = super(SavedDefinitionsController,self).flags(index)
+    if not index.isValid() or not (0<=index.row()<len(self.definitionsList)):  
+      return flags
+    if isinstance(self.definitionsList[index.row()] , str):
+      if flags & Qt.ItemIsEnabled != 0: # If is enabled
+        flags = flags ^ Qt.ItemIsEnabled
+      if flags & Qt.ItemIsSelectable != 0: # If is selectable
+        flags = flags ^ Qt.ItemIsSelectable
+    return flags
 
   def selected(self, index , prevIndex):
     self.currentIndex = index.row()
-    
 
   def updateOnWord(self,word):
     self.currentElement = word
     self.layoutAboutToBeChanged.emit()
     self.definitionsTable = self.defModel.getSavedDefinitions(word)
+    self.definitionsTable.sort_values(by=["type"] , inplace = True)
+    self.definitionsList  = [x for x in self.definitionsTable.itertuples()]
+    self.sortDefList()
     self.layoutChanged.emit()
 
   def update(self):
     self.updateOnWord(self.currentElement)
 
   def getSelectedDefinition(self):
-     selectedDefinition = self.definitionsTable.iloc[self.currentIndex,:].loc["definition"]
+     selectedDefinition = self.definitionsList[self.currentIndex].definition
      return selectedDefinition
+
+  def sortDefList(self):
+    if len(self.definitionsList) == 0:
+      return
+    positions = []
+    numTypes = 1
+    positions.append((0,self.definitionsList[0].type))
+    for i,element in enumerate(self.definitionsList):
+      if i>0:
+        if element.type != self.definitionsList[i-1].type:
+          positions.append((i+numTypes,element.type))
+          numTypes+=1
+    for position in positions:
+      self.definitionsList.insert(position[0] , position[1])

@@ -17,4 +17,6 @@ def getDefinitionsFromHtml(html):
   s = BeautifulSoup(html,"html.parser")
   for element in s.select("ol > li"):
     definitionsList.append(Definition(element.text.split("\n")[0] , "definition") )
+  for element in s.select("ol > li > ul > li"):
+    definitionsList.append(Definition(element.text.split("\n")[0] , "example") )
   return definitionsList

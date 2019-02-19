@@ -19,14 +19,20 @@ QListView {
     color: #C2C7CB;    
 }
 
+QListView::item:disabled{
+  background: #3B3B3B;
+  font-style: italic;
+  border: 0.5px solid #C2C7CB;
+}
+
 #definitionListView{
-  font-size: 20px; /*There is no support for responsive font size at the moment. Should be changed in runtime*/
+  font-size: 15px; /*There is no support for responsive font size at the moment. Should be changed in runtime*/
   alternate-background-color: #3B3B3B;
 }
 #definitionListView::item{
   padding-bottom: 4px; 
   padding-top: 4px; 
-  border-bottom: 2px solid #C2C7CB;
+  border-bottom: 0.5px solid #C2C7CB;
 }
 
 #definitionListView::disabled{
