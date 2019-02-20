@@ -106,6 +106,9 @@ class Ui_MainWindow(QtCore.QObject):
     self.savedDefinitionsView = QtWidgets.QListView(self.centralwidget)
     self.savedDefinitionsView.setObjectName("savedDefinitionsView")
     self.savedDefinitionsView.setWordWrap(True)
+    self.savedDefinitionsView.setEditTriggers(QtWidgets.QAbstractItemView.SelectedClicked)
+    self.savedDefinitionsView.itemDelegate().commitData.connect(self.replaceSavedDefinition)
+
     uiUtils.addLabeledWidget("Saved Definitions", self.savedDefinitionsView,self.horizontalLayout)
 
     self.tabwidget = QtWidgets.QTabWidget(self.centralwidget)
@@ -427,16 +430,23 @@ class Ui_MainWindow(QtCore.QObject):
 
   def saveDefinition(self):
     definition  = self.defController.getSelectedDefinition()
+    self._saveDefinition(definition)
+
+  def _saveDefinition(self,definition):
     word        = self.wordController.getSelectedWord()
     if not self.defDataModel.definitionExists(word,definition.text):
       dictionary  = self.dictSelect.currentText()
       self.defDataModel.addDefinition(word,definition.text,dictionary,definition.type)
       self.savedDefController.update()
+
   
-  def removeDefinition(self):
+  def _removeSelectedDefinition(self):
     definition  = self.savedDefController.getSelectedDefinition()
     word        = self.wordController.getSelectedWord()
     self.defDataModel.removeDefinition(word,definition)
+
+  def removeDefinition(self):
+    self._removeSelectedDefinition()
     self.savedDefController.update()
   
   def contextMenuRequested(self,point):
@@ -457,5 +467,12 @@ class Ui_MainWindow(QtCore.QObject):
     self._removeWord(word,tags)
     self.wordController.updateOnTag(self.tagController.getSelectedTag())
     self.tagController.updateTags()
-    
+  
+  def replaceSavedDefinition(self,widget):
+    newDefinition = widget.text()
+    word = self.wordController.getSelectedWord()
+    definition  = self.savedDefController.getSelectedDefinition()
+    self.defDataModel.replaceDefinition(word,definition,newDefinition)
+    self.savedDefController.update()
+
 from PyQt5 import QtWebEngineWidgets 

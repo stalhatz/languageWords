@@ -110,6 +110,15 @@ class DefinitionDataModel(QObject):
   
   def getSavedDefinitions(self,word):
     return self.savedDefinitionsTable[ self.savedDefinitionsTable.text == word]
+  
+  def getSavedDefinition(self,word,definition):
+    condition = self.definitionCondition(word,definition)
+    return self.savedDefinitionsTable[condition]
+
+  def replaceDefinition(self,word,oldDefinition,newDefinition):
+    condition = self.definitionCondition(word,oldDefinition)
+    self.savedDefinitionsTable.loc[condition,"definition"] = newDefinition
+    print(self.savedDefinitionsTable[condition])
 
   def removeDefinition(self,word,definition):
     condition = self.definitionCondition(word,definition)
@@ -167,6 +176,7 @@ class DefinitionDataModel(QObject):
       self.lastRequest = future
       self.showMessage.emit("Loading from " + url)
 
+  #This is run by a thread other the main one. Though interpreter lock is in place, we should make sure there are no race conditions...
   def _load(self,url,dictName,future):
     if url != self.url:
       future.cancel() #Should cancel itself when issuing the next request as max_workers = 1

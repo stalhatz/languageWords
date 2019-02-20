@@ -276,21 +276,31 @@ class SavedDefinitionsController(QAbstractListModel):
   def data(self, index, role):
     if not index.isValid() or not (0<=index.row()<len(self.definitionsList)):  
       return QVariant()
-    if role==Qt.DisplayRole:  
+    if role==Qt.DisplayRole:
       if isinstance(self.definitionsList[index.row()] , str):
         return self.definitionsList[index.row()].upper()
       else:
-        return self.definitionsList[index.row()].definition 
-  
+        return self.definitionsList[index.row()].definition
+    if role==Qt.EditRole:
+      if not isinstance(self.definitionsList[index.row()] , str):
+        a  = self.definitionsList[index.row()].definition
+        return a
+
   def flags(self,index):
     flags = super(SavedDefinitionsController,self).flags(index)
     if not index.isValid() or not (0<=index.row()<len(self.definitionsList)):  
       return flags
+    
     if isinstance(self.definitionsList[index.row()] , str):
-      if flags & Qt.ItemIsEnabled != 0: # If is enabled
+      if flags & Qt.ItemIsEnabled != (flags & 0) : # If is enabled
         flags = flags ^ Qt.ItemIsEnabled
-      if flags & Qt.ItemIsSelectable != 0: # If is selectable
+      if flags & Qt.ItemIsSelectable != (flags & 0): # If is selectable
         flags = flags ^ Qt.ItemIsSelectable
+    else:
+      if flags & Qt.ItemIsEditable == (flags & 0): # If is not editable
+        flags = flags ^ Qt.ItemIsEditable
+        
+
     return flags
 
   def selected(self, index , prevIndex):
