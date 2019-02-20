@@ -129,12 +129,9 @@ class Ui_MainWindow(QtCore.QObject):
     self.menubar.setObjectName("menubar")
     self.menuFile = QtWidgets.QMenu(self.menubar)
     self.menuFile.setObjectName("menuFile")
-
     self.menuFile.addAction(self.actionNew)
     self.menuFile.addAction(self.actionOpen)
     self.menuFile.addAction(self.actionSave)
-
-
     self.menubar.addAction(self.menuFile.menuAction())
     MainWindow.setMenuBar(self.menubar)
   def addStatusBar(self,MainWindow):
@@ -149,12 +146,12 @@ class Ui_MainWindow(QtCore.QObject):
     self.wordController     = WordController(wordDataModel,self.tagDataModel)
     self.tagController      = TagController(self.tagDataModel)
     self.filterController   = QtCore.QSortFilterProxyModel()
-    self.filterController.setSourceModel(self.tagController)
-    self.filterController.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
     self.defController      = DefinitionController()
     self.elementController  = ElementTagController(tagDataModel)
     self.savedDefController = SavedDefinitionsController(defDataModel)
     #Set signals/slots views to controllers
+    self.filterController.setSourceModel(self.tagController)
+    self.filterController.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
     self.savedDefinitionsView.setModel(self.savedDefController)
     self.savedDefinitionsView.doubleClicked.connect(self.removeDefinition)
     self.savedDefinitionsView.selectionModel().currentChanged.connect(self.savedDefController.selected)
@@ -166,36 +163,38 @@ class Ui_MainWindow(QtCore.QObject):
     self.tagview.setModel(self.filterController)
     self.tagview.selectionModel().currentChanged.connect(self.tagController.selected)
     self.wordview.setModel(self.wordController)
-    
     self.wordController.addView(self.wordview)
     
-    self.wordview.selectionModel().currentChanged.connect(self.wordController.selected)
+    #View->Ui signals
     self.wordview.customContextMenuRequested.connect(self.contextMenuRequested)
     self.wordview.selectionModel().currentChanged.connect(self.enableEditWordButton)
+    
+    #Controller->Ui signals
+    self.wordController.clearSelection.connect(self.disableEditWordButton)
+    
+    #View->Controller signals
+    self.wordview.selectionModel().currentChanged.connect(self.wordController.selected)
     self.wordController.currentChanged.connect(self.elementController.updateOnWord)
     self.wordController.currentChanged.connect(self.savedDefController.updateOnWord)
-    
-    #self.wordview.selectionModel().currentChanged.connect(self.setEnabledEditButton.selected)
-    
     self.dictSelect.currentTextChanged.connect(self.wordController.updateDict)
     self.tagFilter.textChanged.connect(self.filterController.setFilterFixedString)
-    #InterController signals
+    self.tabwidget.currentChanged.connect(self.wordController.setDefinitionLoadingSource)
+
+    #Controller->Controller signals
     self.tagController.tagChanged.connect(self.wordController.updateOnTag)
-    #Connect signals to tab views
-    #self.wordController.dataChanged.connect(self.wordview.dataChanged)
-    #self.wordController.clearSelection.connect(self.wordview.clearSelection)
-    self.wordController.clearSelection.connect(self.disableEditWordButton)
+
+    #Controller->View signals
     self.defController.dataChanged.connect(self.definitionListView.dataChanged)
     self.tagController.dataChanged.connect(self.tagview.dataChanged)
     self.defController.setEnabledView.connect(self.definitionListView.setEnabled)
-    self.tabwidget.currentChanged.connect(self.wordController.setDefinitionLoadingSource)
+
     #Connect signals to data models
     self.defDataModel.dictNamesUpdated.connect(self.updateDictNames)
-    self.wordController.loadDefinition.connect(defDataModel.load)
+    self.wordController.loadDefinition.connect(self.defDataModel.load)
     self.wordController.loadDefinition.connect(self.defController.loadingInitiated)
-    defDataModel.definitionsUpdated.connect(self.defController.updateDefinition)
-    defDataModel.externalPageLoad.connect(self.webView.load)
-    defDataModel.showMessage.connect(self.statusBar.showMessage)
+    self.defDataModel.definitionsUpdated.connect(self.defController.updateDefinition)
+    self.defDataModel.externalPageLoad.connect(self.webView.load)
+    self.defDataModel.showMessage.connect(self.statusBar.showMessage)
 
     self.dictSelect.insertItems(0,defDataModel.getDictNames())
 
@@ -254,8 +253,7 @@ class Ui_MainWindow(QtCore.QObject):
     dialogCode = self.editWordDialog.exec()
     if dialogCode == QtWidgets.QDialog.Accepted:
       #Remove word and tags
-      self.tagDataModel.removeTagging(word,tags)
-      self.wordDataModel.removeWord(word)
+      self._removeWord(word,tags)
       #Add new word and tags
       editedWord = self.editWordDialog.getWord()
       if editedWord != "":
@@ -449,8 +447,15 @@ class Ui_MainWindow(QtCore.QObject):
       contextMenu.addAction(self.removeWordAction)
       contextMenu.exec(self.wordview.mapToGlobal(point))
 
+  def _removeWord(self,word,tags):
+    self.tagDataModel.removeTagging(word,tags)
+    self.wordDataModel.removeWord(word)
+
   def removeWord(self):
-    self.wordDataModel.removeWord(self.wordController.getSelectedWord())
+    word = self.wordController.getSelectedWord()
+    tags = self.tagDataModel.getTagsFromIndex(word)
+    self._removeWord(word,tags)
     self.wordController.updateOnTag(self.tagController.getSelectedTag())
+    self.tagController.updateTags()
     
 from PyQt5 import QtWebEngineWidgets 
