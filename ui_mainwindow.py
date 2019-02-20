@@ -60,6 +60,8 @@ class Ui_MainWindow(QtCore.QObject):
     self.wordview = QtWidgets.QListView(self.centralwidget)
     self.wordview.setMaximumSize(QtCore.QSize(400, 400))
     self.wordview.setObjectName("wordview")
+    self.wordview.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+    
     self.tagview = QtWidgets.QListView(self.centralwidget)
     self.tagview.setMaximumSize(QtCore.QSize(400, 400))
     self.tagview.setObjectName("tagview")
@@ -157,9 +159,11 @@ class Ui_MainWindow(QtCore.QObject):
     self.tagview.setModel(self.filterController)
     self.tagview.selectionModel().currentChanged.connect(self.tagController.selected)
     self.wordview.setModel(self.wordController)
+    
     self.wordController.addView(self.wordview)
     
     self.wordview.selectionModel().currentChanged.connect(self.wordController.selected)
+    self.wordview.customContextMenuRequested.connect(self.contextMenuRequested)
     self.wordview.selectionModel().currentChanged.connect(self.enableEditWordButton)
     self.wordController.currentChanged.connect(self.elementController.updateOnWord)
     self.wordController.currentChanged.connect(self.savedDefController.updateOnWord)
@@ -428,5 +432,20 @@ class Ui_MainWindow(QtCore.QObject):
     word        = self.wordController.getSelectedWord()
     self.defDataModel.removeDefinition(word,definition)
     self.savedDefController.update()
+  
+  def contextMenuRequested(self,point):
+    index = self.wordview.indexAt(point).row()
+    print(index)
+    if (index >= 0):
+      contextMenu = QtWidgets.QMenu ("Context menu", self.wordview)
+      action1 = QtWidgets.QAction ("Remove Word", self.wordview)
+      action1.setObjectName("removeWordAction")
+      action1.triggered.connect(self.removeWord)
+      contextMenu.addAction(action1)
+      contextMenu.exec(self.wordview.mapToGlobal(point))
 
+  def removeWord(self):
+    self.wordDataModel.removeWord(self.wordController.getSelectedWord())
+    self.wordController.updateOnTag(self.tagController.getSelectedTag())
+    
 from PyQt5 import QtWebEngineWidgets 
