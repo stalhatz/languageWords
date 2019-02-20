@@ -11,6 +11,26 @@ import uiUtils
 #TODO : [FEATURE] Store information (definitions / examples) provided in the definitionsModel: Copy items from definitions to a per word structure. In this way we can better contextualize each word with definitions that seem pertinant to the user.
 #TODO : [UI] Move tabs to the right/left of QTabWidget with horizontal text. Calling setTabPosition(QtWidgets.QTabWidget.West) produces vertical text
 class Ui_MainWindow(QtCore.QObject):
+  def defineActions(self):
+    self.actionNew = QtWidgets.QAction(self.mainWindow)
+    self.actionNew.setObjectName("actionNew")
+    self.actionNew.triggered.connect(self.newProject)
+    self.actionNew.setShortcut("Ctrl+N")
+
+    self.actionOpen = QtWidgets.QAction(self.mainWindow)
+    self.actionOpen.setObjectName("actionOpen")
+    self.actionOpen.triggered.connect(self.openFile)
+    self.actionOpen.setShortcut("Ctrl+O")
+
+    self.actionSave = QtWidgets.QAction(self.mainWindow)
+    self.actionSave.setObjectName("actionSave")
+    self.actionSave.triggered.connect(self.saveFile)
+    self.actionSave.setShortcut("Ctrl+S")
+
+    self.removeWordAction = QtWidgets.QAction ("Remove Word", self.mainWindow)
+    self.removeWordAction.setObjectName("removeWordAction")
+    self.removeWordAction.triggered.connect(self.removeWord)
+
   def addTopButtons(self):
     self.buttonHorizontalLayout = QtWidgets.QHBoxLayout()
     self.buttonHorizontalLayout.setObjectName("buttonHorizontalLayout")
@@ -110,23 +130,10 @@ class Ui_MainWindow(QtCore.QObject):
     self.menuFile = QtWidgets.QMenu(self.menubar)
     self.menuFile.setObjectName("menuFile")
 
-    self.actionNew = QtWidgets.QAction(MainWindow)
-    self.actionNew.setObjectName("actionNew")
     self.menuFile.addAction(self.actionNew)
-    self.actionNew.triggered.connect(self.newProject)
-    self.actionNew.setShortcut("Ctrl+N")
-
-    self.actionOpen = QtWidgets.QAction(MainWindow)
-    self.actionOpen.setObjectName("actionOpen")
     self.menuFile.addAction(self.actionOpen)
-    self.actionOpen.triggered.connect(self.openFile)
-    self.actionOpen.setShortcut("Ctrl+O")
-
-    self.actionSave = QtWidgets.QAction(MainWindow)
-    self.actionSave.setObjectName("actionSave")
     self.menuFile.addAction(self.actionSave)
-    self.actionSave.triggered.connect(self.saveFile)
-    self.actionSave.setShortcut("Ctrl+S")
+
 
     self.menubar.addAction(self.menuFile.menuAction())
     MainWindow.setMenuBar(self.menubar)
@@ -205,6 +212,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.centralwidget.setObjectName("centralwidget")
     self.outerVerticalLayout = QtWidgets.QVBoxLayout(self.centralwidget)
     self.outerVerticalLayout.setObjectName("outerVerticalLayout")
+    self.defineActions()
     self.addTopButtons()
     self.addListViews()
     MainWindow.setCentralWidget(self.centralwidget)
@@ -438,10 +446,7 @@ class Ui_MainWindow(QtCore.QObject):
     print(index)
     if (index >= 0):
       contextMenu = QtWidgets.QMenu ("Context menu", self.wordview)
-      action1 = QtWidgets.QAction ("Remove Word", self.wordview)
-      action1.setObjectName("removeWordAction")
-      action1.triggered.connect(self.removeWord)
-      contextMenu.addAction(action1)
+      contextMenu.addAction(self.removeWordAction)
       contextMenu.exec(self.wordview.mapToGlobal(point))
 
   def removeWord(self):
