@@ -9,6 +9,8 @@ import unidecode
 
 from collections import Counter
 from operator import attrgetter
+from collections import namedtuple
+
 # TODO : [FEATURE] Animation while loading using QMovie
 # TODO : [FEATURE] Enable help through tooltip messages
 # (Racing condition? Is the server blocking us?).
@@ -181,7 +183,10 @@ class WordController(QAbstractListModel):
     if self.currentIndex >= 0:
       self.loadDefinition.emit(str(self.df_image.iloc[self.currentIndex,0]),self.dict , self.externalLoading)
   def getSelectedWord(self):
-    return str(self.df_image.iloc[self.currentIndex,0])
+    if self.currentIndex > 0:
+      return str(self.df_image.iloc[self.currentIndex,0])
+    else:
+      return None
 
 #TODO: Augment internal list with non-selectable elements ("INHERITED TAGS") to simplify indexing
 class ElementTagController(QAbstractListModel):
@@ -299,8 +304,6 @@ class SavedDefinitionsController(QAbstractListModel):
     else:
       if flags & Qt.ItemIsEditable == (flags & 0): # If is not editable
         flags = flags ^ Qt.ItemIsEditable
-        
-
     return flags
 
   def selected(self, index , prevIndex):
@@ -319,7 +322,7 @@ class SavedDefinitionsController(QAbstractListModel):
     self.updateOnWord(self.currentElement)
 
   def getSelectedDefinition(self):
-     selectedDefinition = self.definitionsList[self.currentIndex].definition
+     selectedDefinition = self.definitionsList[self.currentIndex]
      return selectedDefinition
 
   def sortDefList(self):
@@ -335,3 +338,18 @@ class SavedDefinitionsController(QAbstractListModel):
           numTypes+=1
     for position in positions:
       self.definitionsList.insert(position[0] , position[1])
+  
+  def addDefinition(self):
+    self.layoutAboutToBeChanged.emit()
+    Definition = namedtuple('definition', ('definition', 'type'))
+    self.definitionsList.append(Definition("","_newUserDefinition"))
+    #self.sortDefList()
+    self.layoutChanged.emit()
+    return self.createIndex(len(self.definitionsList) - 1,0)
+  
+  def deleteTmpDefinition(self):
+    for d in self.definitionsList:
+      if not isinstance(d , str):
+        if d.type == "_newUserDefinition":
+          self.definitionsList.remove(d)
+          break

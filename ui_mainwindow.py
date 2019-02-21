@@ -31,6 +31,15 @@ class Ui_MainWindow(QtCore.QObject):
     self.removeWordAction.setObjectName("removeWordAction")
     self.removeWordAction.triggered.connect(self.removeWord)
 
+    self.addDefinitionAction = QtWidgets.QAction ("Add Custom Definition", self.mainWindow)
+    self.addDefinitionAction.setObjectName("addDefinitionAction")
+    self.addDefinitionAction.triggered.connect(self.addDefinition)
+
+    self.removeDefinitionAction = QtWidgets.QAction ("Remove Definition", self.mainWindow)
+    self.removeDefinitionAction.setObjectName("removeDefinitionAction")
+    self.removeDefinitionAction.triggered.connect(self.removeDefinition)
+
+
   def addTopButtons(self):
     self.buttonHorizontalLayout = QtWidgets.QHBoxLayout()
     self.buttonHorizontalLayout.setObjectName("buttonHorizontalLayout")
@@ -80,7 +89,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.wordview = QtWidgets.QListView(self.centralwidget)
     self.wordview.setMaximumSize(QtCore.QSize(400, 400))
     self.wordview.setObjectName("wordview")
-    self.wordview.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+    
     
     self.tagview = QtWidgets.QListView(self.centralwidget)
     self.tagview.setMaximumSize(QtCore.QSize(400, 400))
@@ -107,7 +116,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.savedDefinitionsView.setObjectName("savedDefinitionsView")
     self.savedDefinitionsView.setWordWrap(True)
     self.savedDefinitionsView.setEditTriggers(QtWidgets.QAbstractItemView.SelectedClicked)
-    self.savedDefinitionsView.itemDelegate().commitData.connect(self.replaceSavedDefinition)
+    self.savedDefinitionsView.itemDelegate().commitData.connect(self.handleEditedDefinition)
 
     uiUtils.addLabeledWidget("Saved Definitions", self.savedDefinitionsView,self.horizontalLayout)
 
@@ -169,9 +178,11 @@ class Ui_MainWindow(QtCore.QObject):
     self.wordController.addView(self.wordview)
     
     #View->Ui signals
-    self.wordview.customContextMenuRequested.connect(self.contextMenuRequested)
+    self.wordview.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+    self.wordview.customContextMenuRequested.connect(self.wordViewContextMenuRequested)
     self.wordview.selectionModel().currentChanged.connect(self.enableEditWordButton)
-    
+    self.savedDefinitionsView.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+    self.savedDefinitionsView.customContextMenuRequested.connect(self.savedDefViewContextMenuRequested)
     #Controller->Ui signals
     self.wordController.clearSelection.connect(self.disableEditWordButton)
     
@@ -430,18 +441,19 @@ class Ui_MainWindow(QtCore.QObject):
 
   def saveDefinition(self):
     definition  = self.defController.getSelectedDefinition()
-    self._saveDefinition(definition)
-
-  def _saveDefinition(self,definition):
     word        = self.wordController.getSelectedWord()
     if not self.defDataModel.definitionExists(word,definition.text):
-      dictionary  = self.dictSelect.currentText()
-      self.defDataModel.addDefinition(word,definition.text,dictionary,definition.type)
-      self.savedDefController.update()
+      self._saveDefinition(definition.text,definition.type,word)
+    self.savedDefController.update()
+
+  def _saveDefinition(self,definitionText,definitionType,word):
+    dictionary  = self.dictSelect.currentText()
+    self.defDataModel.addDefinition(word,definitionText,dictionary,definitionType)
+      
 
   
   def _removeSelectedDefinition(self):
-    definition  = self.savedDefController.getSelectedDefinition()
+    definition  = self.savedDefController.getSelectedDefinition().definition
     word        = self.wordController.getSelectedWord()
     self.defDataModel.removeDefinition(word,definition)
 
@@ -449,9 +461,18 @@ class Ui_MainWindow(QtCore.QObject):
     self._removeSelectedDefinition()
     self.savedDefController.update()
   
-  def contextMenuRequested(self,point):
+  def savedDefViewContextMenuRequested(self,point):
+    if self.wordController.getSelectedWord() is not None:
+      index = self.savedDefinitionsView.indexAt(point).row()
+      contextMenu = QtWidgets.QMenu ("Context menu", self.savedDefinitionsView)
+      contextMenu.addAction(self.addDefinitionAction)
+      if (index >= 0):
+        contextMenu.addAction(self.removeDefinitionAction)
+      contextMenu.exec(self.savedDefinitionsView.mapToGlobal(point))
+
+  def wordViewContextMenuRequested(self,point):
+    print("wordViewContextMenuRequested")
     index = self.wordview.indexAt(point).row()
-    print(index)
     if (index >= 0):
       contextMenu = QtWidgets.QMenu ("Context menu", self.wordview)
       contextMenu.addAction(self.removeWordAction)
@@ -468,11 +489,22 @@ class Ui_MainWindow(QtCore.QObject):
     self.wordController.updateOnTag(self.tagController.getSelectedTag())
     self.tagController.updateTags()
   
-  def replaceSavedDefinition(self,widget):
+  def handleEditedDefinition(self,widget):
+    definition  = self.savedDefController.getSelectedDefinition()
     newDefinition = widget.text()
     word = self.wordController.getSelectedWord()
-    definition  = self.savedDefController.getSelectedDefinition()
-    self.defDataModel.replaceDefinition(word,definition,newDefinition)
-    self.savedDefController.update()
+    if definition.type == "_newUserDefinition":  #Dont'replace, add to the model
+      self._saveDefinition(newDefinition,"User Definition", word)
+      self.savedDefController.deleteTmpDefinition()
+    else:
+      self.defDataModel.replaceDefinition(word,definition,newDefinition)
+    self.savedDefController.updateOnWord(word)
+  
+  def addDefinition(self):
+    index = self.savedDefController.addDefinition()
+    self.savedDefinitionsView.setCurrentIndex(index)
+    self.savedDefinitionsView.edit(index)
+
+
 
 from PyQt5 import QtWebEngineWidgets 
