@@ -74,6 +74,7 @@ class WordDialog(QtWidgets.QDialog):
 
     self.wLineEdit = QtWidgets.QLineEdit(self)
     self.wLineEdit.setMaximumSize(QtCore.QSize(400, 25))
+    self.wLineEdit.setFocus()
     if self.dialogType == self.CREATE_DIALOG:
       self.wLineEdit.setPlaceholderText("Enter a new word")
     if self.dialogType == self.EDIT_DIALOG:
