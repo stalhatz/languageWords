@@ -53,17 +53,18 @@ class DefinitionController(QAbstractListModel):
   def getSelectedDefinition(self):
     return self.definitionsList[self.selectedIndex.row()]
   def sortDefList(self):
-    self.definitionsList.sort(key=attrgetter('type'))
-    positions = []
-    numTypes = 1
-    positions.append((0,self.definitionsList[0].type))
-    for i,element in enumerate(self.definitionsList):
-      if i>0:
-        if element.type != self.definitionsList[i-1].type:
-          positions.append((i+numTypes,element.type))
-          numTypes+=1
-    for position in positions:
-      self.definitionsList.insert(position[0] , position[1])
+    if len(self.definitionsList) > 0: 
+      self.definitionsList.sort(key=attrgetter('type'))
+      positions = []
+      numTypes = 1
+      positions.append((0,self.definitionsList[0].type))
+      for i,element in enumerate(self.definitionsList):
+        if i>0:
+          if element.type != self.definitionsList[i-1].type:
+            positions.append((i+numTypes,element.type))
+            numTypes+=1
+      for position in positions:
+        self.definitionsList.insert(position[0] , position[1])
 
     
 
@@ -183,7 +184,7 @@ class WordController(QAbstractListModel):
     if self.currentIndex >= 0:
       self.loadDefinition.emit(str(self.df_image.iloc[self.currentIndex,0]),self.dict , self.externalLoading)
   def getSelectedWord(self):
-    if self.currentIndex > 0:
+    if self.currentIndex >= 0:
       return str(self.df_image.iloc[self.currentIndex,0])
     else:
       return None
@@ -312,7 +313,7 @@ class SavedDefinitionsController(QAbstractListModel):
   def updateOnWord(self,word):
     self.currentElement = word
     self.layoutAboutToBeChanged.emit()
-    self.definitionsTable = self.defModel.getSavedDefinitions(word)
+    self.definitionsTable = self.defModel.getSavedDefinitions(word).copy(True)
     self.definitionsTable.sort_values(by=["type"] , inplace = True)
     self.definitionsList  = [x for x in self.definitionsTable.itertuples()]
     self.sortDefList()
