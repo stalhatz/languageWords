@@ -14,7 +14,7 @@ def createUrl(word,requestLang):
 
 
 def getDefinitionsFromHtml(html):
-  Definition = namedtuple('definition', ('text', 'type'))
+  Definition = namedtuple('definition', ('definition', 'type'))
   definitionsList = []
   s = BeautifulSoup(html,"html.parser")
   for element in s.find_all("li",class_ = "DivisionDefinition"):

@@ -11,7 +11,7 @@ def createUrl(word,requestLang):
   raise ValueError("Could not find " + requestLang + " in " + name + "'s language list. Available langs : " + str(languages) )
 
 def getDefinitionsFromHtml(html):
-  Definition = namedtuple('definition', ('text', 'type'))
+  Definition = namedtuple('definition', ('definition', 'type'))
   definitionsList = []
   titles = []
   texts  = []

@@ -40,7 +40,7 @@ class DefinitionController(QAbstractListModel):
       if isinstance(self.definitionsList[index.row()] , str):
         return self.definitionsList[index.row()].upper()
       else:
-        return self.definitionsList[index.row()].text 
+        return self.definitionsList[index.row()].definition 
   def flags(self,index):
     flags = super(DefinitionController,self).flags(index)
     if isinstance(self.definitionsList[index.row()] , str):

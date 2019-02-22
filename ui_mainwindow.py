@@ -442,8 +442,8 @@ class Ui_MainWindow(QtCore.QObject):
   def saveDefinition(self):
     definition  = self.defController.getSelectedDefinition()
     word        = self.wordController.getSelectedWord()
-    if not self.defDataModel.definitionExists(word,definition.text):
-      self._saveDefinition(definition.text,definition.type,word)
+    if not self.defDataModel.definitionExists(word,definition.definition):
+      self._saveDefinition(definition.definition,definition.type,word)
     self.savedDefController.update()
 
   def _saveDefinition(self,definitionText,definitionType,word):
@@ -497,7 +497,7 @@ class Ui_MainWindow(QtCore.QObject):
       self._saveDefinition(newDefinition,"User Definition", word)
       self.savedDefController.deleteTmpDefinition()
     else:
-      self.defDataModel.replaceDefinition(word,definition,newDefinition)
+      self.defDataModel.replaceDefinition(word,definition.definition,newDefinition)
     self.savedDefController.updateOnWord(word)
   
   def addDefinition(self):
