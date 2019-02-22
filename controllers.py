@@ -174,7 +174,7 @@ class WordController(QAbstractListModel):
     if dictName == "":
       return
     self.dict = dictName
-    if self.currentIndex > 0:
+    if self.currentIndex >= 0:
       self.selected(self.createIndex(self.currentIndex, 0) , self.createIndex(0 , 0))
   def setDefinitionLoadingSource(self,widgetID):
     if widgetID == 1:
