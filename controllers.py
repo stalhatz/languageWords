@@ -43,6 +43,8 @@ class DefinitionController(QAbstractListModel):
         return self.definitionsList[index.row()].definition 
   def flags(self,index):
     flags = super(DefinitionController,self).flags(index)
+    if not index.isValid() or not (0<=index.row()<len(self.definitionsList)):  
+      return flags
     if isinstance(self.definitionsList[index.row()] , str):
       if flags & Qt.ItemIsEnabled != 0: # If is enabled
         flags = flags ^ Qt.ItemIsEnabled
