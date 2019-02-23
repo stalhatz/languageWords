@@ -22,10 +22,16 @@ class Ui_MainWindow(QtCore.QObject):
     self.actionOpen.triggered.connect(self.openFile)
     self.actionOpen.setShortcut("Ctrl+O")
 
+    self.actionSaveAs = QtWidgets.QAction(self.mainWindow)
+    self.actionSaveAs.setObjectName("actionSave")
+    self.actionSaveAs.triggered.connect(self.saveFileAs)
+    self.actionSaveAs.setShortcut("Ctrl+Shift+S")
+
     self.actionSave = QtWidgets.QAction(self.mainWindow)
     self.actionSave.setObjectName("actionSave")
     self.actionSave.triggered.connect(self.saveFile)
     self.actionSave.setShortcut("Ctrl+S")
+    self.actionSave.setEnabled(False)
 
     self.removeWordAction = QtWidgets.QAction ("Remove Word", self.mainWindow)
     self.removeWordAction.setObjectName("removeWordAction")
@@ -144,6 +150,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.menuFile.addAction(self.actionNew)
     self.menuFile.addAction(self.actionOpen)
     self.menuFile.addAction(self.actionSave)
+    self.menuFile.addAction(self.actionSaveAs)
     self.menubar.addAction(self.menuFile.menuAction())
     MainWindow.setMenuBar(self.menubar)
   def addStatusBar(self,MainWindow):
@@ -239,7 +246,8 @@ class Ui_MainWindow(QtCore.QObject):
     self.menuFile.setTitle(_translate("MainWindow", "Fi&le"))
     self.actionNew.setText(_translate("MainWindow", "New project"))
     self.actionOpen.setText(_translate("MainWindow", "Open..."))
-    self.actionSave.setText(_translate("MainWindow", "Save..."))
+    self.actionSaveAs.setText(_translate("MainWindow", "Save As..."))
+    self.actionSave.setText(_translate("MainWindow", "Save"))
   
   def showAddWordDialog(self,event):
     self.addWordDialog = WordDialog(self.centralwidget,self.wordDataModel,self.tagDataModel,self.defDataModel,self.dictionary,
@@ -403,27 +411,37 @@ class Ui_MainWindow(QtCore.QObject):
       Ui_MainWindow.fromFile(fileName,None,self)
       self.setWindowTitle()
       self.tagController.updateTags()
+      self.projectFile = fileName
+      self.actionSave.setEnabled(True)
       if self.welcomeDialog.isVisible():
         self.welcomeDialog.loadedFile = True
         self.welcomeDialog.accept()
   def newProject(self):
+    self.projectFile = None
+    self.actionSave.setEnabled(False)
     pass
 
   def setWindowTitle(self):
     self.mainWindow.setWindowTitle(self.projectName + " - " + "(" + str(self.language) + ")" + " - " + str(self.programName) )
-
+  
   def saveFile(self):
-    fileName,fileType = QtWidgets.QFileDialog.getSaveFileName(self.centralwidget,"Save File",".","Pickle Files (*.pkl)")
-    if fileName == "":
+    self.saveFileAs(False, self.projectFile)
+
+  def saveFileAs(self , checked, fileName = None):
+    if fileName is None:
+      fileName,fileType = QtWidgets.QFileDialog.getSaveFileName(self.centralwidget,"Save File",".","Pickle Files (*.pkl)")
+    if fileName == "" or fileName is None:
       return
     else:
-      with open(fileName, 'wb') as output:
+      fName = fileName
+      with open(fName, 'wb') as output:
         pickle.dump(self.version, output, pickle.HIGHEST_PROTOCOL) #Version
         pickle.dump(self.projectName, output, pickle.HIGHEST_PROTOCOL) #ProjectName
         pickle.dump(self.language, output , pickle.HIGHEST_PROTOCOL) #Language
         self.wordDataModel.toFile(output)
         self.tagDataModel.toFile(output)
         self.defDataModel.toFile(output)
+        self.statusBar.showMessage("Saved to "+ fileName)
 
   def updateDictNames(self,dictNames):
     self.dictSelect.clear()
