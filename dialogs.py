@@ -299,7 +299,6 @@ class DictionaryDialog(QtWidgets.QDialog):
   def validateSelection(self, index , prevIndex):
     self._validateSelection(index.row())
   def _validateSelection(self, selectedID):
-    self.selectedID = selectedID
     dictName = self.aController.dictionaries[selectedID].name
     if any(dictName == _dict.name for _dict in self.sController.dictionaries):
       self.addDictButton.setEnabled(False)
@@ -309,7 +308,7 @@ class DictionaryDialog(QtWidgets.QDialog):
     self.sController.removeSelectedDict()
     if len(self.sController.dictionaries) == 0:
       self.removeDictButton.setEnabled(False)
-    self._validateSelection(self.selectedID)
+    self._validateSelection(self.aDictTableView.currentIndex().row())
 
 class TagEditDialog(QtWidgets.QDialog):
   def __init__(self ,parent , wordDataModel , tagDataModel):
