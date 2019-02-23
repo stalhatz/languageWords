@@ -122,7 +122,16 @@ class TagController(QAbstractListModel):
     #self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.tagIndex.index) , 0))
     selectedTag = self.getTag(self.selectedIndex)
     self.tagChanged.emit(  selectedTag )
-    
+
+  def getTagIndex(self,tag):
+    condition = self.tagIndex.tag == tag
+    result    = self.tagIndex[condition]
+    if result.empty:
+      return QModelIndex()
+    else:
+      index =  int( result.index.values[0] )
+      return self.createIndex(index,0)
+
 #FIXME: Load word definition when shown on screen not only when selected
 class WordController(QAbstractListModel):
   dataChanged       = pyqtSignal(QModelIndex,QModelIndex)
@@ -188,6 +197,15 @@ class WordController(QAbstractListModel):
       return str(self.df_image.iloc[self.currentIndex,0])
     else:
       return None
+  def getWordIndex(self,word):
+    condition = self.df_image.text == word
+    result    = self.df_image[condition]
+    if result.empty:
+      return QModelIndex()
+    else:
+      index =  int( result.index.values[0] )
+      return self.createIndex(index,0)
+
 
 #TODO: Augment internal list with non-selectable elements ("INHERITED TAGS") to simplify indexing
 class ElementTagController(QAbstractListModel):

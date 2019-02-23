@@ -253,6 +253,11 @@ class Ui_MainWindow(QtCore.QObject):
       self.tagController.updateTags()
       print('Accepted. New Word:' + newWord)
       print("Tags: " + str(tags))
+      self.tagFilter.setText("")
+      tagIndex = self.tagController.getTagIndex(tags[0])
+      tagIndex = self.filterController.mapFromSource(tagIndex)
+      self.tagview.setCurrentIndex(tagIndex)
+      self.wordview.setCurrentIndex(self.wordController.getWordIndex(newWord))
     elif dialogCode == QtWidgets.QDialog.Rejected:
       print('Rejected')
 
