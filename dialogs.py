@@ -443,7 +443,7 @@ class TagEditDialog(QtWidgets.QDialog):
     #self.enableOKButton()
 
 class WelcomeDialog(QtWidgets.QDialog):
-  def __init__(self ,parent, loadAction , newAction , programName, version ,languages):
+  def __init__(self ,parent, loadAction , newAction , programName, version ,languages,lastOpenedFunc,loadTmpFunc):
     super(WelcomeDialog,self).__init__(parent)
     self.loadAction = loadAction
     self.newAction  = newAction
@@ -479,7 +479,25 @@ class WelcomeDialog(QtWidgets.QDialog):
 
     hMiddleLayout.addWidget(self.newProjectButton)
     hMiddleLayout.addWidget(self.loadProjectButton)
+
+    if lastOpenedFunc is not None:
+      self.lastOpenedButton      = QtWidgets.QPushButton(self)
+      self.lastOpenedButton.setText("Load latest project")
+      self.lastOpenedButton.setObjectName("welcomeDialog.lastOpenedButton")
+      self.lastOpenedButton.setMinimumSize(QtCore.QSize(100, 50))
+      self.lastOpenedButton.clicked.connect(lastOpenedFunc)
+      hMiddleLayout.addWidget(self.lastOpenedButton)  
+
+    if loadTmpFunc is not None:
+      self.loadTmpButton      = QtWidgets.QPushButton(self)
+      self.loadTmpButton.setText("Load unsaved project")
+      self.loadTmpButton.setObjectName("welcomeDialog.loadTmpButton")
+      self.loadTmpButton.setMinimumSize(QtCore.QSize(100, 50))
+      self.loadTmpButton.clicked.connect(loadTmpFunc)
+      hMiddleLayout.addWidget(self.loadTmpButton)
     
+    
+
 
     #hLowLayout (vLayout)
     self.nameLineEdit     = QtWidgets.QLineEdit(self)

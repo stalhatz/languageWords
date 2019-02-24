@@ -234,6 +234,9 @@ class Ui_MainWindow(QtCore.QObject):
     self.autoSaveTimer = QtCore.QTimer()
     self.autoSaveTimer.timeout.connect(self.autoSave)
     self.autoSaveTimerInterval = 3000
+    self.projectFile = None 
+    self.unsavedChanges = False 
+    self.tempProjectFile = None
     self.setWindowTitle()
     self.centralwidget = QtWidgets.QWidget(MainWindow)
     self.centralwidget.setObjectName("centralwidget")
@@ -319,16 +322,22 @@ class Ui_MainWindow(QtCore.QObject):
       print('Rejected')
   
   def showWelcomeDialog(self):
-    # if os.path.exists(self.sessionFile):
-    #   with open(self.sessionFile, 'rb') as _input:
-    #     version = pickle.load(_input)
-    #     self.tempProjectFile  = pickle.load(_input)
-    #     self.projectFile      = pickle.load(_input)
-    #     self.unsavedChanges   = pickle.load(_input)
+    tempCallback = None
+    lastOpenedCallback = None
+    if os.path.exists(self.sessionFile):
+      with open(self.sessionFile, 'rb') as _input:
+        version = pickle.load(_input)
+        self.tempProjectFile  = pickle.load(_input)
+        self.projectFile      = pickle.load(_input)
+        self.unsavedChanges   = pickle.load(_input)
+        if self.unsavedChanges:
+          tempCallback          = partial(self.openFile,self.tempProjectFile,True)
+        lastOpenedCallback    = partial(self.openFile,self.projectFile)
 
     availableLanguages = self.defDataModel.getAvailableLanguages()
     self.welcomeDialog = WelcomeDialog(self.centralwidget,self.actionOpen, self.actionNew , 
-                                        self.programName , self.version , availableLanguages)
+                                        self.programName , self.version , availableLanguages,
+                                        lastOpenedCallback , tempCallback)
     dialogCode = self.welcomeDialog.exec()
     if dialogCode == QtWidgets.QDialog.Accepted:
       if not self.welcomeDialog.loadedFile: #New Project
@@ -417,15 +426,17 @@ class Ui_MainWindow(QtCore.QObject):
       obj.dictionary    = obj.loadDictionary(dicPath, affPath)
     return obj
   
-  def openFile(self):
-    fileName,fileType = QtWidgets.QFileDialog.getOpenFileName(self.centralwidget,"Open File", ".", "Pickle Files (*.pkl)")
+  def openFile(self,fileName = None, isTmpFile = False):
+    if (fileName is None) | (fileName is False):
+      fileName,fileType = QtWidgets.QFileDialog.getOpenFileName(self.centralwidget,"Open File", ".", "Pickle Files (*.pkl)")
     if fileName == "" or fileName is None:
       return
     else:
       Ui_MainWindow.fromFile(fileName,None,self)
       self.setWindowTitle()
       self.tagController.updateTags()
-      self.projectFile = fileName
+      if not isTmpFile:
+        self.projectFile = fileName
       self.actionSave.setEnabled(True)
       if self.welcomeDialog.isVisible():
         self.welcomeDialog.loadedFile = True
