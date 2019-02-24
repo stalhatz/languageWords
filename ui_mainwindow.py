@@ -6,10 +6,13 @@ import pickle
 import os
 from hunspell import HunSpell
 import uiUtils
+from functools import partial
+
 # TODO : Setup keyboard shortcuts for easily navigating between ListViews/ListEdits etc.
 #TODO : [FEATURE] TagWordView showing tags corresponding to a word. Optimally it should be done without introducing an extra Controller, just by filtering TagController
 #TODO : [FEATURE] Store information (definitions / examples) provided in the definitionsModel: Copy items from definitions to a per word structure. In this way we can better contextualize each word with definitions that seem pertinant to the user.
 #TODO : [UI] Move tabs to the right/left of QTabWidget with horizontal text. Calling setTabPosition(QtWidgets.QTabWidget.West) produces vertical text
+#FIXME: Dialogs do not trigger a dirty program state
 class Ui_MainWindow(QtCore.QObject):
   def defineActions(self):
     self.actionNew = QtWidgets.QAction(self.mainWindow)
@@ -31,7 +34,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.actionSave.setObjectName("actionSave")
     self.actionSave.triggered.connect(self.saveFile)
     self.actionSave.setShortcut("Ctrl+S")
-    self.actionSave.setEnabled(False)
+    #self.actionSave.setEnabled(False)
 
     self.removeWordAction = QtWidgets.QAction ("Remove Word", self.mainWindow)
     self.removeWordAction.setObjectName("removeWordAction")
@@ -227,6 +230,10 @@ class Ui_MainWindow(QtCore.QObject):
     self.language = "N/A"
     self.projectName = "Untitled"
     self.programName = "LanguageWords"
+    self.sessionFile = "." + self.programName + "_" + "session" + ".pkl"
+    self.autoSaveTimer = QtCore.QTimer()
+    self.autoSaveTimer.timeout.connect(self.autoSave)
+    self.autoSaveTimerInterval = 3000
     self.setWindowTitle()
     self.centralwidget = QtWidgets.QWidget(MainWindow)
     self.centralwidget.setObjectName("centralwidget")
@@ -259,8 +266,7 @@ class Ui_MainWindow(QtCore.QObject):
       self.tagDataModel.addTagging(newWord,tags)
       self.wordDataModel.addWord(newWord)
       self.tagController.updateTags()
-      print('Accepted. New Word:' + newWord)
-      print("Tags: " + str(tags))
+      self.setDirtyState()
       self.tagFilter.setText("")
       tagIndex = self.tagController.getTagIndex(tags[0])
       tagIndex = self.filterController.mapFromSource(tagIndex)
@@ -313,6 +319,13 @@ class Ui_MainWindow(QtCore.QObject):
       print('Rejected')
   
   def showWelcomeDialog(self):
+    # if os.path.exists(self.sessionFile):
+    #   with open(self.sessionFile, 'rb') as _input:
+    #     version = pickle.load(_input)
+    #     self.tempProjectFile  = pickle.load(_input)
+    #     self.projectFile      = pickle.load(_input)
+    #     self.unsavedChanges   = pickle.load(_input)
+
     availableLanguages = self.defDataModel.getAvailableLanguages()
     self.welcomeDialog = WelcomeDialog(self.centralwidget,self.actionOpen, self.actionNew , 
                                         self.programName , self.version , availableLanguages)
@@ -324,6 +337,7 @@ class Ui_MainWindow(QtCore.QObject):
         self.defDataModel.language   = self.language
         self.projectName  = self.welcomeDialog.nameLineEdit.text()
         self.setWindowTitle()
+        self.setDirtyState()
       print('Accepted')
     elif dialogCode == QtWidgets.QDialog.Rejected:
       print('Rejected')
@@ -418,8 +432,6 @@ class Ui_MainWindow(QtCore.QObject):
         self.welcomeDialog.accept()
   def newProject(self):
     self.projectFile = None
-    self.actionSave.setEnabled(False)
-    pass
 
   def setWindowTitle(self):
     self.mainWindow.setWindowTitle(self.projectName + " - " + "(" + str(self.language) + ")" + " - " + str(self.programName) )
@@ -428,10 +440,16 @@ class Ui_MainWindow(QtCore.QObject):
     self.saveFileAs(False, self.projectFile)
 
   def saveFileAs(self , checked, fileName = None):
+    if self._saveFileAs(checked, fileName):
+      self.unsavedChanges = False
+      self.autoSaveTimer.stop()
+      self.writeSessionFile()
+
+  def _saveFileAs(self , checked, fileName = None):
     if fileName is None:
       fileName,fileType = QtWidgets.QFileDialog.getSaveFileName(self.centralwidget,"Save File",".","Pickle Files (*.pkl)")
     if fileName == "" or fileName is None:
-      return
+      return False
     else:
       fName = fileName
       with open(fName, 'wb') as output:
@@ -441,7 +459,8 @@ class Ui_MainWindow(QtCore.QObject):
         self.wordDataModel.toFile(output)
         self.tagDataModel.toFile(output)
         self.defDataModel.toFile(output)
-        self.statusBar.showMessage("Saved to "+ fileName)
+        self.statusBar.showMessage("Saved to "+ fileName , 2000)
+        return True
 
   def updateDictNames(self,dictNames):
     self.dictSelect.clear()
@@ -472,6 +491,7 @@ class Ui_MainWindow(QtCore.QObject):
   def _saveDefinition(self,definitionText,definitionType,word):
     dictionary  = self.dictSelect.currentText()
     self.defDataModel.addDefinition(word,definitionText,dictionary,definitionType)
+    self.setDirtyState()
       
 
   
@@ -479,6 +499,7 @@ class Ui_MainWindow(QtCore.QObject):
     definition  = self.savedDefController.getSelectedDefinition().definition
     word        = self.wordController.getSelectedWord()
     self.defDataModel.removeDefinition(word,definition)
+    self.setDirtyState()
 
   def removeDefinition(self):
     self._removeSelectedDefinition()
@@ -504,6 +525,7 @@ class Ui_MainWindow(QtCore.QObject):
   def _removeWord(self,word,tags):
     self.tagDataModel.removeTagging(word,tags)
     self.wordDataModel.removeWord(word)
+    self.setDirtyState()
 
   def removeWord(self):
     word = self.wordController.getSelectedWord()
@@ -521,6 +543,7 @@ class Ui_MainWindow(QtCore.QObject):
       self.savedDefController.deleteTmpDefinition()
     else:
       self.defDataModel.replaceDefinition(word,definition.definition,newDefinition)
+      self.setDirtyState()
     self.savedDefController.updateOnWord(word)
   
   def addDefinition(self):
@@ -528,6 +551,24 @@ class Ui_MainWindow(QtCore.QObject):
     self.savedDefinitionsView.setCurrentIndex(index)
     self.savedDefinitionsView.edit(index)
 
+  def setDirtyState(self):
+    if self.autoSaveTimer.isActive():
+      return
+    self.tempProjectFile = ".tmp_"+self.projectName+".pkl"
+    self.unsavedChanges = True
+    self.autoSaveTimer.start(self.autoSaveTimerInterval)
+
+  def autoSave(self):
+    self.autoSaveTimer.stop()
+    self._saveFileAs(False,self.tempProjectFile)
+    self.writeSessionFile()
+  
+  def writeSessionFile(self):
+    with open(self.sessionFile, 'wb') as output:
+      pickle.dump(self.version,output, pickle.HIGHEST_PROTOCOL)
+      pickle.dump(self.tempProjectFile,output, pickle.HIGHEST_PROTOCOL)
+      pickle.dump(self.projectFile,output, pickle.HIGHEST_PROTOCOL)
+      pickle.dump(self.unsavedChanges,output, pickle.HIGHEST_PROTOCOL) #unsavedChanges
 
 
 from PyQt5 import QtWebEngineWidgets 

@@ -3,8 +3,9 @@ from ui_mainwindow import Ui_MainWindow
 from PyQt5.QtWidgets import (QApplication, QMainWindow)
 from PyQt5.QtCore import QTimer
 
+#TODO: [FEATURE_2] Context menu to rename tags
+#TODO: [FEATURE_1] Dictionaries can propose tags 
 #TODO: [FEATURE_2] Offer option in WelcomeDialog to open last saved project
-#TODO: [FEATURE_2] Ctrl+S should save to the already open project
 #TODO: [FEATURE_1] Periodical auto-save
 #TODO: [FEATURE_2] Show word in bold when found in example (impossible currently without implementing the paint function of a delegate)
 #TODO: [FEATURE_0] Training mode where a category is selected and examples are shown for the user to fill the gaps.
