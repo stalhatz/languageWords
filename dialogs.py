@@ -340,8 +340,6 @@ class TagEditDialog(QtWidgets.QDialog):
     self.filterController = QtCore.QSortFilterProxyModel()
     self.filterController.setSourceModel(self.tagController)
     self.tagView.setModel(self.filterController)
-    self.tagView.selectionModel().currentChanged.connect(self.tagController.selected)
-    self.tagController.dataChanged.connect(self.tagView.dataChanged)
     
     self.tagFilter      = QtWidgets.QLineEdit(self)
     self.tagFilter.setObjectName("metaTagDialog.tagFilter")
@@ -360,7 +358,7 @@ class TagEditDialog(QtWidgets.QDialog):
     self.mtLineEdit         = QtWidgets.QLineEdit(self)
     self.mtLineEdit.setMaximumSize(QtCore.QSize(400, 50))
     self.mtLineEdit.setPlaceholderText("Enter metatag to be applied to selected tag")
-    self.mtLineEdit.textChanged.connect(self.tagTextChanged)
+    self.mtLineEdit.textChanged.connect(self.mtEditTextChanged)
     tagCompleter            = QtWidgets.QCompleter(self.tagDataModel.getTags())
     tagCompleter.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
     self.mtLineEdit.setCompleter(tagCompleter)
@@ -368,7 +366,9 @@ class TagEditDialog(QtWidgets.QDialog):
     uiUtils.addLabeledWidget("Metatags applied to tag", self.metaTagView , vRightLayout)
     vRightLayout.addWidget(self.mtLineEdit)
 
-    self.tagController.tagChanged.connect(self.metaTagController.updateOnTag)
+    #self.tagController.tagChanged.connect(self.metaTagController.updateOnTag)
+    self.tagView.selectionModel().currentChanged.connect(self.selectedTagChanged)
+
     #hMiddleLayout (vLayout)
     self.addMetaTagButton    = QtWidgets.QPushButton(self)
     self.addMetaTagButton.setText("Add MetaTag")
@@ -397,14 +397,37 @@ class TagEditDialog(QtWidgets.QDialog):
           self.tagView.setFocus()
           return True
     return False
+  
+  def selectedTagChanged(self,index):
+    selectedTag = self.getSelectedTag(index)
+    self.metaTagController.updateOnTag(selectedTag)
 
-  def tagTextChanged(self,text):
+  def getSelectedTag(self,viewIndex=None):
+    if viewIndex is None:
+      viewIndex = self.tagView.currentIndex()
+    index = self.filterController.mapToSource(viewIndex)
+    selectedTag = self.tagController.data(index,QtCore.Qt.EditRole)
+    if isinstance(selectedTag,str):
+      return selectedTag    
+    else:
+      return None
+
+  def getSelectedMetaTag(self,viewIndex=None):
+    if viewIndex is None:
+      viewIndex = self.metaTagView.currentIndex()
+    selectedMTag = self.metaTagController.data(viewIndex,QtCore.Qt.DisplayRole)
+    if isinstance(selectedMTag,str):
+      return selectedMTag    
+    else:
+      return None
+
+  def mtEditTextChanged(self,text):
     shouldEnable = False
     if text != "":
       if any(text == x for x in self.metaTagController.tagList):
         self.statusBar.showMessage("Tag already added")
       else:
-        if (text == self.tagController.getSelectedTag()):
+        if (text == self.getSelectedTag()):
           self.statusBar.showMessage("A tag can't apply to itself")
         else:
           shouldEnable = True
@@ -423,7 +446,7 @@ class TagEditDialog(QtWidgets.QDialog):
       
   def addMetaTag(self,event):
     metaTag = self.mtLineEdit.text()
-    selectedTag = self.tagController.getSelectedTag()
+    selectedTag = self.getSelectedTag()
     self.metaTagController.tagModel.addRelation(selectedTag , metaTag)
     self.mtLineEdit.clear()
     self.metaTagController.update()
@@ -434,11 +457,11 @@ class TagEditDialog(QtWidgets.QDialog):
     stringList = self.metaTagController.tagList
     if len(stringList) > 0:
       index = self.metaTagView.currentIndex().row()
-      selectedTag = self.tagController.getSelectedTag()
-      metaTag     = self.metaTagController.getSelectedTag()
-      self.metaTagController.tagDataModel.removeRelation(selectedTag,metaTag)
+      selectedTag = self.getSelectedTag()
+      metaTag     = self.getSelectedMetaTag()
+      self.metaTagController.tagModel.removeRelation(selectedTag,metaTag)
       self.metaTagController.update()
-      if len(metaTagController) == 0:
+      if len(self.metaTagController) == 0:
         self.removeMetaTagButton.setEnabled(False)
     #self.enableOKButton()
 

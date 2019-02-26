@@ -188,7 +188,6 @@ class Ui_MainWindow(QtCore.QObject):
     self.definitionListView.doubleClicked.connect(self.saveDefinition)
     self.definitionListView.selectionModel().currentChanged.connect(self.defController.selected)
     self.tagview.setModel(self.filterController)
-    self.tagview.selectionModel().currentChanged.connect(self.tagController.selected)
     self.wordview.setModel(self.wordController)
     self.wordController.addView(self.wordview)
     
@@ -212,7 +211,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.tabwidget.currentChanged.connect(self.wordController.setDefinitionLoadingSource)
 
     #Controller->Controller signals
-    self.tagController.tagChanged.connect(self.wordController.updateOnTag)
+    self.tagview.selectionModel().currentChanged.connect(self.selectedTagChanged)
 
     #Controller->View signals
     self.defController.dataChanged.connect(self.definitionListView.dataChanged)
@@ -499,6 +498,10 @@ class Ui_MainWindow(QtCore.QObject):
           return True
     return False
 
+  def selectedTagChanged(self,index):
+    selectedTag = self.getSelectedTag()
+    self.wordController.updateOnTag(selectedTag)
+
   def saveDefinition(self):
     definition  = self.defController.getSelectedDefinition()
     word        = self.wordController.getSelectedWord()
@@ -524,22 +527,28 @@ class Ui_MainWindow(QtCore.QObject):
 
   def handleEditedTag(self,widget):
     if (widget.isModified()):
-      index   = self.tagview.currentIndex()
-      index   = self.filterController.mapToSource(index)
-      oldTag  = self.tagController.data(index,QtCore.Qt.EditRole)
+      oldTag  = self.getSelectedTag()
       newTag = widget.text()
       self.tagDataModel.replaceTag(oldTag,newTag)
-      self.tagController.updateTagIndexFromModel()
+      self.tagController.updateTags()
       self.setDirtyState()
 
   def editSelectedTag(self):
     index = self.tagview.currentIndex()
     self.tagview.edit(index)
   
+  def getSelectedTag(self,viewIndex=None):
+    if viewIndex is None:
+      viewIndex = self.tagview.currentIndex()
+    index = self.filterController.mapToSource(viewIndex)
+    selectedTag = self.tagController.data(index,QtCore.Qt.EditRole)
+    if isinstance(selectedTag,str):
+      return selectedTag    
+    else:
+      return None
+
   def tagViewMenuRequested(self,point):
-    if self.tagController.getSelectedTag() is not None:
-      index = self.tagview.indexAt(point)
-      index = self.filterController.mapToSource(index)
+    if self.getSelectedTag() is not None:
       contextMenu = QtWidgets.QMenu ("Context menu", self.tagview)
       contextMenu.addAction(self.renameTagAction)
       contextMenu.exec(self.tagview.mapToGlobal(point))
@@ -570,7 +579,7 @@ class Ui_MainWindow(QtCore.QObject):
     word = self.wordController.getSelectedWord()
     tags = self.tagDataModel.getTagsFromIndex(word)
     self._removeWord(word,tags)
-    self.wordController.updateOnTag(self.tagController.getSelectedTag())
+    self.wordController.updateOnTag(self.getSelectedTag())
     self.tagController.updateTags()
   
   def handleEditedDefinition(self,widget):

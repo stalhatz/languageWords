@@ -73,16 +73,13 @@ class DefinitionController(QAbstractListModel):
 # TODO: [FEATURE] [LOW PRIORITY] unidecode filter and pandas Series to match string with accents / no accents
 # TODO: [FEATURE] [LOW PRIORITY] use > = < filters to filter tags with certain number of corresponding words
 class TagController(QAbstractListModel):
-  tagChanged = pyqtSignal(str, name='tagChanged')
   def __init__(self,tagModel):
     super(TagController,self).__init__()
     self.tagModel = tagModel
     if self.tagModel.tagTable.empty:
       self.tagIndex  = pd.DataFrame(columns=["tag","text"])
     else:
-      self.updateTagIndexFromModel()
-    self.selectedIndex = self.createIndex(0,0)
-    self.currentFilter = ""
+      self.updateTags()
   def rowCount(self, modelIndex):
     return len(self.tagIndex.index)
   def data(self, index, role):
@@ -92,10 +89,6 @@ class TagController(QAbstractListModel):
       return self.getTag(index) + " ("+str(self.getTagCount(index))+")"
     if role==Qt.EditRole:
       return self.getTag(index)
-  def selected(self, index , prevIndex):
-    self.selectedIndex = index
-    selectedTag = self.getTag(index)
-    self.tagChanged.emit(  selectedTag )
   def getTag(self,index):
     if isinstance(index,int):
       return str(self.tagIndex.iloc[index,0])  
@@ -103,12 +96,8 @@ class TagController(QAbstractListModel):
       return str(self.tagIndex.iloc[index.row(),0])
   def getTagCount(self,index):
     return self.tagIndex.iloc[index.row(),1]
-  def getSelectedTag(self):
-    return self.getTag(self.selectedIndex)
-  def getSelectedIndex(self):
-    return self.selectedIndex
 
-  def updateTagIndexFromModel(self):
+  def updateTags(self):
     self.layoutAboutToBeChanged.emit()
     self.tagIndex = pd.pivot_table(self.tagModel.tagTable,values='text',index='tag',aggfunc=pd.Series.nunique).reset_index()
     self.tagIndex.rename(columns={"text":"indexCount"},inplace = True)
@@ -122,12 +111,6 @@ class TagController(QAbstractListModel):
     if len(newTagsList) > 0:
       self.tagIndex = self.tagIndex.append(newTagsList,ignore_index = True)
     self.layoutChanged.emit()
-    
-  def updateTags(self):
-    self.updateTagIndexFromModel()
-    #self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.tagIndex.index) , 0))
-    selectedTag = self.getTag(self.selectedIndex)
-    self.tagChanged.emit(  selectedTag )
 
   def getTagIndex(self,tag):
     condition = self.tagIndex.tag == tag
@@ -256,21 +239,29 @@ class ElementTagController(QAbstractListModel):
     self.updatesOnTag = True
     self.currentElement = tag
     self.layoutAboutToBeChanged.emit()
-    self.tagList = self.tagModel.getAllParentTags(tag)
-    self.directTagList = self.tagModel.getDirectParentTags(tag)
-    self.orderTagLists()
+    if tag is None:
+      self.tagList = []
+      self.directTagList = []
+    else:
+      self.tagList = self.tagModel.getAllParentTags(tag)
+      self.directTagList = self.tagModel.getDirectParentTags(tag)
+      self.orderTagLists()
     self.layoutChanged.emit()
     
   def updateOnWord(self,word):
     self.updatesOnTag = False
     self.currentElement = word
     self.layoutAboutToBeChanged.emit()
-    self.directTagList = self.tagModel.getTagsFromIndex(word)
-    self.tagList = []
-    for tag in self.directTagList:
-      self.tagList += self.tagModel.getAllParentTags(tag)
-    self.tagList = list(set(self.tagList))
-    self.orderTagLists()
+    if word is None:
+      self.tagList = []
+      self.directTagList = []
+    else:
+      self.directTagList = self.tagModel.getTagsFromIndex(word)
+      self.tagList = []
+      for tag in self.directTagList:
+        self.tagList += self.tagModel.getAllParentTags(tag)
+      self.tagList = list(set(self.tagList))
+      self.orderTagLists()
     self.layoutChanged.emit()
 
 
