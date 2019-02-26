@@ -172,6 +172,8 @@ class Ui_MainWindow(QtCore.QObject):
     self.tagController      = TagController(self.tagDataModel)
     self.filterController   = QtCore.QSortFilterProxyModel()
     self.defController      = DefinitionController()
+    self.defController.addView(self.definitionListView)
+    
     self.elementController  = ElementTagController(tagDataModel)
     self.savedDefController = SavedDefinitionsController(defDataModel)
     #Set signals/slots views to controllers
@@ -186,7 +188,6 @@ class Ui_MainWindow(QtCore.QObject):
     self.elementTagview.selectionModel().currentChanged.connect(self.elementController.selected)
     self.definitionListView.setModel(self.defController)
     self.definitionListView.doubleClicked.connect(self.saveDefinition)
-    self.definitionListView.selectionModel().currentChanged.connect(self.defController.selected)
     self.tagview.setModel(self.filterController)
     self.wordview.setModel(self.wordController)
     self.wordController.addView(self.wordview)
@@ -212,11 +213,6 @@ class Ui_MainWindow(QtCore.QObject):
 
     #Controller->Controller signals
     self.tagview.selectionModel().currentChanged.connect(self.selectedTagChanged)
-
-    #Controller->View signals
-    self.defController.dataChanged.connect(self.definitionListView.dataChanged)
-    self.tagController.dataChanged.connect(self.tagview.dataChanged)
-    self.defController.setEnabledView.connect(self.definitionListView.setEnabled)
 
     #Connect signals to data models
     self.defDataModel.dictNamesUpdated.connect(self.updateDictNames)
@@ -503,7 +499,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.wordController.updateOnTag(selectedTag)
 
   def saveDefinition(self):
-    definition  = self.defController.getSelectedDefinition()
+    definition  = self.getSelectedDefinition()
     word        = self.wordController.getSelectedWord()
     if not self.defDataModel.definitionExists(word,definition.definition):
       self._saveDefinition(definition.definition,definition.type,word)
@@ -536,6 +532,11 @@ class Ui_MainWindow(QtCore.QObject):
   def editSelectedTag(self):
     index = self.tagview.currentIndex()
     self.tagview.edit(index)
+  
+  def getSelectedDefinition(self):
+    index = self.definitionListView.currentIndex()
+    definition = self.defController.getDefinition(index)
+    return definition
   
   def getSelectedTag(self,viewIndex=None):
     if viewIndex is None:

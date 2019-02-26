@@ -17,30 +17,37 @@ from collections import namedtuple
 # QNetworkAccessManager (which would be the easiest way to do this) not working due to QTBUG-68156
 # Should use requests-futures
 class DefinitionController(QAbstractListModel):
-  dataChanged = pyqtSignal(QModelIndex,QModelIndex)
-  setEnabledView = pyqtSignal(bool)
   def __init__(self):
     super(DefinitionController,self).__init__()
-    self.definitionsList = []
+    self.definitionsList  = []
+    self.views            = []
   def loadingInitiated(self, dict, word, external):
     if not external:
-      self.setEnabledView.emit(False)
+      for view in self.views:
+        view.setEnabled(False)
   def updateDefinition(self,definitionsList):
+    self.layoutAboutToBeChanged.emit()
     self.definitionsList = definitionsList
     self.sortDefList()
-    self.setEnabledView.emit(True)
-    self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.definitionsList) , 0))
-  def selected(self, index , prevIndex):
-    self.selectedIndex = index
+    for view in self.views:
+        view.setEnabled(True)
+    self.layoutChanged.emit()
   def rowCount(self, modelIndex):
     return len(self.definitionsList)
   def data(self, index, role):
     if not index.isValid() or not (0<=index.row()<len(self.definitionsList)):  return QVariant()
-    if role==Qt.DisplayRole:  
+    if role==Qt.DisplayRole:
       if isinstance(self.definitionsList[index.row()] , str):
         return self.definitionsList[index.row()].upper()
       else:
         return self.definitionsList[index.row()].definition 
+  def getDefinition(self,index):
+    if not index.isValid() or not (0<=index.row()<len(self.definitionsList)):  
+      raise IndexError("Invalid index or index out of range")
+    if isinstance(self.definitionsList[index.row()] , str):
+      raise IndexError("Data where requested for a decorative index")
+    else:
+      return self.definitionsList[index.row()]
   def flags(self,index):
     flags = super(DefinitionController,self).flags(index)
     if not index.isValid() or not (0<=index.row()<len(self.definitionsList)):  
@@ -51,9 +58,6 @@ class DefinitionController(QAbstractListModel):
       if flags & Qt.ItemIsSelectable != 0: # If is selectable
         flags = flags ^ Qt.ItemIsSelectable
     return flags
-
-  def getSelectedDefinition(self):
-    return self.definitionsList[self.selectedIndex.row()]
   def sortDefList(self):
     if len(self.definitionsList) > 0: 
       self.definitionsList.sort(key=attrgetter('type'))
@@ -67,7 +71,8 @@ class DefinitionController(QAbstractListModel):
             numTypes+=1
       for position in positions:
         self.definitionsList.insert(position[0] , position[1])
-
+  def addView(self,view):
+    self.views.append(view)
     
 
 # TODO: [FEATURE] [LOW PRIORITY] unidecode filter and pandas Series to match string with accents / no accents
