@@ -263,6 +263,16 @@ class TagDataModel():
     tagIndex = pd.pivot_table(self.tagTable,values='text',index='tag',aggfunc=pd.Series.nunique).reset_index()
     return list(tagIndex['tag'])
 
+  def replaceTag(self,oldTag,newTag):
+    #Replace it as a metatag
+    if oldTag in self.tagNodes:
+      node = self.tagNodes[oldTag]
+      node.tag = newTag
+    #Replace it as a tagging to words
+    condition = self.tagTable.tag == oldTag
+    print (self.tagTable[condition])
+    self.tagTable.loc[condition,"tag"] = newTag
+
   def addTagging(self,word,tags):
     if len(tags) > 0:
       tagTableList = []

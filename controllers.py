@@ -73,7 +73,6 @@ class DefinitionController(QAbstractListModel):
 # TODO: [FEATURE] [LOW PRIORITY] unidecode filter and pandas Series to match string with accents / no accents
 # TODO: [FEATURE] [LOW PRIORITY] use > = < filters to filter tags with certain number of corresponding words
 class TagController(QAbstractListModel):
-  dataChanged = pyqtSignal(QModelIndex,QModelIndex)
   tagChanged = pyqtSignal(str, name='tagChanged')
   def __init__(self,tagModel):
     super(TagController,self).__init__()
@@ -91,6 +90,8 @@ class TagController(QAbstractListModel):
       return QVariant()
     if role==Qt.DisplayRole:      
       return self.getTag(index) + " ("+str(self.getTagCount(index))+")"
+    if role==Qt.EditRole:
+      return self.getTag(index)
   def selected(self, index , prevIndex):
     self.selectedIndex = index
     selectedTag = self.getTag(index)
@@ -104,6 +105,9 @@ class TagController(QAbstractListModel):
     return self.tagIndex.iloc[index.row(),1]
   def getSelectedTag(self):
     return self.getTag(self.selectedIndex)
+  def getSelectedIndex(self):
+    return self.selectedIndex
+
   def updateTagIndexFromModel(self):
     self.layoutAboutToBeChanged.emit()
     self.tagIndex = pd.pivot_table(self.tagModel.tagTable,values='text',index='tag',aggfunc=pd.Series.nunique).reset_index()
@@ -133,7 +137,13 @@ class TagController(QAbstractListModel):
     else:
       index =  int( result.index.values[0] )
       return self.createIndex(index,0)
-
+  
+  def flags(self,index):
+    flags = super(TagController,self).flags(index)
+    if index.row() < len(self.tagIndex.index):
+      if flags & Qt.ItemIsEditable == (flags & 0): # If is not editable
+        flags = flags ^ Qt.ItemIsEditable
+    return flags
 #FIXME: Load word definition when shown on screen not only when selected
 class WordController(QAbstractListModel):
   dataChanged       = pyqtSignal(QModelIndex,QModelIndex)

@@ -9,8 +9,6 @@ import uiUtils
 from functools import partial
 
 # TODO : Setup keyboard shortcuts for easily navigating between ListViews/ListEdits etc.
-#TODO : [FEATURE] TagWordView showing tags corresponding to a word. Optimally it should be done without introducing an extra Controller, just by filtering TagController
-#TODO : [FEATURE] Store information (definitions / examples) provided in the definitionsModel: Copy items from definitions to a per word structure. In this way we can better contextualize each word with definitions that seem pertinant to the user.
 #TODO : [UI] Move tabs to the right/left of QTabWidget with horizontal text. Calling setTabPosition(QtWidgets.QTabWidget.West) produces vertical text
 #FIXME: Dialogs do not trigger a dirty program state
 class Ui_MainWindow(QtCore.QObject):
@@ -48,6 +46,9 @@ class Ui_MainWindow(QtCore.QObject):
     self.removeDefinitionAction.setObjectName("removeDefinitionAction")
     self.removeDefinitionAction.triggered.connect(self.removeDefinition)
 
+    self.renameTagAction = QtWidgets.QAction ("Rename Tag", self.mainWindow)
+    self.renameTagAction.setObjectName("renameTagAction")
+    self.renameTagAction.triggered.connect(self.editSelectedTag)
 
   def addTopButtons(self):
     self.buttonHorizontalLayout = QtWidgets.QHBoxLayout()
@@ -104,6 +105,8 @@ class Ui_MainWindow(QtCore.QObject):
     self.tagview.setMaximumSize(QtCore.QSize(400, 400))
     self.tagview.setObjectName("tagview")
     self.tagview.installEventFilter(self)
+    
+
     self.tagFilter = QtWidgets.QLineEdit(self.centralwidget)
     self.tagFilter.setObjectName("tagFilter")
     self.tagFilter.setPlaceholderText("Enter text to filter tags")
@@ -174,6 +177,8 @@ class Ui_MainWindow(QtCore.QObject):
     #Set signals/slots views to controllers
     self.filterController.setSourceModel(self.tagController)
     self.filterController.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
+    self.tagview.itemDelegate().commitData.connect(self.handleEditedTag)
+    
     self.savedDefinitionsView.setModel(self.savedDefController)
     self.savedDefinitionsView.doubleClicked.connect(self.removeDefinition)
     self.savedDefinitionsView.selectionModel().currentChanged.connect(self.savedDefController.selected)
@@ -191,6 +196,8 @@ class Ui_MainWindow(QtCore.QObject):
     self.wordview.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
     self.wordview.customContextMenuRequested.connect(self.wordViewContextMenuRequested)
     self.wordview.selectionModel().currentChanged.connect(self.enableEditWordButton)
+    self.tagview.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+    self.tagview.customContextMenuRequested.connect(self.tagViewMenuRequested)
     self.savedDefinitionsView.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
     self.savedDefinitionsView.customContextMenuRequested.connect(self.savedDefViewContextMenuRequested)
     #Controller->Ui signals
@@ -478,17 +485,17 @@ class Ui_MainWindow(QtCore.QObject):
     self.dictSelect.insertItems(0,dictNames)
     
   # def showEditWordDialog(self,event):
-
+  #FIXME: When editing Enter key is not consumed in Delegate of TagView and is falsely propagated up to this filter. Reactivate filters when fixed.
   def eventFilter(self,_object, event):
     if _object == self.tagFilter:
       if event.type() == QtCore.QEvent.KeyPress:
         if (event.key() == QtCore.Qt.Key_Enter) or (event.key() == QtCore.Qt.Key_Return):
-          self.tagview.setFocus()
+          #self.tagview.setFocus()
           return True
     if _object == self.tagview:
       if event.type() == QtCore.QEvent.KeyPress:
         if (event.key() == QtCore.Qt.Key_Enter) or (event.key() == QtCore.Qt.Key_Return):
-          self.wordview.setFocus()
+          #self.wordview.setFocus()
           return True
     return False
 
@@ -503,8 +510,6 @@ class Ui_MainWindow(QtCore.QObject):
     dictionary  = self.dictSelect.currentText()
     self.defDataModel.addDefinition(word,definitionText,dictionary,definitionType)
     self.setDirtyState()
-      
-
   
   def _removeSelectedDefinition(self):
     definition  = self.savedDefController.getSelectedDefinition().definition
@@ -516,6 +521,29 @@ class Ui_MainWindow(QtCore.QObject):
     self._removeSelectedDefinition()
     self.savedDefController.update()
   
+
+  def handleEditedTag(self,widget):
+    if (widget.isModified()):
+      index   = self.tagview.currentIndex()
+      index   = self.filterController.mapToSource(index)
+      oldTag  = self.tagController.data(index,QtCore.Qt.EditRole)
+      newTag = widget.text()
+      self.tagDataModel.replaceTag(oldTag,newTag)
+      self.tagController.updateTagIndexFromModel()
+      self.setDirtyState()
+
+  def editSelectedTag(self):
+    index = self.tagview.currentIndex()
+    self.tagview.edit(index)
+  
+  def tagViewMenuRequested(self,point):
+    if self.tagController.getSelectedTag() is not None:
+      index = self.tagview.indexAt(point)
+      index = self.filterController.mapToSource(index)
+      contextMenu = QtWidgets.QMenu ("Context menu", self.tagview)
+      contextMenu.addAction(self.renameTagAction)
+      contextMenu.exec(self.tagview.mapToGlobal(point))
+
   def savedDefViewContextMenuRequested(self,point):
     if self.wordController.getSelectedWord() is not None:
       index = self.savedDefinitionsView.indexAt(point).row()
