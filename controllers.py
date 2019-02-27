@@ -1,4 +1,4 @@
-from PyQt5.QtCore import (QVariant, Qt, pyqtSignal, QUrl)
+from PyQt5.QtCore import (QVariant, Qt, pyqtSignal, QUrl,QItemSelectionModel)
 from PyQt5.QtCore import (QAbstractListModel, QModelIndex, QStringListModel)
 from PyQt5.QtNetwork import (QNetworkAccessManager, QNetworkRequest, QNetworkReply)
 
@@ -17,20 +17,14 @@ from collections import namedtuple
 # QNetworkAccessManager (which would be the easiest way to do this) not working due to QTBUG-68156
 # Should use requests-futures
 class DefinitionController(QAbstractListModel):
-  def __init__(self):
+  def __init__(self,defModel):
     super(DefinitionController,self).__init__()
     self.definitionsList  = []
     self.views            = []
-  def loadingInitiated(self, dict, word, external):
-    if not external:
-      for view in self.views:
-        view.setEnabled(False)
-  def updateDefinition(self,definitionsList):
+  def update(self,definitionsList):
     self.layoutAboutToBeChanged.emit()
     self.definitionsList = definitionsList
     self.sortDefList()
-    for view in self.views:
-        view.setEnabled(True)
     self.layoutChanged.emit()
   def rowCount(self, modelIndex):
     return len(self.definitionsList)
@@ -134,10 +128,7 @@ class TagController(QAbstractListModel):
     return flags
 #FIXME: Load word definition when shown on screen not only when selected
 class WordController(QAbstractListModel):
-  dataChanged       = pyqtSignal(QModelIndex,QModelIndex)
   loadDefinition    = pyqtSignal(str, str, bool)
-  clearSelection    = pyqtSignal()
-  currentChanged    = pyqtSignal(str)
   def __init__(self, wordModel ,tagModel):
     super(WordController,self).__init__()
     self.wordModel = wordModel
@@ -145,7 +136,6 @@ class WordController(QAbstractListModel):
     self.df_image = self.wordModel.wordTable
     self.dict = None
     self.url = None
-    self.currentIndex = -1
     self.externalLoading = False
     self.viewList = []
 
@@ -158,45 +148,17 @@ class WordController(QAbstractListModel):
       return QVariant()
     if role==Qt.DisplayRole:
       return str(self.df_image.iloc[index.row(),0])
-  def selected(self, index , prevIndex):
-    self.currentIndex = index.row()
-    word = str(self.df_image.iloc[index.row(),0])
-    self.currentChanged.emit(word)
-    if self.dict is None:
-      pass  
-    else:
-      self.loadDefinition.emit(word,self.dict , self.externalLoading)
   def updateOnTag(self,tag):
+    self.layoutAboutToBeChanged.emit()
     tagList = self.tagModel.getAllChildTags(tag)
     tagList.append(tag)
     tagIndexTable = self.tagModel.getIndexesFromTagList(tagList)
-    self.currentIndex = -1
-    self.clearSelection.emit()
     for view in self.viewList:
-      view.clearSelection()
-      view.setCurrentIndex(QModelIndex())
+      view.selectionModel().setCurrentIndex(QModelIndex(),QItemSelectionModel.Deselect)
+
     self.df_image = pd.merge(self.wordModel.wordTable, tagIndexTable, on=['text','text'])
-    for view in self.viewList:
-      view.dataChanged(self.createIndex(0,0) , self.createIndex(len(self.df_image.index) , 0))
-    #self.dataChanged.emit(self.createIndex(0,0) , self.createIndex(len(self.df_image.index) , 0))
-  def updateDict(self,dictName):
-    if dictName == "":
-      return
-    self.dict = dictName
-    if self.currentIndex >= 0:
-      self.selected(self.createIndex(self.currentIndex, 0) , self.createIndex(0 , 0))
-  def setDefinitionLoadingSource(self,widgetID):
-    if widgetID == 1:
-      self.externalLoading = True
-    else:
-      self.externalLoading = False
-    if self.currentIndex >= 0:
-      self.loadDefinition.emit(str(self.df_image.iloc[self.currentIndex,0]),self.dict , self.externalLoading)
-  def getSelectedWord(self):
-    if self.currentIndex >= 0:
-      return str(self.df_image.iloc[self.currentIndex,0])
-    else:
-      return None
+    self.layoutChanged.emit()
+
   def getWordIndex(self,word):
     condition = self.df_image.text == word
     result    = self.df_image[condition]
@@ -295,16 +257,22 @@ class ElementTagController(QAbstractListModel):
 
 #TODO: Merge with DefinitionController
 class SavedDefinitionsController(QAbstractListModel):
-  dataChanged       = pyqtSignal(QModelIndex,QModelIndex)
   def __init__(self,defModel):
     super(SavedDefinitionsController,self).__init__()
     self.defModel = defModel
-    self.currentIndex = -1
     self.definitionsList  = []
-    self.currentElement = None
+
   def rowCount(self, modelIndex):
     return len(self.definitionsList)
 
+  def getDefinition(self,index):
+    if not index.isValid() or not (0<=index.row()<len(self.definitionsList)):  
+      raise IndexError("Invalid index or index out of bounds")
+    if isinstance(self.definitionsList[index.row()] , str):
+      raise IndexError("Data where requested for a decorative index")
+    else:
+      return self.definitionsList[index.row()]
+      
   def data(self, index, role):
     if not index.isValid() or not (0<=index.row()<len(self.definitionsList)):  
       return QVariant()
@@ -333,9 +301,6 @@ class SavedDefinitionsController(QAbstractListModel):
         flags = flags ^ Qt.ItemIsEditable
     return flags
 
-  def selected(self, index , prevIndex):
-    self.currentIndex = index.row()
-
   def updateOnWord(self,word):
     self.currentElement = word
     self.layoutAboutToBeChanged.emit()
@@ -344,13 +309,6 @@ class SavedDefinitionsController(QAbstractListModel):
     self.definitionsList  = [x for x in self.definitionsTable.itertuples()]
     self.sortDefList()
     self.layoutChanged.emit()
-
-  def update(self):
-    self.updateOnWord(self.currentElement)
-
-  def getSelectedDefinition(self):
-     selectedDefinition = self.definitionsList[self.currentIndex]
-     return selectedDefinition
 
   def sortDefList(self):
     if len(self.definitionsList) == 0:

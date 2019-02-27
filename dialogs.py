@@ -91,6 +91,8 @@ class WordDialog(QtWidgets.QDialog):
     if self.dialogType == self.EDIT_DIALOG:
       self.tagController.setStringList(self.existingTags)
     self.tagView.setModel(self.tagController)    
+    self.tagView.selectionModel().currentChanged.connect(self.selectedTagChanged)
+
     #self.tagView.setSelectionBehavior(QtWidgets.QAbstractItemView.)
     self.tLineEdit = QtWidgets.QLineEdit(self)
     self.tLineEdit.setMaximumSize(QtCore.QSize(400, 50))
@@ -119,6 +121,9 @@ class WordDialog(QtWidgets.QDialog):
   
     if self.dialogType == self.EDIT_DIALOG:
       self.wLineEdit.setText(self.existingWord)
+
+  def selectedTagChanged(self):
+    self.removeTagButton.setEnabled(True)
 
   def tagTextChanged(self,text):
     shouldEnable = False

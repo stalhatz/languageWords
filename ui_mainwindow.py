@@ -168,59 +168,49 @@ class Ui_MainWindow(QtCore.QObject):
     self.wordDataModel      = wordDataModel
     self.defDataModel       = defDataModel
     self.tagDataModel       = tagDataModel
+    #Instantiate controllers
     self.wordController     = WordController(wordDataModel,self.tagDataModel)
+    self.wordview.setModel(self.wordController)
+    self.wordview.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+    self.wordController.addView(self.wordview)
     self.tagController      = TagController(self.tagDataModel)
+    self.tagview.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
     self.filterController   = QtCore.QSortFilterProxyModel()
-    self.defController      = DefinitionController()
-    self.defController.addView(self.definitionListView)
-    
-    self.elementController  = ElementTagController(tagDataModel)
-    self.savedDefController = SavedDefinitionsController(defDataModel)
-    #Set signals/slots views to controllers
     self.filterController.setSourceModel(self.tagController)
     self.filterController.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
-    self.tagview.itemDelegate().commitData.connect(self.handleEditedTag)
+    self.tagview.setModel(self.filterController)
+    self.defController      = DefinitionController(self.defDataModel)
+    self.defController.addView(self.definitionListView)
+    self.definitionListView.setModel(self.defController)
+    self.elementController  = ElementTagController(tagDataModel)
+    self.elementTagview.setModel(self.elementController)
+    self.savedDefController = SavedDefinitionsController(defDataModel)
     
+    #Set signals/slots views to controllers
+    self.elementTagview.selectionModel().currentChanged.connect(self.elementController.selected)
+    #View->Ui signals
+    self.definitionListView.doubleClicked.connect(self.saveDefinition)
+    self.tagview.itemDelegate().commitData.connect(self.handleEditedTag)
+    self.tagview.customContextMenuRequested.connect(self.tagViewMenuRequested)
+    self.tagview.selectionModel().currentChanged.connect(self.selectedTagChanged)
     self.savedDefinitionsView.setModel(self.savedDefController)
     self.savedDefinitionsView.doubleClicked.connect(self.removeDefinition)
-    self.savedDefinitionsView.selectionModel().currentChanged.connect(self.savedDefController.selected)
-    self.elementTagview.setModel(self.elementController)
-    self.elementTagview.selectionModel().currentChanged.connect(self.elementController.selected)
-    self.definitionListView.setModel(self.defController)
-    self.definitionListView.doubleClicked.connect(self.saveDefinition)
-    self.tagview.setModel(self.filterController)
-    self.wordview.setModel(self.wordController)
-    self.wordController.addView(self.wordview)
-    
-    #View->Ui signals
-    self.wordview.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
     self.wordview.customContextMenuRequested.connect(self.wordViewContextMenuRequested)
-    self.wordview.selectionModel().currentChanged.connect(self.enableEditWordButton)
-    self.tagview.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-    self.tagview.customContextMenuRequested.connect(self.tagViewMenuRequested)
+    self.wordview.selectionModel().currentChanged.connect(self.selectedWordChanged)
     self.savedDefinitionsView.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
     self.savedDefinitionsView.customContextMenuRequested.connect(self.savedDefViewContextMenuRequested)
+    self.dictSelect.currentTextChanged.connect(self.updateOnlineDefinition)
+    self.tabwidget.currentChanged.connect(self.updateOnlineDefinition)
     #Controller->Ui signals
-    self.wordController.clearSelection.connect(self.disableEditWordButton)
+    #self.wordController.clearSelection.connect(self.disableEditWordButton)
     
     #View->Controller signals
-    self.wordview.selectionModel().currentChanged.connect(self.wordController.selected)
-    self.wordController.currentChanged.connect(self.elementController.updateOnWord)
-    self.wordController.currentChanged.connect(self.savedDefController.updateOnWord)
-    self.dictSelect.currentTextChanged.connect(self.wordController.updateDict)
     self.tagFilter.textChanged.connect(self.filterController.setFilterFixedString)
-    self.tabwidget.currentChanged.connect(self.wordController.setDefinitionLoadingSource)
-
-    #Controller->Controller signals
-    self.tagview.selectionModel().currentChanged.connect(self.selectedTagChanged)
-
-    #Connect signals to data models
+    
+    #Data models->Ui signals
     self.defDataModel.dictNamesUpdated.connect(self.updateDictNames)
-    self.wordController.loadDefinition.connect(self.defDataModel.load)
-    self.wordController.loadDefinition.connect(self.defController.loadingInitiated)
-    self.defDataModel.definitionsUpdated.connect(self.defController.updateDefinition)
-    self.defDataModel.externalPageLoad.connect(self.webView.load)
-    self.defDataModel.showMessage.connect(self.statusBar.showMessage)
+    self.defDataModel.definitionsUpdated.connect(self._updateOnlineDefinition)
+    self.defDataModel.showMessage.connect(self.statusBar.showMessage) #Not really needed...
 
     self.dictSelect.insertItems(0,defDataModel.getDictNames())
 
@@ -353,11 +343,8 @@ class Ui_MainWindow(QtCore.QObject):
     elif dialogCode == QtWidgets.QDialog.Rejected:
       print('Rejected')
 
-  def disableEditWordButton(self):
-    self.editWordButton.setEnabled(False)
-  def enableEditWordButton(self, wordIndex,*_):
-    if wordIndex.isValid():
-      self.editWordButton.setEnabled(True)
+  # def disableEditWordButton(self):
+  #   self.editWordButton.setEnabled(False)
 
   @classmethod
   def defaultInit(cls,window):
@@ -494,16 +481,48 @@ class Ui_MainWindow(QtCore.QObject):
           return True
     return False
 
+  def requestWebPage(self,word,_dict,activeTab):
+    if activeTab == 0:
+      self.definitionListView.setEnabled(False)
+      self.defDataModel.load(word,_dict)
+    elif activeTab == 1:
+      url = self.defDataModel.createUrl(word,_dict)
+      self.webView.load(QtCore.QUrl(url))
+
+  def updateOnlineDefinition(self,index):
+    activeTab   = self.tabwidget.currentIndex()
+    activeDict  = self.dictSelect.currentText()
+    if activeDict == "":
+      return
+    selectedWord = self.getSelectedWord()
+    if selectedWord is None:
+      return
+    self.requestWebPage(selectedWord,activeDict,activeTab)
+
+  def _updateOnlineDefinition(self,definitionsList):
+    self.defController.update(definitionsList)
+    self.definitionListView.setEnabled(True)
+
+  def selectedWordChanged(self,index):
+    if index.isValid():
+      self.editWordButton.setEnabled(True)
+    else:
+      self.editWordButton.setEnabled(False)
+    selectedWord = self.getSelectedWord()
+    self.elementController.updateOnWord(selectedWord)
+    self.savedDefController.updateOnWord(selectedWord)
+    self.updateOnlineDefinition(index)
+
   def selectedTagChanged(self,index):
     selectedTag = self.getSelectedTag()
     self.wordController.updateOnTag(selectedTag)
 
   def saveDefinition(self):
     definition  = self.getSelectedDefinition()
-    word        = self.wordController.getSelectedWord()
+    word        = self.getSelectedWord()
     if not self.defDataModel.definitionExists(word,definition.definition):
       self._saveDefinition(definition.definition,definition.type,word)
-    self.savedDefController.update()
+    self.savedDefController.updateOnWord(word)
 
   def _saveDefinition(self,definitionText,definitionType,word):
     dictionary  = self.dictSelect.currentText()
@@ -511,14 +530,14 @@ class Ui_MainWindow(QtCore.QObject):
     self.setDirtyState()
   
   def _removeSelectedDefinition(self):
-    definition  = self.savedDefController.getSelectedDefinition().definition
-    word        = self.wordController.getSelectedWord()
+    definition  = self.getSelectedSavedDefinition().definition
+    word        = self.getSelectedWord()
     self.defDataModel.removeDefinition(word,definition)
     self.setDirtyState()
 
   def removeDefinition(self):
     self._removeSelectedDefinition()
-    self.savedDefController.update()
+    self.savedDefController.updateOnWord(self.getSelectedWord())
   
 
   def handleEditedTag(self,widget):
@@ -533,6 +552,19 @@ class Ui_MainWindow(QtCore.QObject):
     index = self.tagview.currentIndex()
     self.tagview.edit(index)
   
+  def getSelectedWord(self):
+    index = self.wordview.currentIndex()
+    selectedWord  = self.wordController.data(index,QtCore.Qt.DisplayRole)
+    if isinstance(selectedWord,str):
+      return selectedWord    
+    else:
+      return None
+
+  def getSelectedSavedDefinition(self):
+    index = self.savedDefinitionsView.currentIndex()
+    definition = self.savedDefController.getDefinition(index)
+    return definition
+
   def getSelectedDefinition(self):
     index = self.definitionListView.currentIndex()
     definition = self.defController.getDefinition(index)
@@ -555,7 +587,7 @@ class Ui_MainWindow(QtCore.QObject):
       contextMenu.exec(self.tagview.mapToGlobal(point))
 
   def savedDefViewContextMenuRequested(self,point):
-    if self.wordController.getSelectedWord() is not None:
+    if self.getSelectedWord() is not None:
       index = self.savedDefinitionsView.indexAt(point).row()
       contextMenu = QtWidgets.QMenu ("Context menu", self.savedDefinitionsView)
       contextMenu.addAction(self.addDefinitionAction)
@@ -577,16 +609,16 @@ class Ui_MainWindow(QtCore.QObject):
     self.setDirtyState()
 
   def removeWord(self):
-    word = self.wordController.getSelectedWord()
+    word = self.getSelectedWord()
     tags = self.tagDataModel.getTagsFromIndex(word)
     self._removeWord(word,tags)
     self.wordController.updateOnTag(self.getSelectedTag())
     self.tagController.updateTags()
   
   def handleEditedDefinition(self,widget):
-    definition  = self.savedDefController.getSelectedDefinition()
+    definition  = self.getSelectedSavedDefinition()
     newDefinition = widget.text()
-    word = self.wordController.getSelectedWord()
+    word = self.getSelectedWord()
     if definition.type == "_newUserDefinition":  #Dont'replace, add to the model
       self._saveDefinition(newDefinition,"User Definition", word)
       self.savedDefController.deleteTmpDefinition()

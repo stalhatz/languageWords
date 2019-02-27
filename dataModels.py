@@ -81,7 +81,6 @@ class WordDataModel(QObject):
 class DefinitionDataModel(QObject):
   dictNamesUpdated    = pyqtSignal(list)
   definitionsUpdated  = pyqtSignal(list)
-  externalPageLoad    = pyqtSignal(QUrl)
   showMessage         = pyqtSignal(str)
   def __init__(self, dictNames = []):
     super(DefinitionDataModel, self).__init__()
@@ -164,17 +163,18 @@ class DefinitionDataModel(QObject):
   def getDictNames(self):
     return list(self.selectedDicts.keys())
 
-  def load(self, word, dictName, externalLoad):
+  def createUrl(self,word,dictName):
     url = self.availableDicts[dictName].createUrl(word,self.language)
+    return url
+
+  def load(self, word, dictName):
+    url = self.createUrl(word,dictName)
     self.url = url
-    if externalLoad:
-      self.externalPageLoad.emit(QUrl(url))
-    else:
-      self.definitionsList = []
-      future = self.session.get(url)
-      future.add_done_callback(partial(self._load,url,dictName))
-      self.lastRequest = future
-      self.showMessage.emit("Loading from " + url)
+    self.definitionsList = []
+    future = self.session.get(url)
+    future.add_done_callback(partial(self._load,url,dictName))
+    self.lastRequest = future
+    self.showMessage.emit("Loading from " + url)
 
   #This is run by a thread other the main one. Though interpreter lock is in place, we should make sure there are no race conditions...
   def _load(self,url,dictName,future):
