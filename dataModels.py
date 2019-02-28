@@ -25,7 +25,7 @@ def loadFromPickle(file):
     a = pickle.load(file)
   return a
 
-class WordDataModel(QObject):
+class WordDataModel():
   def __init__(self, wordTable = None):
     super(WordDataModel, self).__init__()
     self.version = 0.01
