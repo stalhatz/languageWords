@@ -43,6 +43,7 @@ class WordDataModel():
     #The version variable is only for backwards compatibility with the class version.
     #It should not be stores to the object
     version = loadFromPickle(_input)
+    print("Loading WordDataModel version " + str(version))
     self.wordTable = loadFromPickle(_input)
 
   def toFile(self,file):
@@ -77,52 +78,24 @@ class WordDataModel():
     self.wordTable.drop(word , inplace = True)
     self.wordTable.reset_index(inplace = True)
     
-
-class DefinitionDataModel(QObject):
+class OnlineDefinitionDataModel(QObject):
   dictNamesUpdated    = pyqtSignal(list)
   definitionsUpdated  = pyqtSignal(list)
   showMessage         = pyqtSignal(str)
-  def __init__(self, dictNames = []):
-    super(DefinitionDataModel, self).__init__()
-
-
+  
+  def __init__(self):
+    super(OnlineDefinitionDataModel, self).__init__()
   @classmethod
-  def getInstance(cls,modulePath = "./dictionaries" , columns = ["text" , "definition", "timestamp" , "dictionary","type"]):
+
+  def getInstance(cls,modulePath = "./dictionaries"):
     obj = cls()
-    obj.version      = 0.03
+    obj.version      = 0.01
     obj.session      = FuturesSession(max_workers=1)
     obj.lastRequest  = None
     obj.url          = None
     obj.availableDicts = obj.findModules(modulePath)
     obj.selectedDicts = {}
-    obj.savedDefinitionsTable = pd.DataFrame(columns = columns)
     return obj
-
-  def definitionCondition(self,word,definition):
-    return (self.savedDefinitionsTable.text == word) & (self.savedDefinitionsTable.definition == definition)
-  def definitionExists(self,word,definition):
-    return self.definitionCondition(word,definition).any()
-
-  def addDefinition(self, word, definition, dictionary,_type):
-    record = {"text" : word ,"definition":definition, "timestamp": pd.Timestamp.now() , "dictionary": dictionary , "type":_type}
-    self.savedDefinitionsTable = self.savedDefinitionsTable.append(record, ignore_index = True)
-  
-  def getSavedDefinitions(self,word):
-    return self.savedDefinitionsTable[ self.savedDefinitionsTable.text == word]
-  
-  def getSavedDefinition(self,word,definition):
-    condition = self.definitionCondition(word,definition)
-    return self.savedDefinitionsTable[condition]
-
-  def replaceDefinition(self,word,oldDefinition,newDefinition):
-    condition = self.definitionCondition(word,oldDefinition)
-    self.savedDefinitionsTable.loc[condition,"definition"] = newDefinition
-    print(self.savedDefinitionsTable[condition])
-
-  def removeDefinition(self,word,definition):
-    condition = self.definitionCondition(word,definition)
-    index = self.savedDefinitionsTable[condition].index
-    self.savedDefinitionsTable.drop(index, inplace = True)
 
   def selectDictsFromNames(self,dictNames):
     #We will silently ignore all names not corresponding to available dictionaries
@@ -192,15 +165,88 @@ class DefinitionDataModel(QObject):
 
   def saveData(self,output):
     saveToPickle(self.version, output)
-    #version 0.02
+    #version 0.01
     saveToPickle(self.getDictNames(), output)
-    #version 0.03
+
+  def loadData(self,_input,noVersion):
+    #The version variable is only for backwards compatibility with the class version.
+    #It should not be stored to the object
+    version = loadFromPickle(_input)
+    print("Loading OnlineDefinitionDataModel version " + str(version))
+    #version 0.01
+    dictNames = loadFromPickle(_input)
+    self.selectDictsFromNames(dictNames)
+
+  def toFile(self,file):
+    if isinstance(file,str):
+      with open(file, 'wb') as output:
+        self.saveData(output)
+    else:
+      self.saveData(file)
+
+  def _fromFile(self,file,noVersion = False):
+    if isinstance(file,str):
+      with open(file, 'rb') as _input: 
+        self.loadData(_input,noVersion)
+    else:
+      self.loadData(file,noVersion)
+  
+  @classmethod
+  def fromFile(cls,file,noVersion = False):
+    a = cls.getInstance()
+    a._fromFile(file,noVersion)
+    return a
+
+class DefinitionDataModel():
+  def __init__(self):
+    super(DefinitionDataModel, self).__init__()
+
+  @classmethod
+  def getInstance(cls, columns = ["text" , "definition", "timestamp" , "dictionary","type"]):
+    obj = cls()
+    obj.version      = 0.04
+    obj.savedDefinitionsTable = pd.DataFrame(columns = columns)
+    return obj
+
+  def definitionCondition(self,word,definition):
+    return (self.savedDefinitionsTable.text == word) & (self.savedDefinitionsTable.definition == definition)
+  def definitionExists(self,word,definition):
+    return self.definitionCondition(word,definition).any()
+
+  def addDefinition(self, word, definition, dictionary,_type):
+    record = {"text" : word ,"definition":definition, "timestamp": pd.Timestamp.now() , "dictionary": dictionary , "type":_type}
+    self.savedDefinitionsTable = self.savedDefinitionsTable.append(record, ignore_index = True)
+  
+  def getSavedDefinitions(self,word):
+    return self.savedDefinitionsTable[ self.savedDefinitionsTable.text == word]
+  
+  def getSavedDefinition(self,word,definition):
+    condition = self.definitionCondition(word,definition)
+    return self.savedDefinitionsTable[condition]
+
+  def replaceDefinition(self,word,oldDefinition,newDefinition):
+    condition = self.definitionCondition(word,oldDefinition)
+    self.savedDefinitionsTable.loc[condition,"definition"] = newDefinition
+    print(self.savedDefinitionsTable[condition])
+
+  def removeDefinition(self,word,definition):
+    condition = self.definitionCondition(word,definition)
+    index = self.savedDefinitionsTable[condition].index
+    self.savedDefinitionsTable.drop(index, inplace = True)
+
+  def saveData(self,output):
+    saveToPickle(self.version, output)
+    #version 0.04
     saveToPickle(self.savedDefinitionsTable, output)
 
-  def loadData(self,_input):
+  def loadData(self,_input,noVersion):
     #The version variable is only for backwards compatibility with the class version.
     #It should not be stores to the object
-    version = loadFromPickle(_input)
+    if not noVersion:
+      version = loadFromPickle(_input)
+      print("Loading DefinitionDataModel version " + str(version))
+    else:
+      version = 0.03
     #print("DefinitionsVersion :: " + str(version))
     #version 0.01
     if (version == 0.01):
@@ -213,10 +259,9 @@ class DefinitionDataModel(QObject):
       dictNames = loadFromPickle(_input)
       self.selectDictsFromNames(dictNames)
     if (version == 0.03):
-      dictNames = loadFromPickle(_input)
-      self.selectDictsFromNames(dictNames)
       self.savedDefinitionsTable = loadFromPickle(_input)
-
+    if (version == 0.04):
+      self.savedDefinitionsTable = loadFromPickle(_input)
 
   def toFile(self,file):
     if isinstance(file,str):
@@ -225,17 +270,17 @@ class DefinitionDataModel(QObject):
     else:
       self.saveData(file)
 
-  def _fromFile(self,file):
+  def _fromFile(self,file,nv= False):
     if isinstance(file,str):
       with open(file, 'rb') as _input: 
-        self.loadData(_input)
+        self.loadData(_input,nv)
     else:
-      self.loadData(file)
+      self.loadData(file,nv)
   
   @classmethod
-  def fromFile(cls,file):
+  def fromFile(cls,file,nv = False):
     a = cls.getInstance()
-    a._fromFile(file)
+    a._fromFile(file,nv)
     return a
 
 
@@ -312,6 +357,7 @@ class TagDataModel():
     #It should not be stores to the object
     #version 0.02
     version = loadFromPickle(_input)
+    print("Loading TagDataModel version " + str(version))
     if version == 0.01:
       self.tagTable = loadFromPickle(_input)  
       self.tagNodes = loadFromPickle(_input)  

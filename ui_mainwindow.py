@@ -1,7 +1,7 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from controllers import (DefinitionController, TagController, WordController,ElementTagController,SavedDefinitionsController)
 from dialogs import WordDialog,DictionaryDialog,TagEditDialog,WelcomeDialog
-from dataModels import WordDataModel,DefinitionDataModel,TagDataModel
+from dataModels import WordDataModel,DefinitionDataModel,TagDataModel,OnlineDefinitionDataModel
 import pickle
 import os
 from hunspell import HunSpell
@@ -164,10 +164,11 @@ class Ui_MainWindow(QtCore.QObject):
     self.statusBar.setObjectName("statusbar")
     MainWindow.setStatusBar(self.statusBar)
   
-  def setupDataModels(self,wordDataModel,tagDataModel,defDataModel):
+  def setupDataModels(self,wordDataModel,tagDataModel,defDataModel,onlineDefDataModel):
     self.wordDataModel      = wordDataModel
     self.defDataModel       = defDataModel
     self.tagDataModel       = tagDataModel
+    self.onlineDefDataModel = onlineDefDataModel
     #Instantiate controllers
     self.wordController     = WordController(wordDataModel,self.tagDataModel)
     self.wordview.setModel(self.wordController)
@@ -179,7 +180,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.filterController.setSourceModel(self.tagController)
     self.filterController.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
     self.tagview.setModel(self.filterController)
-    self.defController      = DefinitionController(self.defDataModel)
+    self.defController      = DefinitionController(self.onlineDefDataModel)
     self.defController.addView(self.definitionListView)
     self.definitionListView.setModel(self.defController)
     self.elementController  = ElementTagController(tagDataModel)
@@ -208,17 +209,17 @@ class Ui_MainWindow(QtCore.QObject):
     self.tagFilter.textChanged.connect(self.filterController.setFilterFixedString)
     
     #Data models->Ui signals
-    self.defDataModel.dictNamesUpdated.connect(self.updateDictNames)
-    self.defDataModel.definitionsUpdated.connect(self._updateOnlineDefinition)
-    self.defDataModel.showMessage.connect(self.statusBar.showMessage) #Not really needed...
+    self.onlineDefDataModel.dictNamesUpdated.connect(self.updateDictNames)
+    self.onlineDefDataModel.definitionsUpdated.connect(self._updateOnlineDefinition)
+    self.onlineDefDataModel.showMessage.connect(self.statusBar.showMessage) #Not really needed...
 
-    self.dictSelect.insertItems(0,defDataModel.getDictNames())
+    self.dictSelect.insertItems(0,self.onlineDefDataModel.getDictNames())
 
   def setupUi(self, MainWindow):
     MainWindow.setObjectName("MainWindow")
     MainWindow.resize(720, 1024)
     self.mainWindow = MainWindow
-    self.version = 0.02
+    self.version = 0.03
     self.language = "N/A"
     self.projectName = "Untitled"
     self.programName = "LanguageWords"
@@ -326,7 +327,7 @@ class Ui_MainWindow(QtCore.QObject):
           tempCallback          = partial(self.openFile,self.tempProjectFile,True)
         lastOpenedCallback    = partial(self.openFile,self.projectFile)
 
-    availableLanguages = self.defDataModel.getAvailableLanguages()
+    availableLanguages = self.onlineDefDataModel.getAvailableLanguages()
     self.welcomeDialog = WelcomeDialog(self.centralwidget,self.actionOpen, self.actionNew , 
                                         self.programName , self.version , availableLanguages,
                                         lastOpenedCallback , tempCallback)
@@ -348,12 +349,14 @@ class Ui_MainWindow(QtCore.QObject):
 
   @classmethod
   def defaultInit(cls,window):
-    wordDataModel = WordDataModel()
-    defDataModel = DefinitionDataModel.getInstance()
-    tagDataModel = TagDataModel()
+    wordDataModel   = WordDataModel()
+    defDataModel    = DefinitionDataModel.getInstance()
+    onlineDefModel  = OnlineDefinitionDataModel.getInstance()
+    tagDataModel    = TagDataModel()
+
     obj = cls()
     obj.setupUi(window)
-    obj.setupDataModels(wordDataModel,tagDataModel, defDataModel)
+    obj.setupDataModels(wordDataModel,tagDataModel, defDataModel, onlineDefModel)
     obj.dictionary  = None
     obj.language    = None
     #self.activeConnections = []
@@ -371,6 +374,12 @@ class Ui_MainWindow(QtCore.QObject):
     code = codes[language]
     dicFile = [f for f in dicFiles if code.lower() in f.lower()]
     affFile = [f for f in affFiles if code.lower() in f.lower()]
+    if len(dicFile) == 0:
+      print("Could not find corresponding hunspell .dic file for " + language + " language")
+      return None,None
+    if len(dicFile) == 0:
+      print("Could not find corresponding hunspell .aff file for " + language + " language")
+      return None,None
     return os.path.join(dicPath,dicFile[0]), os.path.join(dicPath,affFile[0])
 
 
@@ -388,23 +397,39 @@ class Ui_MainWindow(QtCore.QObject):
   def _fromFile(cls, _input, window=None,obj=None):
     projectName = "Untitled"
     version = pickle.load(_input)
+    print("Loading project file version " + str(version))
     if version > 0.01:
       projectName = pickle.load(_input)
     language = pickle.load(_input)
     if obj is None:
       obj = cls()
-      wordDataModel = WordDataModel.fromFile(_input)
-      tagDataModel = TagDataModel.fromFile(_input)
-      defDataModel = DefinitionDataModel.fromFile(_input)
+      if version > 0.02:
+        wordDataModel = WordDataModel.fromFile(_input)
+        tagDataModel = TagDataModel.fromFile(_input)
+        onlineDefDataModel = OnlineDefinitionDataModel(_input)
+        defDataModel = DefinitionDataModel.fromFile(_input)
+      else:
+        wordDataModel = WordDataModel.fromFile(_input)
+        tagDataModel = TagDataModel.fromFile(_input)
+        onlineDefDataModel = OnlineDefinitionDataModel.fromFile(_input)
+        defDataModel = DefinitionDataModel.fromFile(_input , True)
       obj.setupUi(window)
       obj.setupDataModels(wordDataModel,tagDataModel,defDataModel)
     else:
-      obj.wordDataModel._fromFile(_input)
-      obj.tagDataModel._fromFile(_input)
-      obj.defDataModel._fromFile(_input)
-    
+      if version > 0.02:
+        obj.wordDataModel._fromFile(_input)
+        obj.tagDataModel._fromFile(_input)
+        obj.onlineDefDataModel._fromFile(_input)
+        obj.defDataModel._fromFile(_input)
+      else:
+        obj.wordDataModel._fromFile(_input)
+        obj.tagDataModel._fromFile(_input)
+        obj.onlineDefDataModel._fromFile(_input)
+        obj.defDataModel._fromFile(_input, True)
+
     obj.wordDataModel.language  = language
     obj.defDataModel.language   = language
+    obj.onlineDefDataModel.language = language
     obj.language                = language
     obj.projectName             = projectName
     obj.dictionary              = None
@@ -412,7 +437,8 @@ class Ui_MainWindow(QtCore.QObject):
     if language is not None:
       obj.dicPath       = "/usr/share/hunspell/"
       dicPath,affPath   = obj.findDictionary(obj.dicPath,obj.language)
-      obj.dictionary    = obj.loadDictionary(dicPath, affPath)
+      if (dicPath is not None) and (affPath is not None): 
+        obj.dictionary    = obj.loadDictionary(dicPath, affPath)
     return obj
   
   def openFile(self,fileName = None, isTmpFile = False):
@@ -458,6 +484,7 @@ class Ui_MainWindow(QtCore.QObject):
         pickle.dump(self.language, output , pickle.HIGHEST_PROTOCOL) #Language
         self.wordDataModel.toFile(output)
         self.tagDataModel.toFile(output)
+        self.onlineDefDataModel.toFile(output)
         self.defDataModel.toFile(output)
         self.statusBar.showMessage("Saved to "+ fileName , 2000)
         return True
@@ -484,9 +511,9 @@ class Ui_MainWindow(QtCore.QObject):
   def requestWebPage(self,word,_dict,activeTab):
     if activeTab == 0:
       self.definitionListView.setEnabled(False)
-      self.defDataModel.load(word,_dict)
+      self.onlineDefDataModel.load(word,_dict)
     elif activeTab == 1:
-      url = self.defDataModel.createUrl(word,_dict)
+      url = self.onlineDefDataModel.createUrl(word,_dict)
       self.webView.load(QtCore.QUrl(url))
 
   def updateOnlineDefinition(self,index):
