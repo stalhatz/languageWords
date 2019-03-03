@@ -10,7 +10,7 @@ def createUrl(word,requestLang):
       return "https://www.google.com/search?q="+ word.lower() +"&tbm=nws" 
   raise ValueError("Could not find " + requestLang + " in " + name + "'s language list. Available langs : " + str(languages) )
 
-def getDefinitionsFromHtml(html):
+def getDefinitionsFromHtml(html,language):
   Definition = namedtuple('definition', ('definition', 'type'))
   definitionsList = []
   titles = []
