@@ -268,7 +268,7 @@ class DictionaryDialog(QtWidgets.QDialog):
       self.layoutChanged.emit()
     def getDictNames(self):
       return [_dict.name for _dict in self.dictionaries]
-  def __init__(self ,parent , defModel):
+  def __init__(self ,parent , onlineDefModel):
     super(DictionaryDialog,self).__init__(parent)
 
     vLayout     = QtWidgets.QVBoxLayout(self)
@@ -288,8 +288,8 @@ class DictionaryDialog(QtWidgets.QDialog):
     
     self.sDictTableView = QtWidgets.QTableView(self) #Selected
     self.aDictTableView = QtWidgets.QTableView(self) # Available
-    self.sController         = DictionaryDialog.DictionaryModel( defModel.getSelectedDicts() , "s") 
-    self.aController         = DictionaryDialog.DictionaryModel( defModel.getAvailableDicts(), "a" ) 
+    self.sController         = DictionaryDialog.DictionaryModel( onlineDefModel.getSelectedDicts() , "s") 
+    self.aController         = DictionaryDialog.DictionaryModel( onlineDefModel.getAvailableDicts(), "a" ) 
     self.sDictTableView.setModel(self.sController)
     self.aDictTableView.setModel(self.aController)
     self.sDictTableView.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows )

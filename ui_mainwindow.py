@@ -298,10 +298,10 @@ class Ui_MainWindow(QtCore.QObject):
       print('Rejected')
 
   def showEditDictsDialog(self,event):
-    self.editDictsDialog = DictionaryDialog(self.centralwidget,self.defDataModel)
+    self.editDictsDialog = DictionaryDialog(self.centralwidget,self.onlineDefDataModel)
     dialogCode = self.editDictsDialog.exec()
     if dialogCode == QtWidgets.QDialog.Accepted:
-      self.defDataModel.selectDictsFromNames(self.editDictsDialog.sController.getDictNames())
+      self.onlineDefDataModel.selectDictsFromNames(self.editDictsDialog.sController.getDictNames())
       
     elif dialogCode == QtWidgets.QDialog.Rejected:
       print('Rejected')
@@ -566,7 +566,6 @@ class Ui_MainWindow(QtCore.QObject):
     self._removeSelectedDefinition()
     self.savedDefController.updateOnWord(self.getSelectedWord())
   
-
   def handleEditedTag(self,widget):
     if (widget.isModified()):
       oldTag  = self.getSelectedTag()
