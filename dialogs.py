@@ -9,28 +9,41 @@ import os
 #TODO: Implement dictionaries ListView. Show dictionary availability while typing the word.
 # whether it should be hidden and shown thus constucted only once (responsiveness benefits?)
 class WordDialog(QtWidgets.QDialog):
-  class DictDialogListModel(QtCore.QAbstractListModel):
-    def __init__(self,defModel):
-      super(WordDialog.DictDialogListModel, self).__init__()
-      self.dictNames = defModel.getDictNames()
+  class OnlineTagsListModel(QtCore.QAbstractListModel):
+    def __init__(self,onlineDefModel):
+      super(WordDialog.OnlineTagsListModel, self).__init__()
+      #self.dictNames = defModel.getDictNames()
+      self.tagsList = []
+      self.onlineDefModel = onlineDefModel
+    def update(self,tagsList):
+      self.layoutAboutToBeChanged.emit()
+      self.tagsList += tagsList
+      #self.sortDefList()
+      self.layoutChanged.emit()
     def rowCount(self, modelIndex):
-      return len(self.dictNames)
+      return len(self.tagsList)
     def data(self, index, role):
-      if not index.isValid() or not (0<=index.row()<len(self.dictNames)):
+      if not index.isValid() or not (0<=index.row()<len(self.tagsList)):
         return QtCore.QVariant()
       if role==QtCore.Qt.DisplayRole:
-        return self.dictNames[index.row()]
-      if role==QtCore.Qt.DecorationRole:
-        return QtGui.QIcon.fromTheme("edit-undo")
+        return self.tagsList[index.row()]
+    def clear(self):
+      if self.tagsList:
+        self.tagsList = []
+        
+
+      
   
   CREATE_DIALOG = 0
   EDIT_DIALOG = 1
 
-  def __init__(self, parent, wordDataModel,tagDataModel, defModel,dictionary,dialogType, existingWord = None , existingTags = None):
+  def __init__(self, parent, wordDataModel, tagDataModel, onlineDefDataModel,
+                dictionary,dialogType, existingWord = None , existingTags = None):
     super(WordDialog,self).__init__(parent)
-    self.wordDataModel  = wordDataModel
-    self.tagDataModel   = tagDataModel
-    self.words          = [unidecode.unidecode(x.lower()) for x in self.wordDataModel.getWords()]
+    self.wordDataModel        = wordDataModel
+    self.tagDataModel         = tagDataModel
+    self.onlineDefDataModel   = onlineDefDataModel
+    self.words                = [unidecode.unidecode(x.lower()) for x in self.wordDataModel.getWords()]
     self.dictionary           = dictionary
     self.wordSpelledCorrectly = False
     self.wordAlreadyExists    = False
@@ -67,14 +80,17 @@ class WordDialog(QtWidgets.QDialog):
     hHighLayout.addLayout(vRightLayout)
 
     #vLeftLayout (hHighLayout)
-    #verticalSpacer = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Expanding) 
-    dictListView    = QtWidgets.QListView(self)
-    dictController  = self.DictDialogListModel(defModel)
-    dictListView.setModel(dictController)
+    verticalSpacer = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Expanding) 
+    self.onlineTagsListView    = QtWidgets.QListView(self)
+    self.onlineTagsListView.doubleClicked.connect(self.addTagFromListView)
+    self.onlineTagsController  = WordDialog.OnlineTagsListModel(self.onlineDefDataModel)
+    self.onlineTagsListView.setModel(self.onlineTagsController)
+    self.onlineDefDataModel.tagsUpdated.connect(self.updateOnlineTags)
 
     self.wLineEdit = QtWidgets.QLineEdit(self)
     self.wLineEdit.setMaximumSize(QtCore.QSize(400, 25))
     self.wLineEdit.setFocus()
+    self.wLineEdit.editingFinished.connect(self.loadOnlineTags)
     if self.dialogType == self.CREATE_DIALOG:
       self.wLineEdit.setPlaceholderText("Enter a new word")
     if self.dialogType == self.EDIT_DIALOG:
@@ -82,7 +98,7 @@ class WordDialog(QtWidgets.QDialog):
     self.wLineEdit.textChanged.connect(self.wordTextChanged)
     vLeftLayout.addStretch()
 
-    uiUtils.addLabeledWidget("Available dictionaries", dictListView , vLeftLayout)
+    uiUtils.addLabeledWidget("Suggested Tags", self.onlineTagsListView , vLeftLayout)
     vLeftLayout.addWidget(self.wLineEdit)
     
     #vRightLayout (hHighLayout) 
@@ -122,6 +138,14 @@ class WordDialog(QtWidgets.QDialog):
     if self.dialogType == self.EDIT_DIALOG:
       self.wLineEdit.setText(self.existingWord)
 
+  def loadOnlineTags(self):
+    self.onlineTagsController.clear()
+    word = self.wLineEdit.text()
+    self.onlineDefDataModel.loadTags(word)
+
+  def updateOnlineTags(self,tagsList): #Callback from onlineDefDataModel
+    self.onlineTagsController.update(tagsList)
+  
   def selectedTagChanged(self):
     self.removeTagButton.setEnabled(True)
 
@@ -173,13 +197,21 @@ class WordDialog(QtWidgets.QDialog):
           self.wordAlreadyExists = False
     self.enableOKButton()
 
-      
-  def addTag(self,event):
-    stringList = self.tagController.stringList()
-    stringList.append(self.tLineEdit.text())
-    self.tagController.setStringList(stringList)
+  def addTagFromListView(self):
+    index = self.onlineTagsListView.currentIndex()
+    tag = self.onlineTagsController.data(index,QtCore.Qt.DisplayRole)
+    self.addTag(tag)
+
+  def addTagFromLineEdit(self,event):
+    tag = self.tLineEdit.text()
     self.tLineEdit.clear()
     self.removeTagButton.setEnabled(True)
+    self.addTag(tag)
+
+  def addTag(self,tag):
+    stringList = self.tagController.stringList()
+    stringList.append(tag)
+    self.tagController.setStringList(stringList)
     self.enableOKButton()
 
   def removeTag(self,event):

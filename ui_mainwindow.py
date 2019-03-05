@@ -253,7 +253,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.actionSave.setText(_translate("MainWindow", "Save"))
   
   def showAddWordDialog(self,event):
-    self.addWordDialog = WordDialog(self.centralwidget,self.wordDataModel,self.tagDataModel,self.defDataModel,self.dictionary,
+    self.addWordDialog = WordDialog(self.centralwidget,self.wordDataModel,self.tagDataModel,self.onlineDefDataModel,self.dictionary,
                                     WordDialog.CREATE_DIALOG)
     dialogCode = self.addWordDialog.exec()
     if dialogCode == QtWidgets.QDialog.Accepted:

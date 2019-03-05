@@ -8,6 +8,7 @@ import pandas as pd
 import pickle
 from functools import partial
 from requests_futures.sessions import FuturesSession
+import requests
 from concurrent.futures import ThreadPoolExecutor
 
 def saveToPickle(a , file):
@@ -78,8 +79,10 @@ class WordDataModel():
     self.wordTable.drop(word , inplace = True)
     self.wordTable.reset_index(inplace = True)
     
+#FIXME: Sequential loading for suggested tags. Should be moved to threaded requests.
 class OnlineDefinitionDataModel(QObject):
   dictNamesUpdated    = pyqtSignal(list)
+  tagsUpdated         = pyqtSignal(list)
   definitionsUpdated  = pyqtSignal(list)
   showMessage         = pyqtSignal(str)
   
@@ -126,8 +129,14 @@ class OnlineDefinitionDataModel(QObject):
   def getSelectedDicts(self):
     return list(self.selectedDicts.values())
 
+  def getTagsFromHtml(self,dictName, html):
+    tagList = []
+    if hasattr(self.selectedDicts[dictName], 'getTagsFromHtml'):
+      tagsList        = self.selectedDicts[dictName].getTagsFromHtml(html,self.language)
+    return tagsList
+
   def getDefinitionsFromHtml(self,dictName, html):
-    definitionsList = self.selectedDicts[dictName].getDefinitionsFromHtml(html)
+    definitionsList = self.selectedDicts[dictName].getDefinitionsFromHtml(html,self.language)
     return definitionsList
 
   def updateDictNames(self):
@@ -140,28 +149,49 @@ class OnlineDefinitionDataModel(QObject):
     url = self.availableDicts[dictName].createUrl(word,self.language)
     return url
 
-  def load(self, word, dictName):
-    url = self.createUrl(word,dictName)
-    self.url = url
+  def loadDefinition(self,word,dictName):
     self.definitionsList = []
-    future = self.session.get(url)
-    future.add_done_callback(partial(self._load,url,dictName))
-    self.lastRequest = future
-    self.showMessage.emit("Loading from " + url)
+    self.load(self, word, dictName,True)
 
-  #This is run by a thread other the main one. Though interpreter lock is in place, we should make sure there are no race conditions...
-  def _load(self,url,dictName,future):
-    if url != self.url:
-      future.cancel() #Should cancel itself when issuing the next request as max_workers = 1
-      return
-    request = future.result()
+  def loadTags(self, word):
+    for dictName in self.selectedDicts:
+      if hasattr(self.selectedDicts[dictName], 'getTagsFromHtml'):
+        self.loadSequential(word,dictName,False) 
+
+  def handleRequest(self,request,url,dictName,isDefinition=True):
     if request.status_code > 200:
       self.showMessage.emit("Error while loading from " + url + " Code :: " + str(request.status_code))
     else:
       self.showMessage.emit("Finished loading from " + url)
       html =  request.text
-      self.definitionsList = self.getDefinitionsFromHtml(dictName, html)
-      self.definitionsUpdated.emit(self.definitionsList)
+      if isDefinition:
+        self.definitionsList = self.getDefinitionsFromHtml(dictName, html)
+        self.definitionsUpdated.emit(self.definitionsList)
+      else: #Update tags
+        self.tagsList = self.getTagsFromHtml(dictName,html)
+        if self.tagsList:
+          self.tagsUpdated.emit(self.tagsList)
+
+  def loadSequential(self,word, dictName,isDefinition=False):
+    url       = self.createUrl(word,dictName)
+    response  = requests.get(url)
+    self.handleRequest(response,url,dictName,isDefinition)
+
+  def load(self, word, dictName,isDefinition=True):
+    url = self.createUrl(word,dictName)
+    self.url = url
+    future = self.session.get(url)
+    future.add_done_callback(partial(self._load,url,dictName,isDefinition))
+    self.lastRequest = future
+    self.showMessage.emit("Loading from " + url)
+
+  #This is run by a thread other the main one. Though interpreter lock is in place, we should make sure there are no race conditions...
+  def _load(self,url,dictName,isDefinition,future):
+    if url != self.url:
+      future.cancel() #Should cancel itself when issuing the next request as max_workers = 1
+      return
+    request = future.result()
+    self.handleRequest(request,url,dictName,isDefinition)
 
   def saveData(self,output):
     saveToPickle(self.version, output)

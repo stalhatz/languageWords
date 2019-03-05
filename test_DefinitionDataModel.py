@@ -35,4 +35,4 @@ def test_findModules(tmp_path,monkeypatch):
     assert aDicts["fake"].name == "fake"
     assert aDicts["fake"].languages[0] == "Lang1"
     assert aDicts["fake"].languages[1] == "Lang2"
-    assert aDicts["fake"].getDefinitionsFromHtml("")[0] == "fakeDefinition"
+    assert aDicts["fake"].getDefinitionsFromHtml("","fakeLang")[0] == "fakeDefinition"

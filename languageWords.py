@@ -3,11 +3,11 @@ from ui_mainwindow import Ui_MainWindow
 from PyQt5.QtWidgets import (QApplication, QMainWindow)
 from PyQt5.QtCore import QTimer
 
+#TODO: [FEATURE_0] Write README.md
 #TODO: [FEATURE_1] Create separate class to handle online definitions, implement a caching scheme to limit reloading.
 #TODO: [FEATURE_1] Sort ListViews by interacting with their corresponding Label
 #TODO: [FEATURE_1] Drag and Drop support between list views
-#TODO: [FEATURE_2] Context menu to rename tags
-#TODO: [FEATURE_1] Dictionaries can propose tags 
+#TODO: [FEATURE_1] Dictionaries can return more results when user scrolls
 #TODO: [FEATURE_2] Show word in bold when found in example (impossible currently without implementing the paint function of a delegate)
 #TODO: [FEATURE_0] Use a QStackedLayout to show alternative layouts for manipulating/viewing/experimenting with data
 #TODO: [FEATURE_0] Training mode where a category is selected and examples are shown for the user to fill the gaps.
