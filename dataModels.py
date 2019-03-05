@@ -96,7 +96,7 @@ class OnlineDefinitionDataModel(QObject):
     obj.session      = FuturesSession(max_workers=1)
     obj.lastRequest  = None
     obj.url          = None
-    obj.availableDicts = obj.findModules(modulePath)
+    obj.findModules(modulePath)
     obj.selectedDicts = {}
     return obj
 
@@ -109,7 +109,7 @@ class OnlineDefinitionDataModel(QObject):
     self.updateDictNames()
 
   def findModules(self,directory= None,packageName = "dictionaries"):
-    availableDicts = {}
+    self.availableDicts = {}
     if directory is not None:
       sys.path.insert(0,str(directory))
     package  = importlib.import_module(packageName)
@@ -117,8 +117,8 @@ class OnlineDefinitionDataModel(QObject):
     for importer, modname, ispkg in pkgutil.iter_modules(package.__path__, prefix):
       #print ("Found submodule %s (is a package: %s)" % (modname, ispkg))
       dictionary = import_module(modname)
-      availableDicts[dictionary.name] = dictionary
-    return availableDicts
+      self.availableDicts[dictionary.name] = dictionary
+    return self.availableDicts
 
   def getAvailableLanguages(self):
     return list ( set( [l for d in self.availableDicts.values() for l in d.languages] ) )
@@ -146,7 +146,7 @@ class OnlineDefinitionDataModel(QObject):
     return list(self.selectedDicts.keys())
 
   def createUrl(self,word,dictName):
-    url = self.availableDicts[dictName].createUrl(word,self.language)
+    url = self.selectedDicts[dictName].createUrl(word,self.language)
     return url
 
   def loadDefinition(self,word,dictName):
