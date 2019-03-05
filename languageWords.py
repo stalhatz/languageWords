@@ -4,7 +4,8 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow)
 from PyQt5.QtCore import QTimer
 
 #TODO: [FEATURE_0] Write README.md
-#TODO: [FEATURE_1] Create separate class to handle online definitions, implement a caching scheme to limit reloading.
+#TODO: [FEARURE_2] Request asynchronously more than one web page
+#TODO: [FEATURE_1] Implement a caching scheme to limit reloading.
 #TODO: [FEATURE_1] Sort ListViews by interacting with their corresponding Label
 #TODO: [FEATURE_1] Drag and Drop support between list views
 #TODO: [FEATURE_1] Dictionaries can return more results when user scrolls
