@@ -208,7 +208,8 @@ class WordDialog(QtWidgets.QDialog):
     self.removeTagButton.setEnabled(True)
     self.addTag(tag)
 
-  def addTag(self,tag):
+  def addTag(self,checked):
+    tag = self.tLineEdit.text()
     stringList = self.tagController.stringList()
     stringList.append(tag)
     self.tagController.setStringList(stringList)
