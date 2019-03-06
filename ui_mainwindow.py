@@ -277,7 +277,7 @@ class Ui_MainWindow(QtCore.QObject):
     if isinstance(word,QtCore.QVariant):
       return
     tags      = self.tagDataModel.getTagsFromIndex(word)
-    self.editWordDialog = WordDialog(self.centralwidget,self.wordDataModel,self.tagDataModel,self.defDataModel,self.dictionary,
+    self.editWordDialog = WordDialog(self.centralwidget,self.wordDataModel,self.tagDataModel,self.onlineDefDataModel,self.dictionary,
                                       WordDialog.EDIT_DIALOG , word, tags)
     dialogCode = self.editWordDialog.exec()
     if dialogCode == QtWidgets.QDialog.Accepted:
