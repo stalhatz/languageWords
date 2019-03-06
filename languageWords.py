@@ -4,7 +4,8 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow)
 from PyQt5.QtCore import QTimer
 
 #TODO: [FEATURE_0] Write README.md
-#TODO: [FEATURE_3] Exit program when closing WelcomeDialog
+#TODO  [FEATURE_1] Customize generic css styles by modifying styles in-code
+#TODO  [FEATURE_2] Create option for loading css styles from file. Style file choice should be written to the session file.
 #TODO: [FEATURE_3] Ensure project file has a .pkl extension
 #TODO: [FEATURE_3] Have a default metatag "All" for all tags. Should not be renamable or deletable.
 #TODO: [FEARURE_2] Request asynchronously more than one web page
@@ -33,11 +34,11 @@ if __name__ == "__main__":
   # if args.l is not None:
   #    ui = Ui_MainWindow.fromFile(args.l, window)
   # else:
-  ui = Ui_MainWindow.defaultInit(window)
+  ui = Ui_MainWindow.defaultInit(app,window)
   QTimer.singleShot(0,ui.showWelcomeDialog)
 
 
-  stylesheet="stylesheet1.css"
+  stylesheet="tmp_stylesheet2.css"
   with open(stylesheet,"r") as fh:
     app.setStyleSheet(fh.read())
   

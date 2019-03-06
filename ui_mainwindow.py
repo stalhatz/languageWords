@@ -50,6 +50,10 @@ class Ui_MainWindow(QtCore.QObject):
     self.renameTagAction.setObjectName("renameTagAction")
     self.renameTagAction.triggered.connect(self.editSelectedTag)
 
+    self.exitAppAction = QtWidgets.QAction ("Exit Application", self.mainWindow)
+    self.exitAppAction.setObjectName("exitAppAction")
+    self.exitAppAction.triggered.connect(self.exitApplication)
+
   def addTopButtons(self):
     self.buttonHorizontalLayout = QtWidgets.QHBoxLayout()
     self.buttonHorizontalLayout.setObjectName("buttonHorizontalLayout")
@@ -157,6 +161,8 @@ class Ui_MainWindow(QtCore.QObject):
     self.menuFile.addAction(self.actionOpen)
     self.menuFile.addAction(self.actionSave)
     self.menuFile.addAction(self.actionSaveAs)
+    self.menuFile.addSeparator()
+    self.menuFile.addAction(self.exitAppAction)
     self.menubar.addAction(self.menuFile.menuAction())
     MainWindow.setMenuBar(self.menubar)
   def addStatusBar(self,MainWindow):
@@ -340,15 +346,13 @@ class Ui_MainWindow(QtCore.QObject):
         self.projectName  = self.welcomeDialog.nameLineEdit.text()
         self.setWindowTitle()
         self.setDirtyState()
-      print('Accepted')
     elif dialogCode == QtWidgets.QDialog.Rejected:
-      print('Rejected')
-
+      self.exitAppAction.trigger()
   # def disableEditWordButton(self):
   #   self.editWordButton.setEnabled(False)
 
   @classmethod
-  def defaultInit(cls,window):
+  def defaultInit(cls,app,window):
     wordDataModel   = WordDataModel()
     defDataModel    = DefinitionDataModel.getInstance()
     onlineDefModel  = OnlineDefinitionDataModel.getInstance()
@@ -359,6 +363,7 @@ class Ui_MainWindow(QtCore.QObject):
     obj.setupDataModels(wordDataModel,tagDataModel, defDataModel, onlineDefModel)
     obj.dictionary  = None
     obj.language    = None
+    obj.app         = app
     #self.activeConnections = []
     return obj
 
@@ -676,6 +681,7 @@ class Ui_MainWindow(QtCore.QObject):
       pickle.dump(self.tempProjectFile,output, pickle.HIGHEST_PROTOCOL)
       pickle.dump(self.projectFile,output, pickle.HIGHEST_PROTOCOL)
       pickle.dump(self.unsavedChanges,output, pickle.HIGHEST_PROTOCOL) #unsavedChanges
-
+  def exitApplication(self):
+    self.app.quit()
 
 from PyQt5 import QtWebEngineWidgets 
