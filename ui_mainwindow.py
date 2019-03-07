@@ -50,9 +50,13 @@ class Ui_MainWindow(QtCore.QObject):
     self.renameTagAction.setObjectName("renameTagAction")
     self.renameTagAction.triggered.connect(self.editSelectedTag)
 
-    self.exitAppAction = QtWidgets.QAction ("Exit Application", self.mainWindow)
+    self.exitAppAction = QtWidgets.QAction ("Exit application", self.mainWindow)
     self.exitAppAction.setObjectName("exitAppAction")
     self.exitAppAction.triggered.connect(self.exitApplication)
+
+    self.showPreferencesAction = QtWidgets.QAction ("Preferences", self.mainWindow)
+    self.showPreferencesAction.setObjectName("showPreferencesAction")
+    self.showPreferencesAction.triggered.connect(self.showPreferencesDialog)
 
   def addTopButtons(self):
     self.buttonHorizontalLayout = QtWidgets.QHBoxLayout()
@@ -155,6 +159,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.menubar = QtWidgets.QMenuBar(MainWindow)
     self.menubar.setGeometry(QtCore.QRect(0, 0, 728, 30))
     self.menubar.setObjectName("menubar")
+    
     self.menuFile = QtWidgets.QMenu(self.menubar)
     self.menuFile.setObjectName("menuFile")
     self.menuFile.addAction(self.actionNew)
@@ -163,7 +168,13 @@ class Ui_MainWindow(QtCore.QObject):
     self.menuFile.addAction(self.actionSaveAs)
     self.menuFile.addSeparator()
     self.menuFile.addAction(self.exitAppAction)
+
+    self.menuEdit = QtWidgets.QMenu(self.menubar)
+    self.menuEdit.setObjectName("menuEdit")
+    self.menuEdit.addAction(self.showPreferencesAction)
+
     self.menubar.addAction(self.menuFile.menuAction())
+    self.menubar.addAction(self.menuEdit.menuAction())
     MainWindow.setMenuBar(self.menubar)
   def addStatusBar(self,MainWindow):
     self.statusBar = QtWidgets.QStatusBar(MainWindow)
@@ -253,11 +264,15 @@ class Ui_MainWindow(QtCore.QObject):
   def retranslateUi(self, MainWindow):
     _translate = QtCore.QCoreApplication.translate
     self.menuFile.setTitle(_translate("MainWindow", "Fi&le"))
+    self.menuEdit.setTitle(_translate("MainWindow", "&Edit"))
     self.actionNew.setText(_translate("MainWindow", "New project"))
     self.actionOpen.setText(_translate("MainWindow", "Open..."))
     self.actionSaveAs.setText(_translate("MainWindow", "Save As..."))
     self.actionSave.setText(_translate("MainWindow", "Save"))
   
+  def showPreferencesDialog(self):
+    pass
+
   def showAddWordDialog(self,event):
     self.addWordDialog = WordDialog(self.centralwidget,self.wordDataModel,self.tagDataModel,self.onlineDefDataModel,self.dictionary,
                                     WordDialog.CREATE_DIALOG)
