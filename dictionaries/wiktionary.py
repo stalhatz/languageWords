@@ -11,14 +11,28 @@ def createUrl(word,requestLang):
       return dictUrls[i] + word.lower()
   raise ValueError("Could not find " + requestLang + " in " + name + "'s language list. Available langs : " + str(languages) )
 
+def breakUpDefinitionLine(_def):
+  tagsList = []
+  splitList = _def.split(")")
+  lastElement = _def
+  for i,element in enumerate(splitList):
+    if element.strip().startswith("("):
+      tag = element.strip().strip("(")
+      tagsList.append(tag)
+    else:
+      lastElement = element
+      break
+  lEIndex = _def.find(lastElement)
+  definition = _def[lEIndex:]
+  return tagsList,definition
+
 def getDefinitionsFromHtml(html,language):
   Definition = namedtuple('definition', ('definition', 'type'))
   definitionsList = []
   s = BeautifulSoup(html,"html.parser")
   for element in s.select("ol > li"):
     _def = element.text.split("\n")[0]
-    if _def.strip().startswith("("):
-      _def = _def.strip().split(")")[1].strip()
+    _,_def = breakUpDefinitionLine(_def)
     definitionsList.append(Definition( _def , "definition") )
   for element in s.select("ol > li > ul > li"):
     definitionsList.append(Definition(element.text.split("\n")[0] , "example") )
@@ -31,12 +45,11 @@ def getTagsFromHtml(html,language):
     grammaticalTag = s.select(".mw-headline > .titredef")[0].text
     tagsList.append(grammaticalTag)
   for element in s.select("ol > li"):
-    _def = element.text.split("\n")[0]
-    if _def.strip().startswith("("):
-      tag = _def.strip().split(")")[0]
-      tag = tag.strip().strip("(").strip(")")
-      tagsList.append(tag)
+    tags,_ = breakUpDefinitionLine(element.text.split("\n")[0])
+    tagsList += tags
   print (tagsList)
   return tagsList
+
+
 
 
