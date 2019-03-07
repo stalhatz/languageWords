@@ -7,6 +7,7 @@
 *.txt
 *.pyc
 *.autosave
+*.qss
 languageWords.code-workspace
 .~lock.Signals_Slots.odp#
 Signals_Slots.odp
