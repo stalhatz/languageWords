@@ -1,0 +1,40 @@
+
+QWidget{
+  /*font-family: 'Courier New', Courier, monospace*/
+  /* font-family: 'Ubuntu', Ubuntu */
+  font-family: "Cantarell"
+}
+#widgetLabel{
+  margin-top: 10px;
+  font-weight: bold;
+  border: 0.5px solid
+}
+
+QListView {
+    show-decoration-selected: 1; /* make the selection span the entire width of the view */
+}
+
+QListView::item:disabled{
+  background: rgba(70, 70, 70, 100);
+  font-style: italic;
+  border: 0.5px solid
+}
+
+QListView::item{
+  padding-bottom: 2px;
+  padding-top: 2px; 
+}
+#definitionListView:item{
+  padding-bottom: 4px; 
+  padding-top: 4px; 
+  border: 0.5px solid rgba(70, 70, 70, 100)
+}
+
+#definitionListView:item::disabled{
+  border: 0.5px solid black;
+  color: white
+}
+
+QStatusBar{
+  font-family: monospace
+}
