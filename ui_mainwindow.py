@@ -133,7 +133,7 @@ class Ui_MainWindow(QtCore.QObject):
     uiUtils.addLabeledWidget("Tags by Phrase", self.elementTagview,self.verticalLayout)
     
     self.savedDefinitionsView = QtWidgets.QListView(self.centralwidget)
-    self.savedDefinitionsView.setObjectName("savedDefinitionsView")
+    self.savedDefinitionsView.setObjectName("definitionListView")
     self.savedDefinitionsView.setWordWrap(True)
     self.savedDefinitionsView.setEditTriggers(QtWidgets.QAbstractItemView.SelectedClicked)
     self.savedDefinitionsView.itemDelegate().commitData.connect(self.handleEditedDefinition)
@@ -247,6 +247,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.projectFile = None 
     self.unsavedChanges = False 
     self.tempProjectFile = None
+    self.applyCss()
     self.setWindowTitle()
     self.centralwidget = QtWidgets.QWidget(MainWindow)
     self.centralwidget.setObjectName("centralwidget")
@@ -271,7 +272,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.actionSave.setText(_translate("MainWindow", "Save"))
   
   def showPreferencesDialog(self):
-    self.preferencesDialog = PreferencesDialog(self.centralwidget , self, self.mainWindow , self.app)
+    self.preferencesDialog = PreferencesDialog(self.centralwidget , self, self.mainWindow , self.app, self.applyCss)
     dialogCode = self.preferencesDialog.exec()
     if dialogCode == QtWidgets.QDialog.Accepted:
       print("Accepted")
@@ -703,5 +704,15 @@ class Ui_MainWindow(QtCore.QObject):
       pickle.dump(self.unsavedChanges,output, pickle.HIGHEST_PROTOCOL) #unsavedChanges
   def exitApplication(self):
     self.app.quit()
+
+  def applyCss(self,cssFileName = None):
+    if cssFileName is not None:
+      self.cssFileName = cssFileName
+      with open(cssFileName,"r") as fh:
+        self.app.setStyleSheet(fh.read())
+    
+    stylesheet="stylesheet_compl.css"
+    with open(stylesheet,"r") as fh:
+      self.mainWindow.setStyleSheet(fh.read())
 
 from PyQt5 import QtWebEngineWidgets 

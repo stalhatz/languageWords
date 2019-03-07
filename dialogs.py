@@ -583,11 +583,13 @@ class WelcomeDialog(QtWidgets.QDialog):
       self.newProjectButton.setEnabled(False)
 
 class PreferencesDialog(QtWidgets.QDialog):
-  def __init__(self ,parent, uiObject, mainWindow, app):
+  def __init__(self ,parent, uiObject, mainWindow, app , applyCssFunc):
     super(PreferencesDialog,self).__init__(parent)
     self.app = app
-    currentPath = "."
-    stylesFiles = [f for f in os.listdir(currentPath) if os.path.isfile(os.path.join(currentPath, f)) and ( str(f).endswith(".css") or str(f).endswith(".qss"))]
+    self.window = mainWindow
+    self.applyCssFunc = applyCssFunc
+    self.currentPath = os.path.join(".","stylesheets")
+    stylesFiles = [f for f in os.listdir(self.currentPath) if os.path.isfile(os.path.join(self.currentPath, f)) and ( str(f).endswith(".css") or str(f).endswith(".qss"))]
     self.stylesView  = QtWidgets.QListView(self)
     self.stylesModel = QtCore.QStringListModel()
     self.stylesView.setModel(self.stylesModel)
@@ -599,6 +601,6 @@ class PreferencesDialog(QtWidgets.QDialog):
   def selectedStyleChanged(self):
     index = self.stylesView.currentIndex()
     currentStyleFile = self.stylesModel.data(index, QtCore.Qt.DisplayRole)
-    with open(currentStyleFile,"r") as fh:
-      self.app.setStyleSheet(fh.read())
+    currentStyleFile = os.path.join(self.currentPath, currentStyleFile)
+    self.applyCssFunc(currentStyleFile)
      

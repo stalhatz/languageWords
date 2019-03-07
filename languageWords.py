@@ -37,10 +37,5 @@ if __name__ == "__main__":
   ui = Ui_MainWindow.defaultInit(app,window)
   QTimer.singleShot(0,ui.showWelcomeDialog)
 
-
-  stylesheet="tmp_stylesheet2.css"
-  with open(stylesheet,"r") as fh:
-    app.setStyleSheet(fh.read())
-  
   window.show()
   app.exec_()
