@@ -1,6 +1,6 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from controllers import (DefinitionController, TagController, WordController,ElementTagController,SavedDefinitionsController)
-from dialogs import WordDialog,DictionaryDialog,TagEditDialog,WelcomeDialog
+from dialogs import WordDialog,DictionaryDialog,TagEditDialog,WelcomeDialog,PreferencesDialog
 from dataModels import WordDataModel,DefinitionDataModel,TagDataModel,OnlineDefinitionDataModel
 import pickle
 import os
@@ -271,7 +271,12 @@ class Ui_MainWindow(QtCore.QObject):
     self.actionSave.setText(_translate("MainWindow", "Save"))
   
   def showPreferencesDialog(self):
-    pass
+    self.preferencesDialog = PreferencesDialog(self.centralwidget , self, self.mainWindow , self.app)
+    dialogCode = self.preferencesDialog.exec()
+    if dialogCode == QtWidgets.QDialog.Accepted:
+      print("Accepted")
+    else:
+      print("Rejected")
 
   def showAddWordDialog(self,event):
     self.addWordDialog = WordDialog(self.centralwidget,self.wordDataModel,self.tagDataModel,self.onlineDefDataModel,self.dictionary,

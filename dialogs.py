@@ -556,9 +556,6 @@ class WelcomeDialog(QtWidgets.QDialog):
       self.loadTmpButton.setMinimumSize(QtCore.QSize(100, 50))
       self.loadTmpButton.clicked.connect(loadTmpFunc)
       hMiddleLayout.addWidget(self.loadTmpButton)
-    
-    
-
 
     #hLowLayout (vLayout)
     self.nameLineEdit     = QtWidgets.QLineEdit(self)
@@ -584,3 +581,24 @@ class WelcomeDialog(QtWidgets.QDialog):
       self.newProjectButton.setEnabled(True)
     else:
       self.newProjectButton.setEnabled(False)
+
+class PreferencesDialog(QtWidgets.QDialog):
+  def __init__(self ,parent, uiObject, mainWindow, app):
+    super(PreferencesDialog,self).__init__(parent)
+    self.app = app
+    currentPath = "."
+    stylesFiles = [f for f in os.listdir(currentPath) if os.path.isfile(os.path.join(currentPath, f)) and ( str(f).endswith(".css") or str(f).endswith(".qss"))]
+    self.stylesView  = QtWidgets.QListView(self)
+    self.stylesModel = QtCore.QStringListModel()
+    self.stylesView.setModel(self.stylesModel)
+    self.stylesView.selectionModel().currentChanged.connect(self.selectedStyleChanged)
+    self.stylesModel.setStringList(stylesFiles)
+    vLayout     = QtWidgets.QVBoxLayout(self)
+    uiUtils.addLabeledWidget("Available styles files", self.stylesView , vLayout)
+  
+  def selectedStyleChanged(self):
+    index = self.stylesView.currentIndex()
+    currentStyleFile = self.stylesModel.data(index, QtCore.Qt.DisplayRole)
+    with open(currentStyleFile,"r") as fh:
+      self.app.setStyleSheet(fh.read())
+     
