@@ -127,7 +127,7 @@ class WordDialog(QtWidgets.QDialog):
     self.addTagButton    = QtWidgets.QPushButton(self)
     self.addTagButton.setEnabled(False)
     self.addTagButton.setText("&Add Tag")
-    self.addTagButton.clicked.connect(self.addTag)
+    self.addTagButton.clicked.connect(self.addTagFromLineEdit)
     self.removeTagButton    = QtWidgets.QPushButton(self)
     self.removeTagButton.setText("&Remove Tag")
     self.removeTagButton.clicked.connect(self.removeTag)
@@ -139,9 +139,10 @@ class WordDialog(QtWidgets.QDialog):
       self.wLineEdit.setText(self.existingWord)
 
   def loadOnlineTags(self):
-    self.onlineTagsController.clear()
-    word = self.wLineEdit.text()
-    self.onlineDefDataModel.loadTags(word)
+    if self.enableOKButton():
+      self.onlineTagsController.clear()
+      word = self.wLineEdit.text()
+      self.onlineDefDataModel.loadTags(word)
 
   def updateOnlineTags(self,tagsList): #Callback from onlineDefDataModel
     self.onlineTagsController.update(tagsList)
@@ -166,9 +167,11 @@ class WordDialog(QtWidgets.QDialog):
   def enableOKButton(self):
     if (not self.wordSpelledCorrectly) or self.wordAlreadyExists or len(self.tagController.stringList()) == 0:
       self.okButton.setEnabled(False)
+      return False
     else:
       self.okButton.setEnabled(True)
       self.statusBar.showMessage("")
+      return True
     if self.wordAlreadyExists:
       self.statusBar.showMessage("Word already exists")
     elif not self.wordSpelledCorrectly:
@@ -207,13 +210,18 @@ class WordDialog(QtWidgets.QDialog):
     self.tLineEdit.clear()
     self.removeTagButton.setEnabled(True)
     self.addTag(tag)
-
-  def addTag(self,checked):
-    tag = self.tLineEdit.text()
+  
+  def addTag(self,tag):
     stringList = self.tagController.stringList()
+    if any(tag in s for s in stringList):
+      return
     stringList.append(tag)
     self.tagController.setStringList(stringList)
     self.enableOKButton()
+
+  def addTagFromLineEdit(self,event):
+    tag = self.tLineEdit.text()
+    self.addTag(tag)
 
   def removeTag(self,event):
     stringList = self.tagController.stringList()
@@ -603,4 +611,3 @@ class PreferencesDialog(QtWidgets.QDialog):
     currentStyleFile = self.stylesModel.data(index, QtCore.Qt.DisplayRole)
     currentStyleFile = os.path.join(self.currentPath, currentStyleFile)
     self.applyCssFunc(currentStyleFile)
-     
