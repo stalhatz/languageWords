@@ -1,13 +1,15 @@
 
 QWidget{
-  /*font-family: 'Courier New', Courier, monospace*/
-  /* font-family: 'Ubuntu', Ubuntu */
-  font-family: "Cantarell"
+  font-family: "Cantarell";
 }
 #widgetLabel{
   margin-top: 10px;
   font-weight: bold;
   border: 0.5px solid
+}
+
+QLineEdit{
+  border-width: 0.5px;
 }
 
 QListView {
@@ -24,6 +26,7 @@ QListView::item{
   padding-bottom: 2px;
   padding-top: 2px; 
 }
+
 #definitionListView:item{
   padding-bottom: 4px; 
   padding-top: 4px; 
