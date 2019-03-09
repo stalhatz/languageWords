@@ -5,7 +5,7 @@ from PyQt5.QtCore import QTimer
 
 #TODO: [FEATURE_0] Write README.md
 #TODO  [FEATURE_1] Customize generic css styles by modifying styles in-code (Is it really needed?)
-#TODO: [FEATURE_3] Ensure project file has a .pkl extension
+
 #TODO: [FEATURE_3] Have a default metatag "All" for all tags. Should not be renamable or deletable.
 #TODO: [FEARURE_2] Request asynchronously more than one web page
 #TODO: [FEATURE_1] Implement a caching scheme to limit reloading.

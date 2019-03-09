@@ -489,6 +489,9 @@ class Ui_MainWindow(QtCore.QObject):
   def _saveFileAs(self , checked, fileName = None):
     if fileName is None:
       fileName,fileType = QtWidgets.QFileDialog.getSaveFileName(self.centralwidget,"Save File",".","Pickle Files (*.pkl)")
+      if fileName is not None:
+        if not fileName.endswith(".pkl"):
+          fileName += ".pkl"
     if fileName == "" or fileName is None:
       return False
     else:
