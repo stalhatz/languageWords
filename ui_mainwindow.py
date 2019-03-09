@@ -8,7 +8,7 @@ from hunspell import HunSpell
 import uiUtils
 from functools import partial
 
-# TODO : Setup keyboard shortcuts for easily navigating between ListViews/ListEdits etc.
+#TODO : Setup keyboard shortcuts for easily navigating between ListViews/ListEdits etc.
 #TODO : [UI] Move tabs to the right/left of QTabWidget with horizontal text. Calling setTabPosition(QtWidgets.QTabWidget.West) produces vertical text
 #FIXME: Dialogs do not trigger a dirty program state
 class Ui_MainWindow(QtCore.QObject):
@@ -342,18 +342,7 @@ class Ui_MainWindow(QtCore.QObject):
       print('Rejected')
   
   def showWelcomeDialog(self):
-    tempCallback = None
-    lastOpenedCallback = None
-    if os.path.exists(self.sessionFile):
-      with open(self.sessionFile, 'rb') as _input:
-        version = pickle.load(_input)
-        self.tempProjectFile  = pickle.load(_input)
-        self.projectFile      = pickle.load(_input)
-        self.unsavedChanges   = pickle.load(_input)
-        if self.unsavedChanges:
-          tempCallback          = partial(self.openFile,self.tempProjectFile,True)
-        lastOpenedCallback    = partial(self.openFile,self.projectFile)
-
+    tempCallback,lastOpenedCallback = self.readSessionFile()
     availableLanguages = self.onlineDefDataModel.getAvailableLanguages()
     self.welcomeDialog = WelcomeDialog(self.centralwidget,self.actionOpen, self.actionNew , 
                                         self.programName , self.version , availableLanguages,
@@ -696,12 +685,32 @@ class Ui_MainWindow(QtCore.QObject):
     self._saveFileAs(False,self.tempProjectFile)
     self.writeSessionFile()
   
+  def readSessionFile(self):
+    tempCallback = None
+    lastOpenedCallback = None
+    if os.path.exists(self.sessionFile):
+      with open(self.sessionFile, 'rb') as _input:
+        version = pickle.load(_input)
+        self.tempProjectFile  = pickle.load(_input)
+        self.projectFile      = pickle.load(_input)
+        self.unsavedChanges   = pickle.load(_input)
+        try:
+          self.cssFileName      = pickle.load(_input)
+          self.applyCss(self.cssFileName)
+        except EOFError:
+          pass
+        if self.unsavedChanges:
+          tempCallback          = partial(self.openFile,self.tempProjectFile,True)
+        lastOpenedCallback    = partial(self.openFile,self.projectFile)
+    return tempCallback,lastOpenedCallback
+
   def writeSessionFile(self):
     with open(self.sessionFile, 'wb') as output:
       pickle.dump(self.version,output, pickle.HIGHEST_PROTOCOL)
       pickle.dump(self.tempProjectFile,output, pickle.HIGHEST_PROTOCOL)
       pickle.dump(self.projectFile,output, pickle.HIGHEST_PROTOCOL)
-      pickle.dump(self.unsavedChanges,output, pickle.HIGHEST_PROTOCOL) #unsavedChanges
+      pickle.dump(self.unsavedChanges,output, pickle.HIGHEST_PROTOCOL)
+      pickle.dump(self.cssFileName,output, pickle.HIGHEST_PROTOCOL)
   def exitApplication(self):
     self.app.quit()
 
