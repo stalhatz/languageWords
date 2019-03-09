@@ -139,7 +139,7 @@ class WordDialog(QtWidgets.QDialog):
       self.wLineEdit.setText(self.existingWord)
 
   def loadOnlineTags(self):
-    if self.enableOKButton():
+    if self.wordSpelledCorrectly:
       self.onlineTagsController.clear()
       word = self.wLineEdit.text()
       self.onlineDefDataModel.loadTags(word)
@@ -167,7 +167,6 @@ class WordDialog(QtWidgets.QDialog):
   def enableOKButton(self):
     if (not self.wordSpelledCorrectly) or self.wordAlreadyExists or len(self.tagController.stringList()) == 0:
       self.okButton.setEnabled(False)
-      return False
     else:
       self.okButton.setEnabled(True)
       self.statusBar.showMessage("")
@@ -178,6 +177,7 @@ class WordDialog(QtWidgets.QDialog):
       self.statusBar.showMessage("Please check your spelling")  
     elif len(self.tagController.stringList()) == 0:
       self.statusBar.showMessage("Need at least one tag to register word")  
+    return False
     
     
   def wordTextChanged(self,text):
