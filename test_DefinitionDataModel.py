@@ -85,5 +85,5 @@ def test_createUrl(dictDirectory):
   with pytest.raises(KeyError) as e_info:
     a.createUrl("word","fake2")
 
-def test_getDefinition(dictDirectory):
+#def test_getDefinition(dictDirectory):
   

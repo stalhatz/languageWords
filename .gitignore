@@ -4,7 +4,6 @@
 *.xlsx
 *.json
 *.pkl
-*.txt
 *.pyc
 *.autosave
 *.qss

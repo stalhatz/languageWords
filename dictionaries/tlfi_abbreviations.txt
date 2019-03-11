@@ -1,0 +1,1081 @@
+abd.	abdias
+abh.	abhandlung
+abr.	abrégé
+abrév.	abréviation
+abs.	absolu
+absol.	absolument
+abstr.	abstrait, abstraitement
+ac.	académie, académique
+acc.	accusatif
+accept.	acception
+acoust.	acoustique
+acquis.	acquisition
+actuell.	actuellement
+acup.	acupuncture
+adapt.	adaptation
+adapt.	adaptation
+add.	addendum, addenda, addition
+adj.	adjectif, adjectival, adjectivement
+admin.	administratif, administration
+adv.	adverbe, adverbial
+aérodyn.	aérodynamique
+aéron.	aéronautique, aéronaut
+aéronav.	aéronavale
+aérospat.	aérospatiale
+aff.	affixe
+affirm.	affirmatif, affirmative, affirmation
+agn.	anglo-normand
+agr.	agrément
+agric.	agricole, agriculture
+agron.	agronomie
+ags.	saxon
+ajust.	ajustage
+ak.	akademie
+ajust.	ajustage
+ak.	akademie
+alchim.	alchimie
+aléman.	alémanique
+alg.	algèbre
+alim.	alimentaire, alimentation
+all.	allemand
+allergol.	allergologie
+allop.	allopathie
+allus.	allusion
+alph.	alphabet, alphabétique
+alpin.	alpinisme
+alsac.	alsacien
+altér.	altération
+amén.	aménagement
+amér.	américain
+ameubl.	ameublement
+anachr.	anachronisme
+anal.	analogie, analogique
+anat.	anatomie
+anc.	ancien
+and.	andalou
+anesthésiol.	anesthésilogie
+ang.	angevin
+angl.	anglais
+anglic.	anglicisme
+anim.	animisme
+ann.	annales
+ant.	antérieur, antérieurement, antériorité
+anthropol.	anthropologie, anthropologique
+anthropon.	anthroponyme, anthroponymie
+antiphr.	antiphrase
+antiq.	antiquité, antiquités
+anton.	antonyme, antonymie, antonymique
+ap.	apud
+apic.	apiculture
+apoc.	apocalypse
+append.	appendice
+appl.	appliqué
+appos.	apposition, appositionnel
+appréc.	appréciatif
+apr.	après
+axiol.	axiologie
+ar.	arabe
+arboric.	arboriculture
+arch.	archaïque, archaïsme, archives
+archéol.	archéologie, archéologique
+archit.	architecture
+archiv.	archivistique
+arg.	argot, argotique
+arithm.	arithmétique
+arm.	armée, armement
+armur.	armurerie
+arpent.	arpentage
+art.	article
+artif.	artificiel(s)
+artill.	artillerie
+artis.	artisanal, artisanat
+artist.	artistique
+axiol.	axiologie
+ass.	assemblée
+assim.	assimilation
+assoc.	association
+assur.	assurances
+astrol.	astrologie, astrologique
+astrom.	astrométrie
+astron.	astronomie, astronomique
+astronaut.	astronautique
+astrophys.	astrophysique
+athl.	athlétisme
+atom.	atomique
+att.	attesté
+attest.	attestation
+attrib.	attribution
+aufl.	auflage
+augm.	augmenté, augmentatif
+auj.	aujourd'hui
+aurev.	[Barbey d']Aurévilly
+ausg.	ausgabe
+ausgew.	ausgewÃ¤hlt
+aust.	Austerlitz
+aut.	auteur
+autom.	automatique
+automat.	automatisation
+automob.	automobile
+autr.	autrichien
+auv.	auvergnat
+auxil.	auxiliaire
+av.	avant
+aviat.	aviation
+avr.	avril
+axiol.	axiologie
+b.n.	bibliothèque nationale
+bactériol.	bactériologie, bactériologique
+badm.	badminton
+balist.	balistique
+bar.	baruch
+bât.	bâtiment
+baudel.	baudelaire
+bbg.	bibliographie, bibliographique, bibliogr, 
+bd.	band
+bearb.	bearbeitet
+beih.	beiheft
+beitr.	beitrag
+berr.	berrichon
+bibl.	bibliothèque
+biblioph.	bibliophilie
+biblioyhécon.	bibliothéconomie, bibliothéconomique
+bijout.	bijouterie
+biochim.	biochimie
+biogéogr.	biogéographie
+biogr.	biographie, biographique
+biol.	biologie, biologique
+biophys.	biophysique
+blas.	blason
+bonh.	bonheur
+bonnet.	bonneterie
+bot.	botanique
+bouch.	boucherie
+bouddh.	bouddhisme
+boulang.	boulangerie
+bourb.	bourbonnais
+bourg.	bourguignon
+brass.	brasserie
+bret.	breton
+bric.	bricolage
+brod.	broderie
+bulg.	bulgare
+burg.	burgonde
+burl.	burlesque
+byz.	byzantin
+brass.	brasserie
+bret.	breton
+bric.	bricolage
+brod.	broderie
+bulg.	bulgare
+burg.	burgonde
+burl.	burlesque
+byz.	byzantin
+ca.	circa
+cah.	cahier
+can.	canadien
+cancérol.	cancérologie
+cant.	cantique
+capill.	capillaire
+caract.	caractère, caractéristique
+caractérol.	caractérologie
+cardiol.	cardiologie
+carol.	carolingien
+carr.	carrières
+cart.	cartonnage
+cartogr.	cartographie
+cartul.	cartulaire
+cast.	castillan
+cat.	catalan
+catal.	catalogue
+cath.	catholique
+celt.	celtique
+céram.	céramique
+cf.	confer
+ch.	champ, chaussées
+champ.	champenois
+chang.	changement
+chans.	chanson
+chap.	chapitre
+chapell.	chapellerie
+charcut.	charcuterie
+charpent.	charpenterie
+chateaubr.	chateaubriand
+chauff.	chauffage
+chauss.	chaussure
+chim.	chimie, chimique
+chir.	chirurgie, chirurgical
+chirom.	chiromancie
+chorégr.	chorégraphie, chorégraphique
+chrét.	chrétien
+christ.	christianisme
+chron.	chroniquechroniques
+chronol.	chronologie, chronologique
+cie.	compagnie
+cin.	cinéma, cinématographique
+circ.	circonstanciel
+citat.	citation
+civilis.	civilisation
+class.	classique
+climatis.	climatisation
+climatol.	climatologie
+col.	colonne
+coll.	collectif, collection
+collab.	collaborateur, collaboration
+collectiv.	collectivement
+coloss.	colossiens
+com.	comique
+combin.	combinatoire
+comm.	commerce, commercial
+comment.	commentaire
+commun.	communication
+comp.	comparé, composé
+compar.	comparaison, comparatif, comparative, comparativement
+compl.	complément, complémentaire
+complét.	complétif, complétive
+compos.	composition
+comptab.	comptabilité
+concess.	concessif, concessive, concession
+conchyliol.	conchyliologie
+concl.	conclusion
+concr.	concret
+cond.	conditionnel
+conf.	conférence
+confess.	confession(s)
+confis.	confiserie
+confuc.	confucianisme
+conj.	conjonction, conjonctive
+conjug.	conjugaison
+connaiss.	connaissance
+cons.	consonne
+conséc.	consécutif, consécutive
+conséq.	conséquence
+conserv.	conserverie
+consid.	considération
+conson.	consonantique, consonantisme
+constell.	constellation
+constit.	constitutionnelle, constitutionnel
+constr.	construction, construire, construit
+cont.	contexte
+contamin.	contamination
+contemp.	contemporain
+contin.	continuateur, continué, continuité
+coord.	coordination, coordonné
+cop.	copyright
+cor.	corinthiens
+cord.	corderie
+cordonn.	cordonnerie
+corpusc.	corpusculaire
+corr.	correction, corrigé, corrigenda
+corrél.	corrélatif, corrélative, corrélation
+corresp.	correspondance, correspondant, correspondre
+cosmét.	cosmétiques
+cosmétol.	cosmétologie
+cosmol.	cosmologie
+cost.	costume
+coul.	couleur
+cour.	courant
+cout.	couture, coutumier, coutume
+couv.	couverture
+cr.	croate
+crépusc.	crépuscule
+cristall.	cristallerie
+cristallogr.	cristallographie
+crit.	critique
+cuis.	cuisine
+culin.	culinaire
+cult.	culture
+cybern.	cybernétique
+cycl.	cyclisme
+cynégét.	cynégétique
+cytol.	cytologie
+d.	deutsch
+dactyl.	dactylographie, dactylographié
+dalm.	dalmate
+dan.	danois
+dat.	datation
+dauph.	dauphinois
+déb.	début
+déc.	décembre
+décor.	décoratifs, décoration
+décr.	décret
+déf.	défini, définition
+délin.	délinquance
+dém.	démonstratif
+démogr.	démographie
+dénigr.	dénigrement
+dénom.	dénominal, dénominatif, dénomination
+dent.	dentaire
+dentell.	dentellerie
+dep.	depuis
+dép.	dépouillé, dépouiller, dépouillement
+départ.	départemental
+dépl.	dépliant
+dépréc.	dépréciatif
+dér.	dérivation, dérivé, dériver
+dermatol.	dermatologie
+dern.	dernier
+dés.	désinence
+désadj.	désadjectival
+désubst.	désubstantival
+déterm.	déterminant
+deut.	deutéronome
+diachr.	diachronie, diachronique
+dial.	dialectal, dialecte
+dialectol.	dialectologie
+dialog.	dialogue
+dict.	dictionnaire
+didact.	didactique
+diét.	diététique
+diff.	diffusion
+dimin.	diminutif, diminutive
+diplom.	diplomatie, diplomatique
+dir.	direct, directeur, direction
+disc.	discours
+diss.	dissertation
+dissim.	dissimilation
+distill.	distillerie
+div.	divers(es)
+divin.	divination
+doc.	document
+docum.	documentation
+documentol.	documentologie
+dogm.	dogmatique
+dr.	droit
+dram.	dramatique
+dramat.	dramaturgie
+druid.	druidisme
+ds.	dans
+dub.	dubois
+dubit.	dubitatif
+durchges.	durchgesehen
+ébén.	ébénisterie
+éc.	école, écoles
+eccl.	ecclésiaste, ecclésiastique
+éclair.	éclairage
+écol.	écologie
+écon.	économie, économique
+éd.	édité, éditeur, édition
+éduc.	éducation
+einf.	einführung
+électr.	électricité
+électrobiol.	électrobiologie
+électrochim.	électrochimie
+électrocinét.	électrocinétique
+électromagn.	électromagnétisme
+électron.	électronique
+électrost.	électrostatique
+électrotechn.	électrotechnique
+élém.	élément, élémentaire
+élev.	élevage
+ell.	ellipse, elliptique, elliptiquement
+embryol.	embryologie, enbryologique
+émot.	émotion
+empl.	emploi, employé
+empr.	emprunt, emprunté
+én.	énergie
+encyclop.	encyclopédie, encyclopédique
+endocrinol.	endocrinologie
+enf.	enfantin
+engl.	english
+enq.	enquête
+enseign.	enseignement
+ent.	entièrement
+entérol.	entérologie
+entomol.	entomologique
+entr.	entreprise
+env.	environ
+ép.	épître
+Éph.	Éphésiens
+épigr.	épigraphie
+épil.	épilogue
+épistémol.	épistémologie
+épith.	épithète
+équip.	équipement
+équit.	équitation
+équiv.	équivoque
+erckm.-chatr	erckmann-chatrian
+erg.	ergÃ¤nzt
+erkl.	erklÃ¤rt
+erl.	erlÃ¤utert
+erw.	erweitert
+escr.	escrime
+esp.	espagnol, espa(ol
+espr.	esprit
+esthét.	esthétique
+ét.	étude
+etc.	et coetera
+ethnol.	ethnologie, ethnologique
+étr.	étranger
+étymol.	étymologie
+euphém.	euphémisme
+ex.	exemple
+exagér.	exagération
+except.	exceptionnellement
+exclam.	exclamatif, exclamative, exclamation
+existent.	existentialisme
+exp.	expérience, expérimental
+expr.	expressif, expression
+express.	expressivité
+ext.	extension
+extr.	extraction, extrait
+exup.	exupéry
+Éz.	Ézéchiel
+f.	feuillet
+f°	folio
+fac.	faculté
+fam.	familier
+fasc.	fascicule
+fauconn.	fauconnerie
+fém.	féminin
+féod.	féodal, féodalité
+févr.	février
+ff.	feuillets
+fig.	figure, figuré
+fil.	filature
+fin.	finances, financier
+finn.	finnois
+fisc.	fiscalité
+flam.	flamand
+flaub.	flaubert, flaube
+flex.	flexion
+fol.	folio
+folkl.	folklore, folkloriques
+fonct.	fonctionnelle, fonctionnel
+footb.	football
+for.	foraine
+forest.	forestage
+fortges.	fortgesetzt
+fortif.	fortifications
+fourr.	fourrure
+fr.	franc, français, französisch, french
+fragm.	fragment
+frais.	fraisage
+franc.	francien
+fréq.	fréquemment, fréquence, fréquent, fréquentatif, fréquentative
+fris.	frison
+frq.	francique
+frz.	französisch
+fut.	futur
+gal.	galates
+gall.	gallois
+gasc.	gascon
+gastr.	gastronome, gastronomie, gastronomique
+gaul.	gaulois
+gd.	grand
+gde.	grande
+gen.	genèse
+gén.	général, généralement
+généal.	généalogie
+génét.	génétique
+géochim.	géochimie
+géod.	géodésie
+géogr.	géographie, géographique
+géol.	géologie, géologique
+géom.	géométrie
+géomorphol.	géomorphologie
+géophys.	géophysique
+géotechn.	géotechnique
+gér.	gériatrie
+germ.	germanique
+gl.	glose
+glaciol.	glaciologie
+gloss.	glossaire
+got.	gotique
+gr.	grec
+gramm.	grammaire, grammatical, grammaticale, grammatik
+graph.	graphie, graphique, graphiques
+graphol.	graphologie
+grav.	gravimétrie
+gymn.	gymnastique
+gynécol.	gynécologie
+hab.	habaquq
+habill.	habillement
+harm.	harmonie
+harmonis.	harmonisation
+hébr.	hébreu
+hébr.	hébreux
+hématol.	hématologie
+hérald.	héraldique
+herpétol.	herpétologie
+hind.	hindouisme
+hipp.	hippisme
+hippol.	hippologie
+hisp.	hispanique, hispano
+hist.	histoire, historique
+histol.	histologie, histologique
+holl.	hollandais
+homéop.	homéopathie
+homogr.	homographe, homographie, homographique
+homon.	homonyme, homonymie, homonymique
+hongr.	hongrois
+horlog.	horlogerie
+hortic.	horticulture
+hrsg.	herausgegeben
+hs.	handschrift
+huil.	huilerie
+hum.	humain
+human.	humanisme
+hydrol.	hydrologie
+hyg.	hygiène
+hyp.	hypothèse, hypothétique
+hyperb.	hyperbole
+hypercorr.	hypercorrection
+hypocor.	hypocoristique
+ibér.	ibérique
+ibid.	ibidem
+ichtyol.	ichtyologie, ichtyologique
+iconogr.	iconographie
+id.	idem
+idéol.	idéologie, idéologique
+ill.	illustrateur, illustration, illustré
+im.	image
+imit.	imitatif
+immunol.	immunologie
+imp.	imparfait
+impér.	impératif
+imperf.	imperfectif
+impers.	impersonnel
+impr.	imprimerie
+ind.	indicatif
+indéf.	indéfini
+indép.	indépendante
+indéterm.	indétermination, indéterminé
+indir.	indirect
+industr.	industrie, industries, industriel
+inéd.	inédit
+inf.	infinitif
+infl.	influence
+inform.	information
+informat.	informatique
+init.	initial, initiale
+inscr.	inscription
+inst.	institut
+instit.	institution
+intens.	intensité
+interj.	interjectif, interjective, interjection
+internat.	international
+internaz.	internazionale
+interpol.	interpolation
+interr.	interrogatif, interrogative, interrogation
+intrans.	intransitif
+introd.	introduction, introduire, introduit
+inus.	inusité
+inv.	invariable
+invas.	invasion
+invent.	inventaire
+invers.	inversion
+irl.	irlandais
+iron.	ironie, ironique
+irrég.	irrégulier
+irrig.	irrigation
+is.	isaÃ¯e
+isl.	islandais
+islam.	islamisme, islamique
+isol.	isolation
+it.	italique
+ital.	italien
+itér.	itératif, itération
+itinér.	itinéraire
+j.	journal
+jahrht.	jahrhundert
+jankél.	jankélévitch
+janv.	janvier
+jard.	jardinage
+jér.	jérémie
+joaill.	joaillerie
+journ.	journalisme
+jr.	junior
+jud.	judaïsme
+judéo-fr.	judéo-français
+juill.	juillet
+jur.	juridique
+jurispr.	jurisprudence
+just.	justice
+kinésith.	kinésithérapie
+kymr.	cymrique, kymrique
+l.	livre
+lab.	laboratoire
+lait.	laiterie
+lam.	lamentations
+lamart.	lamartine
+lang.	langage, language, langue
+langued.	languedocien
+lat.	lateinisch, latin
+laud.	laudatif
+lég.	légende
+législ.	législation
+lév.	lévitique
+lex.	lexical, lexique
+lexicogr.	lexicographie, lexicographique
+lexicol.	lexicologie, lexicologique
+libr.	librairie
+liég.	liégeois
+lim.	limousin
+ling.	linguistique
+lit.	literatur, literature
+lithogr.	lithographie
+litt.	littérature
+littér.	littéraire
+littéral.	littéralement
+liturg.	liturgie, liturgique
+loc.	locution
+log.	logique
+lomb.	lombard
+lorr.	lorrain
+lux.	luxembourgeois
+lyonn.	lyonnais
+macc.	maccabées
+maçonn.	maçonnerie
+magnét.	magnétisme
+mal.	malachie
+malacol.	malacologie
+malg.	malgache
+mammal.	mammalogie
+man.	manège
+manich.	manichéisme
+mar.	marine, maritime
+marionn.	marionnettes
+maroq.	maroquinerie
+marq.	marqueterie
+mart.	martiaux
+masc.	masculin
+matér.	matériau(x), matériel
+math.	mathématiques
+matth.	matthieu
+maupass.	maupassant
+mécan.	mécanique
+méd.	médecine, médical
+médiév.	médiéval
+méditerr.	méditerranéen
+mégiss.	mégisserie
+mél.	mélanges
+mém.	mémoire
+mémor.	mémorial
+mén.	ménagers, ménager
+mens.	mensuel
+menuis.	menuiserie
+mérid.	méridional
+mérov.	mérovingien
+merv.	merveilleux
+mes.	mesure
+mét.	métiers, métier
+métall.	métallurgie, métallurgique
+métaph.	métaphore, métaphorique
+métaphys.	métaphysique
+météor.	météorologie, météorologique
+méth.	méthode
+méthod.	méthdologie
+méthodol.	méthodologie, méthodologique
+méton.	métonymie, métonymique
+métr.	métrique
+métrol.	métrologie, métrologique
+meun.	meunerie
+mex.	mexicain
+microbiol.	microbiologie, microbiologique
+mil.	milieu
+milit.	militaire
+minér.	minéralogie, minéralogique
+mir.	miracle
+miroit.	miroiterie
+misc.	miscel(nea, miscelânea, miscellÃ nea, miscellanea
+misé.	misérables
+mitarb.	mitarbeiter
+mod.	moderne
+moit.	moitié
+monogr.	monographie, monographique
+monosém.	monosémique
+montherl.	montherlant
+mor.	morale, moralement
+morph.	morphème
+morphol.	morphologie, morphologique
+motocycl.	motocyclisme
+motonaut.	motonautisme
+moy.	moyen
+mozar.	mozarable
+ms.	manuscrit
+multigr.	multigraphie, multigraphié
+multil.	multilingue
+mus.	musique
+muséogr.	muséographie
+muséol.	muséologie
+musicol.	musicologie
+mycol.	mycologie
+myst.	mystère
+myth.	mythologie, mythologique
+n.-d.	Notre-Dame
+nat.	national
+naturop.	naturopathie
+naut.	nautique
+nav.	navigation
+naz.	nazionale
+néerl.	néerlandais
+nég.	négation, négative, négatif
+néh.	néhémie
+néol.	néologisme
+neurol.	neurologie
+nom.	nominal
+nomencl.	nomenclature
+nomin.	nominatif
+nord.	nordique
+norm.	normand
+norv.	norvégien
+not.	notion, notionnel
+notat.	notation
+nouv.	nouveau
+nov.	novembre
+nucl.	nucléaire
+num.	numérique
+numism.	numismatique
+nutr.	nutrition
+n°	numéro
+obj.	objet
+obs.	observation
+obsc.	obscur(e)
+obstétr.	obstétrique
+occ.	occidental
+occit.	occitan
+occult.	occultisme
+occurr.	occurrence
+océanogr.	océanographie
+oct.	octobre
+oenol.	oenologie
+onom.	onomastique
+onomasiol.	onomasiologie, onomasiologique
+onomat.	onomatopée, onomatopéique
+ontol.	ontologie
+ophtalmol.	ophtalmologie
+oppos.	opposition
+opt.	optique
+ordin.	ordinaire, ordinairement
+ordonn.	ordonnance
+orfèvr.	orfèvrerie
+organ.	organisation
+orig.	original, origine
+ornith.	ornithologie, ornithologique
+orth.	orthographe, orthographique
+orthop.	orthopédie
+ostrogot.	ostrogotique
+p.	page, paginé
+p.u.f.	Presses Universitaires de France
+paléogr.	paléographie
+paléont.	paléontologie, paléontologique
+papyrol.	papyrologie
+parach.	parachutisme
+parad.	paradigme
+paradigm.	paradigmatique
+parapsychol.	parapsychologie, parapsychologique
+parasitol.	parasitologie
+paron.	paronyme, paronymie, paronymique
+part.	participe, participial, partie
+partic.	particulier, particulièrement
+passem.	passementerie
+pat.	patois
+pathol.	pathologie, pathologique
+patin.	patinage
+pâtiss.	pâtisserie
+peauss.	peausserie
+pédag.	pédagogie, pédagogique
+pédiatr.	pédiatrie
+pédol.	pédologie
+peint.	peinture
+péj.	péjoratif
+perf.	perfectif
+périod.	pédiodique
+perman.	permanence
+pers.	personne, personnel
+personnal.	personnalisme
+pétrochim.	pétrochimie
+pétrog.	pétrographie
+pétrol.	pétrolerie, pétrolier
+ph.	philippiens
+pharm.	pharmacie, pharmaceutique
+pharmacol.	pharmacologie
+phénoménol.	phénoménologie
+philat.	philatélie
+philol.	philologie, philologique
+philos.	phisopophie, philosophique
+phm.	philémon
+phon.	phonique
+phonét.	phonétique
+phonol.	phonologie, phonologique
+phot.	photographie, photographique
+phrénol.	phrénologie
+phys.	physique
+physiol.	physiologie, physiologique
+phytopathol.	phytopathologie
+pic.	picard
+piscic.	pisciculture
+pl.	planche
+plais.	plaisant, plaisamment
+plaisant.	plaisanterie
+plast.	plastiques, plastique
+plâtr.	plâtrerie
+plomb.	plomberie
+plur.	pluriel
+pneumol.	pneumologie
+poés.	poésie
+poét.	poétique
+poissonn.	poissonnerie
+poit.	poitevin
+pol.	politique, politiques
+politol.	politologie
+polon.	polonais
+polysém.	polysémie, polysémique
+pop.	populaire
+port.	portugais
+portr.	portrait
+poss.	possessif
+post.	postérieur
+postf.	postface
+pot.	poterie
+pp.	pages
+prat.	pratique
+prédéterm.	prédéterminant
+préf.	préface, préfixal, préfixe
+préhist.	préhistoire, préhistorique
+prélat.	prélatin
+prem.	premier
+prép.	préposition, prépositionnel
+prérom.	préroman
+prés.	présent
+prestidig.	prestidigitation
+prim.	primaire
+princ.	principal, principale, principalement
+prob.	probablement
+probab.	probabilités
+probl.	problème
+prof.	profession, professionnel
+progr.	progressif, progressive
+prol.	prologue
+pron.	pronom
+pronom.	pronominal, pronominalement
+prononc.	prononciation
+prop.	proposition
+propr.	proprement
+prov.	provençal
+ps.	psaume, psaumes
+psych.	psychiatrie
+psychanal.	psychanalyse
+psychol.	psychologie, psychologique
+psychom.	psychométrie
+psychosociol.	psychosociologie
+psychotechn.	psychotechnique
+pt.	petit
+pte.	petite
+publ.	public, publication, publié, publicité
+pyr.	pyrénéen
+qq.	quelque
+qqc.	quelque chose
+qqf.	quelquefois
+qqn.	quelqu'un
+quem.	quemada
+quincaill.	quincaillerie
+r.	review, revue
+r°	recto
+rad.	radical
+radioastron.	radioastronomie
+radiol.	radiologie
+radioth.	radiothérapie
+rapp.	rapport
+réapp.	réapparaÃ®tre
+rec.	recueil
+rech.	recherche
+réd.	rédacteur, rédaction, rédigé
+rééd.	réédition
+ref.	refondu
+réf.	référence
+réfl.	réfléchi
+réflex.	réflexion(s)
+rég.	régulier
+région.	régional, régionalisme
+régr.	régressif
+réimpr.	réimpression, réimprimé
+réitér.	réitération
+rel.	relatif, relative, relation
+relig.	religieux, religion
+rem.	remarque
+rép.	répertoire
+répert.	répertorier
+répét.	répétition
+reprod.	reproduction
+reprog.	reprographie
+resp.	respectivement
+restr.	restrictif, restrictive, restriction
+rétrosp.	rétrospectif
+rev.	revu
+rév.	révisé, révision
+rév.	révolution
+révol.	révolution
+rhét.	rhétorique
+rhumatol.	rhumatologie
+robot.	robotique
+rom.	roman, romanisch, romanistisch
+romant.	romantique
+roum.	roumain
+roy.	royal
+s.	siècle
+s.v.	sub vocae
+sag.	sagesse
+saint.	saintongeais
+sal.	salines
+sam.	samuel
+samml.	sammlung
+sav.	savant
+savoy.	savoyard
+sax.	saxon
+sc.	science, sciences, scientifique
+scand.	scandinave
+scén.	scéniques, scénique
+scol.	scolaire
+scolast.	scolastique
+scupt.	sculpture
+second.	secondaire
+sém.	sémantique
+semestr.	semestriel
+sémiot.	sémiotique
+sémit.	sémitique
+sept.	septembre
+septentr.	septentrional
+serm.	sermon
+serr.	serrurerie
+serv.	service
+sexol.	sexologie
+sidér.	sidérurgie
+sigillogr.	sigillographie
+signif.	signification
+sim.	similé
+simpl.	simplement
+sing.	singulier
+sismol.	sismologie
+skr.	sanscrit, sanskrit
+sl.	slave
+soc.	social
+sociol.	sociologie, sociologique
+somm.	sommaire
+soph.	sophonie
+soud.	soudure
+souv.	souvent
+sp.	sport
+spéc.	spécial, spécialement
+spirit.	spiritisme
+sq.	sequens, sequensiturque
+sqq.	sequentes, sequentunturque
+st.	saint
+stat.	statistique
+ste.	sainte
+sté.	société
+sténogr.	sténographie
+stomatol.	stomatologie
+struct.	structural, structure
+styl.	stylistique
+sub.	subordination, subordonné, subordonnée
+subj.	subjonctif
+subst.	substantivation, substantivement, substantif, substantival, substantivé
+sucr.	sucrerie
+suéd.	suédois
+suff.	suffixal, suffixe
+suiv.	suivant
+suj.	sujet
+sup.	supérieur
+superl.	superlatif
+suppl.	supplément, supplémentaire
+syll.	syllabe
+sylvic.	sylviculture
+symb.	symbole
+synchr.	synchronie, synchronique
+syndical.	syndicalisme
+synon.	synonyme, synonymie, synonymique
+synt.	syntagme, syntagmes, syntaxe
+syntagm.	syntagmatique
+synth.	synthèse
+syst.	systématique, système
+t.	tome
+tabl.	tableau
+tann.	tannerie
+tantr.	tantrisme
+tapiss.	tapisserie
+taurom.	tauromachie
+tch.	tchèque
+techn.	technique, techniques
+technol.	technologie, technologique
+télécomm.	télécommunications
+télégr.	télégraphie
+téléph.	téléphonie
+télév.	télévision
+temp.	temporel
+tératol.	tératologie
+termin.	terminaison
+terminol.	terminologie, terminologique, terminology
+terr.	terrail, territoire
+terrass.	terrassement
+text.	textile
+th.	thèse
+théol.	théologie, théologique
+théor.	théorique
+théosoph.	théosophie
+thérap.	thérapeutique
+therm.	thermalisme
+thermodyn.	thermodynamique
+thess.	thessaloniciens
+thib.	thibault
+tim.	timothée
+tir.	tirage
+tiss.	tissage
+topogr.	topographie, topographique
+topol.	topologie
+topon.	toponyme, toponymie, toponymique
+tour.	tourisme
+tourang.	tourangeau
+toxicol.	toxicologie
+trad.	traducteur, traduction, traduire, traduit
+trag.	tragique
+trans.	transitif
+transcr.	transcription
+transl.	translated
+transp.	transport, transports
+transpos.	transposition
+trav.	travail, travaux
+travaill.	travailleur(s)
+trév.	trévoux
+tricot.	tricoterie
+trimestr.	trimestriel
+typogr.	typographie, typographique
+übers.	übersetzt
+univ.	universel
+univ.	universität, université, university
+urban.	urbanisme
+urol.	urologie
+us.	usage, usité
+v.	voir
+v°	verso
+vac.	vacances
+val.	valaisan, valien
+vann.	vannerie
+var.	variante, variation
+vaude.	vaudois
+végét.	végétal
+vén.	vénerie
+vénit.	vénitien
+verb.	verbessert
+verl.	verlag
+verm.	vermehrt
+versif.	versification
+vêt.	vêtement
+vétér.	vétérinaire
+virol.	virologie
+vitic.	viticulture
+vocab.	vocabulaire
+vol.	volume
+volcanol.	volcanologie
+voy.	voyelle
+vulg.	vulgaire
+vx.	vieux
+w.	wörterbuch
+wall.	wallon
+wisigot.	wisigotique
+wiss.	wissenschaft
+z.	zeitschrift
+zach.	zacharie
+zing.	zinguerie
+zool.	zoologie, zoologique
+zoroastr.	zoroastrisme
