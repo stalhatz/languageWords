@@ -529,7 +529,7 @@ class Ui_MainWindow(QtCore.QObject):
   def requestWebPage(self,word,_dict,activeTab):
     if activeTab == 0:
       self.definitionListView.setEnabled(False)
-      self.onlineDefDataModel.load(word,_dict)
+      self.onlineDefDataModel.load(word,_dict,isDefinition=True,_async= True)
     elif activeTab == 1:
       url = self.onlineDefDataModel.createUrl(word,_dict)
       self.webView.load(QtCore.QUrl(url))

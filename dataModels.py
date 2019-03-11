@@ -92,7 +92,10 @@ class OnlineDefinitionDataModel(QObject):
 
   def getInstance(cls,modulePath = "./dictionaries"):
     obj = cls()
-    obj.version      = 0.01
+    obj.version      = 0.02
+    obj.enableCaching= True
+    if obj.enableCaching:
+      obj.requestCache  = pd.DataFrame(columns = ["html" , "timestamp"])
     obj.session      = FuturesSession(max_workers=1)
     obj.lastRequest  = None
     obj.url          = None
@@ -151,40 +154,39 @@ class OnlineDefinitionDataModel(QObject):
 
   def loadDefinition(self,word,dictName):
     self.definitionsList = []
-    self.load(self, word, dictName,True)
+    self.load(self, word, dictName,isDefinition = True , _async = True)
 
   def loadTags(self, word):
     for dictName in self.selectedDicts:
       if hasattr(self.selectedDicts[dictName], 'getTagsFromHtml'):
-        self.loadSequential(word,dictName,False) 
+        self.load(word,dictName,isDefinition = False , _async = False) 
 
-  def handleRequest(self,request,url,dictName,isDefinition=True):
-    if request.status_code > 200:
-      self.showMessage.emit("Error while loading from " + url + " Code :: " + str(request.status_code))
+  def load(self,word, dictName,isDefinition=False,_async= False):
+    url       = self.createUrl(word,dictName)  
+    if self.enableCaching:
+      try:
+        html = self.requestCache.loc[url,:].html
+        self.showMessage.emit("Loaded " + url + " from cached copy")
+        self.parseHtml(html,dictName,isDefinition)
+        return
+      except KeyError:
+        pass
+    if _async:
+      self.loadAsync(url,dictName,isDefinition)
     else:
-      self.showMessage.emit("Finished loading from " + url)
-      html =  request.text
-      if isDefinition:
-        self.definitionsList = self.getDefinitionsFromHtml(dictName, html)
-        self.definitionsUpdated.emit(self.definitionsList)
-      else: #Update tags
-        self.tagsList = self.getTagsFromHtml(dictName,html)
-        if self.tagsList:
-          self.tagsUpdated.emit(self.tagsList)
+      self.loadSequential(url,dictName,isDefinition)
 
-  def loadSequential(self,word, dictName,isDefinition=False):
-    url       = self.createUrl(word,dictName)
+  def loadSequential(self, url,dictName,isDefinition=False):
     response  = requests.get(url)
     self.handleRequest(response,url,dictName,isDefinition)
 
-  def load(self, word, dictName,isDefinition=True):
-    url = self.createUrl(word,dictName)
+  def loadAsync(self, url,dictName,isDefinition=True):
     self.url = url
     future = self.session.get(url)
     future.add_done_callback(partial(self._load,url,dictName,isDefinition))
     self.lastRequest = future
     self.showMessage.emit("Loading from " + url)
-
+  
   #This is run by a thread other the main one. Though interpreter lock is in place, we should make sure there are no race conditions...
   def _load(self,url,dictName,isDefinition,future):
     if url != self.url:
@@ -193,10 +195,35 @@ class OnlineDefinitionDataModel(QObject):
     request = future.result()
     self.handleRequest(request,url,dictName,isDefinition)
 
+  def handleRequest(self,request,url,dictName,isDefinition=True):
+    if request.status_code > 200:
+      self.showMessage.emit("Error while loading from " + url + " Code :: " + str(request.status_code))
+    else:
+      html =  request.text
+      if self.enableCaching:
+        try:
+          html = self.requestCache.loc[url,:].html
+        except KeyError:
+          newRecord         = pd.Series({"html":html , "timestamp":pd.Timestamp.now()}, name = url)
+          self.requestCache = self.requestCache.append(newRecord)
+      self.showMessage.emit("Finished loading from " + url)
+      self.parseHtml(html,dictName,isDefinition)
+  
+  def parseHtml(self,html,dictName,isDefinition):
+    if isDefinition:
+      self.definitionsList = self.getDefinitionsFromHtml(dictName, html)
+      self.definitionsUpdated.emit(self.definitionsList)
+    else: #Update tags
+      self.tagsList = self.getTagsFromHtml(dictName,html)
+      if self.tagsList:
+        self.tagsUpdated.emit(self.tagsList)
+
   def saveData(self,output):
     saveToPickle(self.version, output)
     #version 0.01
     saveToPickle(self.getDictNames(), output)
+    #version 0.02
+    saveToPickle(self.requestCache, output)
 
   def loadData(self,_input,noVersion):
     #The version variable is only for backwards compatibility with the class version.
@@ -206,6 +233,8 @@ class OnlineDefinitionDataModel(QObject):
     #version 0.01
     dictNames = loadFromPickle(_input)
     self.selectDictsFromNames(dictNames)
+    if version > 0.01:
+      self.requestCache = loadFromPickle(_input)
 
   def toFile(self,file):
     if isinstance(file,str):
