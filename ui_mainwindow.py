@@ -34,10 +34,23 @@ class Ui_MainWindow(QtCore.QObject):
     self.actionSave.setShortcut("Ctrl+S")
     #self.actionSave.setEnabled(False)
 
+    self.addWordAction = QtWidgets.QAction ("Add Word", self.mainWindow)
+    self.addWordAction.setObjectName("addWordAction")
+    self.addWordAction.triggered.connect(self.showAddWordDialog)
+    self.addWordAction.setShortcut("Ctrl+A")
+
+    self.editWordAction = QtWidgets.QAction ("Edit Word", self.mainWindow)
+    self.editWordAction.setObjectName("editWordAction")
+    self.editWordAction.triggered.connect(self.showEditWordDialog)
+    self.editWordAction.setShortcut("Ctrl+E")
+    self.editWordAction.setEnabled(False)
+
     self.removeWordAction = QtWidgets.QAction ("Remove Word", self.mainWindow)
     self.removeWordAction.setObjectName("removeWordAction")
     self.removeWordAction.triggered.connect(self.removeWord)
-
+    self.removeWordAction.setShortcut("Ctrl+R")
+    self.removeWordAction.setEnabled(False)
+    
     self.addDefinitionAction = QtWidgets.QAction ("Add Custom Definition", self.mainWindow)
     self.addDefinitionAction.setObjectName("addDefinitionAction")
     self.addDefinitionAction.triggered.connect(self.addDefinition)
@@ -61,17 +74,19 @@ class Ui_MainWindow(QtCore.QObject):
   def addTopButtons(self):
     self.buttonHorizontalLayout = QtWidgets.QHBoxLayout()
     self.buttonHorizontalLayout.setObjectName("buttonHorizontalLayout")
-    self.addWordButton = QtWidgets.QPushButton(self.centralwidget)
+    
+    self.addWordButton = QtWidgets.QToolButton(self.centralwidget)
     self.addWordButton.setObjectName("addWordButton")
     self.addWordButton.setMaximumSize(QtCore.QSize(100,50))
-    self.addWordButton.setText("&Add Word")
-    self.addWordButton.clicked.connect(self.showAddWordDialog)
-    self.editWordButton = QtWidgets.QPushButton(self.centralwidget)
+    self.addWordButton.setDefaultAction(self.addWordAction)
+    
+    self.editWordButton = QtWidgets.QToolButton(self.centralwidget)
     self.editWordButton.setObjectName("editWordButton")
     self.editWordButton.setMaximumSize(QtCore.QSize(100,50))
-    self.editWordButton.setText("&Edit Word")
-    self.editWordButton.clicked.connect(self.showEditWordDialog)
-    self.editWordButton.setEnabled(False)
+    self.editWordButton.setDefaultAction(self.editWordAction)
+    #self.editWordButton.setText("&Edit Word")
+    #self.editWordButton.clicked.connect(self.showEditWordDialog)
+
     self.editDictsButton = QtWidgets.QPushButton(self.centralwidget)
     self.editDictsButton.setObjectName("editDictButton")
     self.editDictsButton.setMaximumSize(QtCore.QSize(150,50))
@@ -169,11 +184,18 @@ class Ui_MainWindow(QtCore.QObject):
     self.menuFile.addSeparator()
     self.menuFile.addAction(self.exitAppAction)
 
+    self.menuWord = QtWidgets.QMenu(self.menubar)
+    self.menuWord.setObjectName("menuWord")
+    self.menuWord.addAction(self.addWordAction)
+    self.menuWord.addAction(self.editWordAction)
+    self.menuWord.addAction(self.removeWordAction)
+
     self.menuEdit = QtWidgets.QMenu(self.menubar)
     self.menuEdit.setObjectName("menuEdit")
     self.menuEdit.addAction(self.showPreferencesAction)
 
     self.menubar.addAction(self.menuFile.menuAction())
+    self.menubar.addAction(self.menuWord.menuAction())
     self.menubar.addAction(self.menuEdit.menuAction())
     MainWindow.setMenuBar(self.menubar)
   def addStatusBar(self,MainWindow):
@@ -265,6 +287,7 @@ class Ui_MainWindow(QtCore.QObject):
   def retranslateUi(self, MainWindow):
     _translate = QtCore.QCoreApplication.translate
     self.menuFile.setTitle(_translate("MainWindow", "Fi&le"))
+    self.menuWord.setTitle(_translate("MainWindow", "&Word"))
     self.menuEdit.setTitle(_translate("MainWindow", "&Edit"))
     self.actionNew.setText(_translate("MainWindow", "New project"))
     self.actionOpen.setText(_translate("MainWindow", "Open..."))
@@ -550,9 +573,11 @@ class Ui_MainWindow(QtCore.QObject):
 
   def selectedWordChanged(self,index):
     if index.isValid():
-      self.editWordButton.setEnabled(True)
+      self.editWordAction.setEnabled(True)
+      self.removeWordAction.setEnabled(True)
     else:
-      self.editWordButton.setEnabled(False)
+      self.editWordAction.setEnabled(False)
+      self.removeWordAction.setEnabled(False)
     selectedWord = self.getSelectedWord()
     self.elementController.updateOnWord(selectedWord)
     self.savedDefController.updateOnWord(selectedWord)
@@ -642,10 +667,12 @@ class Ui_MainWindow(QtCore.QObject):
   def wordViewContextMenuRequested(self,point):
     print("wordViewContextMenuRequested")
     index = self.wordview.indexAt(point).row()
+    contextMenu = QtWidgets.QMenu ("Context menu", self.wordview)
+    contextMenu.addAction(self.addWordAction)
     if (index >= 0):
-      contextMenu = QtWidgets.QMenu ("Context menu", self.wordview)
+      contextMenu.addAction(self.editWordAction)
       contextMenu.addAction(self.removeWordAction)
-      contextMenu.exec(self.wordview.mapToGlobal(point))
+    contextMenu.exec(self.wordview.mapToGlobal(point))
 
   def _removeWord(self,word,tags):
     self.tagDataModel.removeTagging(word,tags)
