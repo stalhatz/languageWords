@@ -12,6 +12,47 @@ from functools import partial
 #TODO : [UI] Move tabs to the right/left of QTabWidget with horizontal text. Calling setTabPosition(QtWidgets.QTabWidget.West) produces vertical text
 #FIXME: Dialogs do not trigger a dirty program state
 class Ui_MainWindow(QtCore.QObject):
+
+  def setupUi(self, MainWindow):
+    MainWindow.setObjectName("MainWindow")
+    MainWindow.resize(720, 1024)
+    self.mainWindow = MainWindow
+    self.version = 0.03
+    self.language = "N/A"
+    self.projectName = "Untitled"
+    self.programName = "LanguageWords"
+    self.sessionFile = "." + self.programName + "_" + "session" + ".pkl"
+    self.autoSaveTimer = QtCore.QTimer()
+    self.autoSaveTimer.timeout.connect(self.autoSave)
+    self.autoSaveTimerInterval = 3000
+    self.projectFile = None 
+    self.unsavedChanges = False 
+    self.tempProjectFile = None
+    self.applyCss()
+    self.setWindowTitle()
+    self.defineActions()
+    self.centralwidget = QtWidgets.QWidget(MainWindow)
+    self.centralwidget.setObjectName("centralwidget")
+    MainWindow.setCentralWidget(self.centralwidget)
+    
+    #outerVerticalLayout
+    outerVerticalLayout = QtWidgets.QVBoxLayout(self.centralwidget)
+    #buttonHorizontalLayout(outerVerticalLayout)
+    buttonHorizontalLayout = QtWidgets.QHBoxLayout()
+    self.addTopButtons(buttonHorizontalLayout,self.centralwidget)
+    #horizontalLayout(outerVerticalLayout)
+    horizontalLayout = QtWidgets.QHBoxLayout()
+    horizontalLayout.setContentsMargins(0, 0, 0, 0)
+    horizontalLayout.setObjectName("horizontalLayout")  
+    self.addListViews(horizontalLayout,self.centralwidget)
+    outerVerticalLayout.addLayout(buttonHorizontalLayout)
+    outerVerticalLayout.addLayout(horizontalLayout)
+
+    self.addMenuBar(MainWindow)            
+    self.addStatusBar(MainWindow)
+    self.retranslateUi(MainWindow)
+    QtCore.QMetaObject.connectSlotsByName(MainWindow)
+
   def defineActions(self):
     self.actionNew = QtWidgets.QAction(self.mainWindow)
     self.actionNew.setObjectName("actionNew")
@@ -74,94 +115,76 @@ class Ui_MainWindow(QtCore.QObject):
     self.showPreferencesAction.setObjectName("showPreferencesAction")
     self.showPreferencesAction.triggered.connect(self.showPreferencesDialog)
 
-  def addTopButtons(self):
-    self.buttonHorizontalLayout = QtWidgets.QHBoxLayout()
-    self.buttonHorizontalLayout.setObjectName("buttonHorizontalLayout")
-    
-    self.addWordButton = QtWidgets.QToolButton(self.centralwidget)
+  def addTopButtons(self , layout ,parentWidget):
+    self.addWordButton = QtWidgets.QToolButton(parentWidget)
     self.addWordButton.setObjectName("addWordButton")
     self.addWordButton.setMaximumSize(QtCore.QSize(100,50))
     self.addWordButton.setDefaultAction(self.addWordAction)
     
-    self.editWordButton = QtWidgets.QToolButton(self.centralwidget)
+    self.editWordButton = QtWidgets.QToolButton(parentWidget)
     self.editWordButton.setObjectName("editWordButton")
     self.editWordButton.setMaximumSize(QtCore.QSize(100,50))
     self.editWordButton.setDefaultAction(self.editWordAction)
-    #self.editWordButton.setText("&Edit Word")
-    #self.editWordButton.clicked.connect(self.showEditWordDialog)
 
-    self.editDictsButton = QtWidgets.QPushButton(self.centralwidget)
+    self.editDictsButton = QtWidgets.QPushButton(parentWidget)
     self.editDictsButton.setObjectName("editDictButton")
     self.editDictsButton.setMaximumSize(QtCore.QSize(150,50))
     self.editDictsButton.setText("Edit &Dictionaries")
     self.editDictsButton.clicked.connect(self.showEditDictsDialog)
-    self.editMetaTagsButton = QtWidgets.QPushButton(self.centralwidget)
+    self.editMetaTagsButton = QtWidgets.QPushButton(parentWidget)
     self.editMetaTagsButton.setObjectName("editMTButton")
     self.editMetaTagsButton.setMaximumSize(QtCore.QSize(150,50))
     self.editMetaTagsButton.setText("Edit &MetaTags")
     self.editMetaTagsButton.clicked.connect(self.showEditMetaTagsDialog)
 
-    self.buttonHorizontalLayout.addWidget(self.addWordButton)
-    self.buttonHorizontalLayout.addWidget(self.editWordButton)
-    self.buttonHorizontalLayout.addWidget(self.editDictsButton)
-    self.buttonHorizontalLayout.addWidget(self.editMetaTagsButton)
-  def addListViews(self):
-    #outerVerticalLayout
-    self.horizontalLayout = QtWidgets.QHBoxLayout()
-    self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
-    self.horizontalLayout.setObjectName("horizontalLayout")  
-    self.outerVerticalLayout.addLayout(self.buttonHorizontalLayout)
-    self.outerVerticalLayout.addLayout(self.horizontalLayout)
-    #self.outerVerticalLayout.addWidget(self.statusBar)
+    layout.addWidget(self.addWordButton)
+    layout.addWidget(self.editWordButton)
+    layout.addWidget(self.editDictsButton)
+    layout.addWidget(self.editMetaTagsButton)
 
-    #horizontalLayout (outerVerticalLayout)
-    self.verticalLayout = QtWidgets.QVBoxLayout()
-    self.verticalLayout.setObjectName("verticalLayout")
-    self.horizontalLayout.addLayout(self.verticalLayout)
-    #verticalLayout (horizontalLayout (outerVerticalLayout))
-    self.dictSelect = QtWidgets.QComboBox(self.centralwidget)
+  def addListViews(self,layout,parentWidget):
+    #verticalLayout(layout)
+    verticalLayout = QtWidgets.QVBoxLayout()
+
+    self.dictSelect = QtWidgets.QComboBox(parentWidget)
     self.dictSelect.setMaximumSize(QtCore.QSize(300, 30))
     self.dictSelect.setObjectName("dictSelect")
-    self.wordview = QtWidgets.QListView(self.centralwidget)
+
+    self.wordview = QtWidgets.QListView(parentWidget)
     self.wordview.setMaximumSize(QtCore.QSize(400, 400))
     self.wordview.setObjectName("wordview")
-    
-    
-    self.tagview = QtWidgets.QListView(self.centralwidget)
+        
+    self.tagview = QtWidgets.QListView(parentWidget)
     self.tagview.setMaximumSize(QtCore.QSize(400, 400))
     self.tagview.setObjectName("tagview")
     self.tagview.installEventFilter(self)
     
-
-    self.tagFilter = QtWidgets.QLineEdit(self.centralwidget)
+    self.tagFilter = QtWidgets.QLineEdit(parentWidget)
     self.tagFilter.setObjectName("tagFilter")
     self.tagFilter.setPlaceholderText("Enter text to filter tags")
     self.tagFilter.setMaximumSize(QtCore.QSize(400, 30))
     self.tagFilter.installEventFilter(self) #Catch Enter
-    self.elementTagview = QtWidgets.QListView(self.centralwidget)
+
+    self.elementTagview = QtWidgets.QListView(parentWidget)
     self.elementTagview.setMaximumSize(QtCore.QSize(400, 400))
     self.elementTagview.setObjectName("elementTagview")
     self.elementTagview.installEventFilter(self)
 
-    self.verticalLayout.addWidget(self.dictSelect)
-    uiUtils.addLabeledWidget("Tag List", self.tagview,self.verticalLayout)
-    self.verticalLayout.addWidget(self.tagFilter)
-    uiUtils.addLabeledWidget("Phrases by tag", self.wordview,self.verticalLayout)
+    verticalLayout.addWidget(self.dictSelect)
+    uiUtils.addLabeledWidget("Tag List", self.tagview,verticalLayout)
+    verticalLayout.addWidget(self.tagFilter)
+    uiUtils.addLabeledWidget("Phrases by tag", self.wordview,verticalLayout)
+    uiUtils.addLabeledWidget("Tags by Phrase", self.elementTagview,verticalLayout)
     
-    uiUtils.addLabeledWidget("Tags by Phrase", self.elementTagview,self.verticalLayout)
-    
-    self.savedDefinitionsView = QtWidgets.QListView(self.centralwidget)
+    self.savedDefinitionsView = QtWidgets.QListView(parentWidget)
     self.savedDefinitionsView.setObjectName("definitionListView")
     self.savedDefinitionsView.setWordWrap(True)
     self.savedDefinitionsView.setEditTriggers(QtWidgets.QAbstractItemView.SelectedClicked)
     self.savedDefinitionsView.itemDelegate().commitData.connect(self.handleEditedDefinition)
 
-    uiUtils.addLabeledWidget("Saved Definitions", self.savedDefinitionsView,self.horizontalLayout)
-
-    self.tabwidget = QtWidgets.QTabWidget(self.centralwidget)
+    self.tabwidget = QtWidgets.QTabWidget(parentWidget)
     self.tabwidget.setTabPosition(QtWidgets.QTabWidget.South)
     self.tabwidget.setObjectName("tabwidget")
-    uiUtils.addLabeledWidget("Online Definitions", self.tabwidget,self.horizontalLayout)
     
     self.definitionListView = QtWidgets.QListView(self.tabwidget)
     self.definitionListView.setObjectName("definitionListView")
@@ -172,6 +195,10 @@ class Ui_MainWindow(QtCore.QObject):
     self.webView.setUrl(QtCore.QUrl("about:blank"))
     self.webView.setObjectName("webView")
     self.tabwidget.addTab(self.webView , "Web page")
+
+    layout.addLayout(verticalLayout)
+    uiUtils.addLabeledWidget("Saved Definitions", self.savedDefinitionsView,layout)
+    uiUtils.addLabeledWidget("Online Definitions", self.tabwidget,layout)
 
   def addMenuBar(self,MainWindow):
     self.menubar = QtWidgets.QMenuBar(MainWindow)
@@ -256,36 +283,6 @@ class Ui_MainWindow(QtCore.QObject):
     self.onlineDefDataModel.showMessage.connect(self.statusBar.showMessage) #Not really needed...
 
     self.dictSelect.insertItems(0,self.onlineDefDataModel.getDictNames())
-
-  def setupUi(self, MainWindow):
-    MainWindow.setObjectName("MainWindow")
-    MainWindow.resize(720, 1024)
-    self.mainWindow = MainWindow
-    self.version = 0.03
-    self.language = "N/A"
-    self.projectName = "Untitled"
-    self.programName = "LanguageWords"
-    self.sessionFile = "." + self.programName + "_" + "session" + ".pkl"
-    self.autoSaveTimer = QtCore.QTimer()
-    self.autoSaveTimer.timeout.connect(self.autoSave)
-    self.autoSaveTimerInterval = 3000
-    self.projectFile = None 
-    self.unsavedChanges = False 
-    self.tempProjectFile = None
-    self.applyCss()
-    self.setWindowTitle()
-    self.centralwidget = QtWidgets.QWidget(MainWindow)
-    self.centralwidget.setObjectName("centralwidget")
-    self.outerVerticalLayout = QtWidgets.QVBoxLayout(self.centralwidget)
-    self.outerVerticalLayout.setObjectName("outerVerticalLayout")
-    self.defineActions()
-    self.addTopButtons()
-    self.addListViews()
-    MainWindow.setCentralWidget(self.centralwidget)
-    self.addMenuBar(MainWindow)            
-    self.addStatusBar(MainWindow)
-    self.retranslateUi(MainWindow)
-    QtCore.QMetaObject.connectSlotsByName(MainWindow)
       
   def retranslateUi(self, MainWindow):
     _translate = QtCore.QCoreApplication.translate
