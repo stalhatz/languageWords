@@ -10,7 +10,9 @@ from functools import partial
 
 #TODO : Setup keyboard shortcuts for easily navigating between ListViews/ListEdits etc.
 #TODO : [UI] Move tabs to the right/left of QTabWidget with horizontal text. Calling setTabPosition(QtWidgets.QTabWidget.West) produces vertical text
+
 #FIXME: Dialogs do not trigger a dirty program state
+#FIXME: Renaming a word through the edit dialog does not update the UI
 class Ui_MainWindow(QtCore.QObject):
 
   def setupUi(self, MainWindow):
@@ -374,8 +376,9 @@ class Ui_MainWindow(QtCore.QObject):
     if dialogCode == QtWidgets.QDialog.Accepted:
       if not self.welcomeDialog.loadedFile: #New Project
         self.language     = self.welcomeDialog.languageComboBox.currentText()
-        self.wordDataModel.language  = self.language
-        self.defDataModel.language   = self.language
+        self.wordDataModel.language   = self.language
+        self.defDataModel.language    = self.language
+        self.onlineDefModel.language  = self.language
         self.projectName  = self.welcomeDialog.nameLineEdit.text()
         self.setWindowTitle()
         self.setDirtyState()
