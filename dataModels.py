@@ -10,6 +10,7 @@ from functools import partial
 from requests_futures.sessions import FuturesSession
 import requests
 from concurrent.futures import ThreadPoolExecutor
+import copy
 
 def saveToPickle(a , file):
   if isinstance(file,str):
@@ -88,8 +89,8 @@ class OnlineDefinitionDataModel(QObject):
   
   def __init__(self):
     super(OnlineDefinitionDataModel, self).__init__()
+  
   @classmethod
-
   def getInstance(cls,modulePath = "./dictionaries"):
     obj = cls()
     obj.version      = 0.02
@@ -350,7 +351,13 @@ class TagDataModel():
   to tags attributed to tags. Through the transitive property tags related to other tags also apply to indexes but there is no way to
   directly remove a tag related transitively to an index because by design this information is not captured"""
 
-  def __init__(self , tagTable = None):
+  def __init__(self , tagTable = None , globalParentTag = "#All Words#"):
+    
+    self.useGlobalParentTag = False
+    if globalParentTag is not None:
+      self.useGlobalParentTag = True
+      self.globalParentTag = globalParentTag
+      
     self.version = 0.01
     self.tagNodes = {}
     if tagTable is None:
@@ -402,13 +409,27 @@ class TagDataModel():
     tagIndexTable = tagIndexTable.drop_duplicates()
     return tagIndexTable
 
+  def createAutoTags(self):
+    if self.useGlobalParentTag:
+      tags = self.getTags()
+      for tag in tags:
+        tagNode = self.tagToNode(tag)
+        globalNode = self.tagToNode(self.globalParentTag,True)
+        self.addNodeRelation(tagNode,globalNode)
+
+  def deleteAutoTags(self):
+    self.removeTag(self.globalParentTag)
+
+  
   def saveData(self,output):
     #version 0.01
     #saveToPickle(self.tagTable, output)
     #version 0.02
-    saveToPickle(self.version, output)
-    saveToPickle(self.tagTable, output)
-    saveToPickle(self.tagNodes, output)
+    aCopy = copy.deepcopy(self)
+    aCopy.deleteAutoTags()
+    saveToPickle(aCopy.version, output)
+    saveToPickle(aCopy.tagTable, output)
+    saveToPickle(aCopy.tagNodes, output)
 
 
   def loadData(self,_input):
@@ -419,7 +440,9 @@ class TagDataModel():
     print("Loading TagDataModel version " + str(version))
     if version == 0.01:
       self.tagTable = loadFromPickle(_input)  
-      self.tagNodes = loadFromPickle(_input)  
+      self.tagNodes = loadFromPickle(_input)
+    #FIXME:Auto tags should be moved out of this class. They should be part of the application
+    self.createAutoTags()
     #self.tagTable = loadFromPickle(_input)
 
   def toFile(self,file):
@@ -444,20 +467,21 @@ class TagDataModel():
 
   class Node():
     #The tag works as a subject for its predicatives and as a predicative for its subjects
-    def __init__(self,tag):
+    def __init__(self,tag,isAutoTag=False):
       self.predicatives  = []
       self.subjects = []
       self.tag = tag
+      self.isAutoTag = isAutoTag
     def __str__(self):
       return self.tag + " Pre: " + str(self.predicatives) + " | "
     def __repr__(self):
       return self.tag
   #This is not a symmetrical relation
-  def tagToNode(self,tag):
+  def tagToNode(self,tag , isAutoTag = False):
     if tag in self.tagNodes:
       node = self.tagNodes[tag]
     else:
-      node = TagDataModel.Node(tag)
+      node = TagDataModel.Node(tag , isAutoTag)
     return node
 
   def getDirectParentTags(self,tag):
@@ -515,24 +539,41 @@ class TagDataModel():
       #print("Can't relate a tag to itself")
       return
     subNode = self.tagToNode(subject)
-    predNode = self.tagToNode(pred) 
+    predNode = self.tagToNode(pred)
+    self.addNodeRelation(subNode,predNode)
+      
+
+  def addNodeRelation(self,subNode, predNode):
     if self.connected(subNode,predNode):
       #print("Already connected!") 
-      return
+      return False
     #print("sNode :: " + str(subNode) + " pNode :: "+ str(predNode))  
     if self.checkForCycles(subNode,predNode):
       #print("Cycle found.")
-      return
+      return False
     #Given there are not cycles we can now add the new tagNodes to the graph
-    if subject not in self.tagNodes:
-      self.tagNodes[subject] = subNode
-    if pred not in self.tagNodes:
-      self.tagNodes[pred] = predNode
+    if subNode.tag not in self.tagNodes:
+      self.tagNodes[subNode.tag] = subNode
+    if predNode.tag not in self.tagNodes:
+      self.tagNodes[predNode.tag] = predNode
     subNode.predicatives.append(predNode)
     predNode.subjects.append(subNode)
+    return True
 
   def removeRelation(self,subject,pred):
     subNode = self.tagNodes[subject]
     predNode = self.tagNodes[pred]
+  
+  def removeNodeRelation(self,subNode,predNode):
     subNode.predicatives.remove(predNode)
     predNode.subjects.remove(subNode)
+
+  def removeTag(self,tag):
+    node = self.tagNodes[tag]
+    preds = node.predicatives.copy()
+    for n in preds:
+      self.removeNodeRelation(node,n)
+    subjects = node.subjects.copy()
+    for n in subjects:
+      self.removeNodeRelation(n,node)
+    del self.tagNodes[tag]
