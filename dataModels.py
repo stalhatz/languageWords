@@ -178,7 +178,11 @@ class OnlineDefinitionDataModel(QObject):
       self.loadSequential(url,dictName,isDefinition)
 
   def loadSequential(self, url,dictName,isDefinition=False):
-    response  = requests.get(url)
+    try:
+      response  = requests.get(url,timeout = 1)
+    except requests.exceptions.RequestException as a:
+      self.showMessage.emit("Connexion to " + str(url) + " failed. " + str(a))
+      return
     self.handleRequest(response,url,dictName,isDefinition)
 
   def loadAsync(self, url,dictName,isDefinition=True):
@@ -193,7 +197,11 @@ class OnlineDefinitionDataModel(QObject):
     if url != self.url:
       future.cancel() #Should cancel itself when issuing the next request as max_workers = 1
       return
-    request = future.result()
+    try:
+      request = future.result()
+    except requests.exceptions.RequestException as a:
+      self.showMessage.emit("Connexion to " + str(url) + " failed. " + str(a))
+      return
     self.handleRequest(request,url,dictName,isDefinition)
 
   def handleRequest(self,request,url,dictName,isDefinition=True):
