@@ -72,6 +72,7 @@ class DefinitionController(QAbstractListModel):
 # TODO: [FEATURE] [LOW PRIORITY] unidecode filter and pandas Series to match string with accents / no accents
 # TODO: [FEATURE] [LOW PRIORITY] use > = < filters to filter tags with certain number of corresponding words
 class TagController(QAbstractListModel):
+  DataRole = Qt.UserRole
   def __init__(self,tagModel):
     super(TagController,self).__init__()
     self.tagModel = tagModel
@@ -85,14 +86,18 @@ class TagController(QAbstractListModel):
     if not index.isValid() or not (0<=index.row()<len(self.tagIndex.index)):  
       return QVariant()
     if role==Qt.DisplayRole:      
-      return self.getTag(index) + " ("+str(self.getTagCount(index))+")"
+      return (self.getTag(index) + " ("+str(self.getTagCount(index))+")").capitalize()
     if role==Qt.EditRole:
       return self.getTag(index)
+    if role==self.DataRole:
+      return self.getTag(index)
+
   def getTag(self,index):
     if isinstance(index,int):
-      return str(self.tagIndex.iloc[index,0])  
+      ind = index  
     else:
-      return str(self.tagIndex.iloc[index.row(),0])
+      ind = index.row()
+    return str(self.tagIndex.iloc[ind,0])  
   def getTagCount(self,index):
     return self.tagIndex.iloc[index.row(),1]
 
@@ -129,6 +134,7 @@ class TagController(QAbstractListModel):
 #FIXME: Load word definition when shown on screen not only when selected
 class WordController(QAbstractListModel):
   loadDefinition    = pyqtSignal(str, str, bool)
+  DataRole = Qt.UserRole
   def __init__(self, wordModel ,tagModel):
     super(WordController,self).__init__()
     self.wordModel = wordModel
@@ -147,7 +153,10 @@ class WordController(QAbstractListModel):
     if not index.isValid() or not (0<=index.row()<len(self.df_image.index)):
       return QVariant()
     if role==Qt.DisplayRole:
+      return str(self.df_image.iloc[index.row(),0]).capitalize()
+    if role==self.DataRole:
       return str(self.df_image.iloc[index.row(),0])
+
   def updateOnTag(self,tag):
     self.layoutAboutToBeChanged.emit()
     tagList = self.tagModel.getAllChildTags(tag)
@@ -230,8 +239,6 @@ class ElementTagController(QAbstractListModel):
       self.tagList = list(set(self.tagList))
       self.orderTagLists()
     self.layoutChanged.emit()
-
-
 
   def update(self):
     if self.updatesOnTag:

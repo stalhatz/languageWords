@@ -627,9 +627,9 @@ class Ui_MainWindow(QtCore.QObject):
   
   def getSelectedWord(self):
     index = self.wordview.currentIndex()
-    selectedWord  = self.wordController.data(index,QtCore.Qt.DisplayRole)
+    selectedWord  = self.wordController.data(index,WordController.DataRole)
     if isinstance(selectedWord,str):
-      return selectedWord    
+      return selectedWord
     else:
       return None
 
@@ -647,9 +647,9 @@ class Ui_MainWindow(QtCore.QObject):
     if viewIndex is None:
       viewIndex = self.tagview.currentIndex()
     index = self.filterController.mapToSource(viewIndex)
-    selectedTag = self.tagController.data(index,QtCore.Qt.EditRole)
+    selectedTag = self.tagController.data(index,TagController.DataRole)
     if isinstance(selectedTag,str):
-      return selectedTag    
+      return selectedTag 
     else:
       return None
 
