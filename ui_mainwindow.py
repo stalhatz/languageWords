@@ -509,6 +509,7 @@ class Ui_MainWindow(QtCore.QObject):
   def saveFileAs(self , checked, fileName = None):
     if self._saveFileAs(checked, fileName):
       self.unsavedChanges = False
+      self.projectFile = fileName
       self.autoSaveTimer.stop()
       self.writeSessionFile()
 
