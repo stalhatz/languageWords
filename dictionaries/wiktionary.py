@@ -1,7 +1,10 @@
+
+
 name = "wiktionary"
 languages = ["English","French"] 
 dictUrls     = ["https://en.wiktionary.org/wiki/","https://fr.wiktionary.org/wiki/"]
 
+import dict_types as dt
 from bs4 import BeautifulSoup
 from collections import namedtuple
 
@@ -27,15 +30,14 @@ def breakUpDefinitionLine(_def):
   return tagsList,definition
 
 def getDefinitionsFromHtml(html,language):
-  Definition = namedtuple('definition', ('definition', 'type'))
   definitionsList = []
   s = BeautifulSoup(html,"html.parser")
   for element in s.select("ol > li"):
     _def = element.text.split("\n")[0]
     _,_def = breakUpDefinitionLine(_def)
-    definitionsList.append(Definition( _def , "definition") )
+    definitionsList.append(dt.Definition( _def , "definition") )
   for element in s.select("ol > li > ul > li"):
-    definitionsList.append(Definition(element.text.split("\n")[0] , "example") )
+    definitionsList.append(dt.Definition(element.text.split("\n")[0] , "example") )
   return definitionsList
 
 def getTagsFromHtml(html,language):

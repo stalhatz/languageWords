@@ -121,7 +121,10 @@ class OnlineDefinitionDataModel(QObject):
     for importer, modname, ispkg in pkgutil.iter_modules(package.__path__, prefix):
       #print ("Found submodule %s (is a package: %s)" % (modname, ispkg))
       dictionary = import_module(modname)
+      try:
       self.availableDicts[dictionary.name] = dictionary
+      except AttributeError:
+        continue
     return self.availableDicts
 
   def getAvailableLanguages(self):
