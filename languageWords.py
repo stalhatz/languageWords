@@ -14,7 +14,6 @@ from PyQt5.QtCore import QTimer
 #Interface:
 #TODO: [FEATURE_0] Use a QStackedLayout to show alternative layouts for manipulating/viewing/experimenting with data
 #TODO: [FEATURE_1] Sort ListViews by interacting with their corresponding Label
-#TODO: [FEATURE_2] Show word in bold when found in example (impossible currently without implementing the paint function of a delegate)
 #TODO: [FEATURE_2] Translate interface
 #TODO: [FEATURE_3] Implement rename word action
 #TODO: [FEATURE_3] Implement rename definition action (now uses single click (not that intuitive))
@@ -23,6 +22,9 @@ from PyQt5.QtCore import QTimer
 #FIXME: When switching dictionaries the scrollbar should return to the start
 #FIXME: Erase custom tag from textbox after 'Add tag' button has been clicked
 #FIXME: When adding a phrase to the tag that is already being dispayed, the 'Phrases by tag' does not get refreshed with the newly-added word
+#Data Model:
+#TODO: [FEATURE_2] Enable Online definitions to return markups and preserve them during automatic marking up
+#TODO: [FEATURE_2] Create table to hold markup per definition. Add field to distinguish between automatically created and markups provided by online definitions.
 #Miscellaneous:
 #TODO: [FEATURE_0] Training mode where a category is selected and examples are shown for the user to fill the gaps.
 #TODO: [FEATURE_1] Drag and Drop support between list views

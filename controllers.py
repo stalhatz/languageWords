@@ -16,6 +16,121 @@ from collections import namedtuple
 # (Racing condition? Is the server blocking us?).
 # QNetworkAccessManager (which would be the easiest way to do this) not working due to QTBUG-68156
 # Should use requests-futures
+
+#FIXME: Find a more memory allocation/copies way of inserting multiple elements into a string
+#FIXME: Optimize markup format so the intermediate representation will not be necessary
+def htmlFromMarkups(text,markups):
+  if markups is None : return text
+  singleMarkups = []
+  for markup in markups:
+    if markup.tagType == "bold":
+      tag = "b"
+    initTag = "<" + tag + ">"    
+    endTag = "</" + tag + ">"
+    singleMarkups.append( (markup.start , initTag) )
+    singleMarkups.append( (markup.stop , endTag) )
+  
+  sorted(singleMarkups, key = lambda x: x[0])
+
+  icl = 0 #Inserted Characters Length
+  for markup in singleMarkups:
+    pos = markup[0] + icl
+    text = text[:pos] + markup[1] + text[pos:]
+    icl += len(markup[1])
+  return text
+
+#TODO: Merge with DefinitionController
+class SavedDefinitionsController(QAbstractListModel):
+  def __init__(self,defModel):
+    super(SavedDefinitionsController,self).__init__()
+    self.defModel = defModel
+    self.definitionsList  = []
+
+  def rowCount(self, modelIndex):
+    return len(self.definitionsList)
+
+  def getDefinition(self,index):
+    if not index.isValid() or not (0<=index.row()<len(self.definitionsList)):  
+      raise IndexError("Invalid index or index out of bounds")
+    if isinstance(self.definitionsList[index.row()] , str):
+      raise IndexError("Data where requested for a decorative index")
+    else:
+      return self.definitionsList[index.row()]
+      
+  def data(self, index, role):
+    if not index.isValid() or not (0<=index.row()<len(self.definitionsList)):  
+      return QVariant()
+    if role==Qt.DisplayRole:
+      if isinstance(self.definitionsList[index.row()] , str):
+        return self.definitionsList[index.row()].upper()
+      else:
+        return self.html[index.row()]
+    if role==Qt.EditRole:
+      if not isinstance(self.definitionsList[index.row()] , str):
+        a  = self.definitionsList[index.row()].definition
+        return a
+
+  def flags(self,index):
+    flags = super(SavedDefinitionsController,self).flags(index)
+    if not index.isValid() or not (0<=index.row()<len(self.definitionsList)):  
+      return flags
+    
+    if isinstance(self.definitionsList[index.row()] , str):
+      if flags & Qt.ItemIsEnabled != (flags & 0) : # If is enabled
+        flags = flags ^ Qt.ItemIsEnabled
+      if flags & Qt.ItemIsSelectable != (flags & 0): # If is selectable
+        flags = flags ^ Qt.ItemIsSelectable
+    else:
+      if flags & Qt.ItemIsEditable == (flags & 0): # If is not editable
+        flags = flags ^ Qt.ItemIsEditable
+    return flags
+
+  def updateOnWord(self,word):
+    self.currentElement = word
+    self.layoutAboutToBeChanged.emit()
+    self.definitionsTable = self.defModel.getSavedDefinitions(word).copy(True)
+    self.definitionsTable.sort_values(by=["type"] , inplace = True)
+    self.definitionsList  = [x for x in self.definitionsTable.itertuples()]
+    self.sortDefList()
+    self.html = []
+    for x in self.definitionsList:
+      if isinstance(x , str):
+        self.html.append(None)
+      else:
+        self.html.append(htmlFromMarkups(x.definition , x.markups[0]))
+    self.layoutChanged.emit()
+
+  def sortDefList(self):
+    if len(self.definitionsList) == 0:
+      return
+    positions = []
+    numTypes = 1
+    positions.append((0,self.definitionsList[0].type))
+    for i,element in enumerate(self.definitionsList):
+      if i>0:
+        if element.type != self.definitionsList[i-1].type:
+          positions.append((i+numTypes,element.type))
+          numTypes+=1
+    for position in positions:
+      self.definitionsList.insert(position[0] , position[1])
+  
+  def addTmpDefinition(self):
+    self.layoutAboutToBeChanged.emit()
+    Definition = namedtuple('definition', ('definition', 'type'))
+    self.definitionsList.append(Definition("","_newUserDefinition"))
+    self.html.append("")
+    #self.sortDefList()
+    self.layoutChanged.emit()
+    return self.createIndex(len(self.definitionsList) - 1,0)
+  
+  def deleteTmpDefinition(self):
+    for d in self.definitionsList:
+      if not isinstance(d , str):
+        if d.type == "_newUserDefinition":
+          self.definitionsList.remove(d)
+          break
+
+
 class DefinitionController(QAbstractListModel):
   def __init__(self,defModel):
     super(DefinitionController,self).__init__()
@@ -34,7 +149,8 @@ class DefinitionController(QAbstractListModel):
       if isinstance(self.definitionsList[index.row()] , str):
         return self.definitionsList[index.row()].upper()
       else:
-        return self.definitionsList[index.row()].definition 
+        #return self.definitionsList[index.row()].definition 
+        return htmlFromMarkups( self.definitionsList[index.row()].definition, self.definitionsList[index.row()].markups)
   def getDefinition(self,index):
     if not index.isValid() or not (0<=index.row()<len(self.definitionsList)):  
       raise IndexError("Invalid index or index out of range")
@@ -262,86 +378,3 @@ class ElementTagController(QAbstractListModel):
   def __len__(self):
     return len(self.tagList)
 
-#TODO: Merge with DefinitionController
-class SavedDefinitionsController(QAbstractListModel):
-  def __init__(self,defModel):
-    super(SavedDefinitionsController,self).__init__()
-    self.defModel = defModel
-    self.definitionsList  = []
-
-  def rowCount(self, modelIndex):
-    return len(self.definitionsList)
-
-  def getDefinition(self,index):
-    if not index.isValid() or not (0<=index.row()<len(self.definitionsList)):  
-      raise IndexError("Invalid index or index out of bounds")
-    if isinstance(self.definitionsList[index.row()] , str):
-      raise IndexError("Data where requested for a decorative index")
-    else:
-      return self.definitionsList[index.row()]
-      
-  def data(self, index, role):
-    if not index.isValid() or not (0<=index.row()<len(self.definitionsList)):  
-      return QVariant()
-    if role==Qt.DisplayRole:
-      if isinstance(self.definitionsList[index.row()] , str):
-        return self.definitionsList[index.row()].upper()
-      else:
-        return self.definitionsList[index.row()].definition
-    if role==Qt.EditRole:
-      if not isinstance(self.definitionsList[index.row()] , str):
-        a  = self.definitionsList[index.row()].definition
-        return a
-
-  def flags(self,index):
-    flags = super(SavedDefinitionsController,self).flags(index)
-    if not index.isValid() or not (0<=index.row()<len(self.definitionsList)):  
-      return flags
-    
-    if isinstance(self.definitionsList[index.row()] , str):
-      if flags & Qt.ItemIsEnabled != (flags & 0) : # If is enabled
-        flags = flags ^ Qt.ItemIsEnabled
-      if flags & Qt.ItemIsSelectable != (flags & 0): # If is selectable
-        flags = flags ^ Qt.ItemIsSelectable
-    else:
-      if flags & Qt.ItemIsEditable == (flags & 0): # If is not editable
-        flags = flags ^ Qt.ItemIsEditable
-    return flags
-
-  def updateOnWord(self,word):
-    self.currentElement = word
-    self.layoutAboutToBeChanged.emit()
-    self.definitionsTable = self.defModel.getSavedDefinitions(word).copy(True)
-    self.definitionsTable.sort_values(by=["type"] , inplace = True)
-    self.definitionsList  = [x for x in self.definitionsTable.itertuples()]
-    self.sortDefList()
-    self.layoutChanged.emit()
-
-  def sortDefList(self):
-    if len(self.definitionsList) == 0:
-      return
-    positions = []
-    numTypes = 1
-    positions.append((0,self.definitionsList[0].type))
-    for i,element in enumerate(self.definitionsList):
-      if i>0:
-        if element.type != self.definitionsList[i-1].type:
-          positions.append((i+numTypes,element.type))
-          numTypes+=1
-    for position in positions:
-      self.definitionsList.insert(position[0] , position[1])
-  
-  def addDefinition(self):
-    self.layoutAboutToBeChanged.emit()
-    Definition = namedtuple('definition', ('definition', 'type'))
-    self.definitionsList.append(Definition("","_newUserDefinition"))
-    #self.sortDefList()
-    self.layoutChanged.emit()
-    return self.createIndex(len(self.definitionsList) - 1,0)
-  
-  def deleteTmpDefinition(self):
-    for d in self.definitionsList:
-      if not isinstance(d , str):
-        if d.type == "_newUserDefinition":
-          self.definitionsList.remove(d)
-          break

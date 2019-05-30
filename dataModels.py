@@ -122,7 +122,7 @@ class OnlineDefinitionDataModel(QObject):
       #print ("Found submodule %s (is a package: %s)" % (modname, ispkg))
       dictionary = import_module(modname)
       try:
-      self.availableDicts[dictionary.name] = dictionary
+        self.availableDicts[dictionary.name] = dictionary
       except AttributeError:
         continue
     return self.availableDicts
@@ -273,19 +273,20 @@ class DefinitionDataModel():
     super(DefinitionDataModel, self).__init__()
 
   @classmethod
-  def getInstance(cls, columns = ["text" , "definition", "timestamp" , "dictionary","type"]):
+  def getInstance(cls, columns = ["text" , "definition", "timestamp" , "dictionary","type","markups"]):
     obj = cls()
-    obj.version      = 0.04
+    obj.version      = 0.05
     obj.savedDefinitionsTable = pd.DataFrame(columns = columns)
     return obj
 
   def definitionCondition(self,word,definition):
     return (self.savedDefinitionsTable.text == word) & (self.savedDefinitionsTable.definition == definition)
+
   def definitionExists(self,word,definition):
     return self.definitionCondition(word,definition).any()
 
-  def addDefinition(self, word, definition, dictionary,_type):
-    record = {"text" : word ,"definition":definition, "timestamp": pd.Timestamp.now() , "dictionary": dictionary , "type":_type}
+  def addDefinition(self, word, definition, dictionary,_type, markups=[]):
+    record = {"text" : word ,"definition":definition, "timestamp": pd.Timestamp.now() , "dictionary": dictionary , "type":_type, "markups":[markups]}
     self.savedDefinitionsTable = self.savedDefinitionsTable.append(record, ignore_index = True)
   
   def getSavedDefinitions(self,word):
@@ -294,11 +295,16 @@ class DefinitionDataModel():
   def getSavedDefinition(self,word,definition):
     condition = self.definitionCondition(word,definition)
     return self.savedDefinitionsTable[condition]
-
+  
   def replaceDefinition(self,word,oldDefinition,newDefinition):
     condition = self.definitionCondition(word,oldDefinition)
     self.savedDefinitionsTable.loc[condition,"definition"] = newDefinition
     print(self.savedDefinitionsTable[condition])
+  
+  def replaceMarkups(self,word,definition,markups):
+    condition = self.definitionCondition(word,definition)
+    i = self.savedDefinitionsTable.where(condition).dropna(how = "all").index.tolist()[0]
+    self.savedDefinitionsTable.at[i,"markups"] = [markups]
 
   def removeDefinition(self,word,definition):
     condition = self.definitionCondition(word,definition)
@@ -312,7 +318,7 @@ class DefinitionDataModel():
 
   def loadData(self,_input,noVersion):
     #The version variable is only for backwards compatibility with the class version.
-    #It should not be stores to the object
+    #It should not be stored to the object
     if not noVersion:
       version = loadFromPickle(_input)
       print("Loading DefinitionDataModel version " + str(version))
@@ -329,10 +335,11 @@ class DefinitionDataModel():
     if (version == 0.02):
       dictNames = loadFromPickle(_input)
       self.selectDictsFromNames(dictNames)
-    if (version == 0.03):
+    if (version > 0.03):
       self.savedDefinitionsTable = loadFromPickle(_input)
-    if (version == 0.04):
-      self.savedDefinitionsTable = loadFromPickle(_input)
+    if (version <= 0.04):
+      self.savedDefinitionsTable["markups"] = None
+      self.savedDefinitionsTable["markups"] = self.savedDefinitionsTable["markups"].astype(object)
 
   def toFile(self,file):
     if isinstance(file,str):

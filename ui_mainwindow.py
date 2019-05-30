@@ -2,17 +2,23 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from controllers import (DefinitionController, TagController, WordController,ElementTagController,SavedDefinitionsController)
 from dialogs import WordDialog,DictionaryDialog,TagEditDialog,WelcomeDialog,PreferencesDialog
 from dataModels import WordDataModel,DefinitionDataModel,TagDataModel,OnlineDefinitionDataModel
+from delegates import HTMLDelegate
 import pickle
 import os
 from hunspell import HunSpell
 import uiUtils
 from functools import partial
+from fuzzysearch import find_near_matches as fnm
+from collections import namedtuple
+from dictionaries import dict_types as dictT
 
 #TODO : Setup keyboard shortcuts for easily navigating between ListViews/ListEdits etc.
 #TODO : [UI] Move tabs to the right/left of QTabWidget with horizontal text. Calling setTabPosition(QtWidgets.QTabWidget.West) produces vertical text
 
 #FIXME: Dialogs do not trigger a dirty program state
 #FIXME: Renaming a word through the edit dialog does not update the UI
+Markup = namedtuple('Markup', ('start', 'stop','tagType'))
+
 class Ui_MainWindow(QtCore.QObject):
 
   def setupUi(self, MainWindow):
@@ -179,7 +185,8 @@ class Ui_MainWindow(QtCore.QObject):
     uiUtils.addLabeledWidget("Tags by Phrase", self.elementTagview,verticalLayout)
     
     self.savedDefinitionsView = QtWidgets.QListView(parentWidget)
-    self.savedDefinitionsView.setObjectName("definitionListView")
+    self.savedDefinitionsView.setObjectName("savedDefinitionListView")
+    self.savedDefinitionsView.setItemDelegate(HTMLDelegate())
     self.savedDefinitionsView.setWordWrap(True)
     self.savedDefinitionsView.setEditTriggers(QtWidgets.QAbstractItemView.SelectedClicked)
     self.savedDefinitionsView.itemDelegate().commitData.connect(self.handleEditedDefinition)
@@ -189,7 +196,8 @@ class Ui_MainWindow(QtCore.QObject):
     self.tabwidget.setObjectName("tabwidget")
     
     self.definitionListView = QtWidgets.QListView(self.tabwidget)
-    self.definitionListView.setObjectName("definitionListView")
+    self.definitionListView.setObjectName("onlineDefinitionListView")
+    self.definitionListView.setItemDelegate(HTMLDelegate())
     self.definitionListView.setWordWrap(True)
     self.tabwidget.addTab(self.definitionListView , "List")
 
@@ -236,11 +244,12 @@ class Ui_MainWindow(QtCore.QObject):
     MainWindow.setStatusBar(self.statusBar)
   
   def setupDataModels(self,wordDataModel,tagDataModel,defDataModel,onlineDefDataModel):
+    #Data Models
     self.wordDataModel      = wordDataModel
     self.defDataModel       = defDataModel
     self.tagDataModel       = tagDataModel
     self.onlineDefDataModel = onlineDefDataModel
-    #Instantiate controllers
+    #Controllers
     self.wordController     = WordController(wordDataModel,self.tagDataModel)
     self.wordview.setModel(self.wordController)
     self.wordview.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
@@ -251,9 +260,9 @@ class Ui_MainWindow(QtCore.QObject):
     self.filterController.setSourceModel(self.tagController)
     self.filterController.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
     self.tagview.setModel(self.filterController)
-    self.defController      = DefinitionController(self.onlineDefDataModel)
-    self.defController.addView(self.definitionListView)
-    self.definitionListView.setModel(self.defController)
+    self.onlineDefController      = DefinitionController(self.onlineDefDataModel)
+    self.onlineDefController.addView(self.definitionListView)
+    self.definitionListView.setModel(self.onlineDefController)
     self.elementController  = ElementTagController(tagDataModel)
     self.elementTagview.setModel(self.elementController)
     self.savedDefController = SavedDefinitionsController(defDataModel)
@@ -474,6 +483,8 @@ class Ui_MainWindow(QtCore.QObject):
     obj.projectName             = projectName
     obj.dictionary              = None
     obj.activeConnections       = []
+    if obj.defDataModel.version <= 0.04:
+      obj.markupSavedDefinitions()
     if language is not None:
       obj.dicPath       = "/usr/share/hunspell/"
       dicPath,affPath   = obj.findDictionary(obj.dicPath,obj.language)
@@ -570,8 +581,12 @@ class Ui_MainWindow(QtCore.QObject):
       return
     self.requestWebPage(selectedWord,activeDict,activeTab)
 
-  def _updateOnlineDefinition(self,definitionsList):
-    self.defController.update(definitionsList)
+  def _updateOnlineDefinition(self,onlineDefinitionsList):
+    word = self.getSelectedWord()
+    for i,d in enumerate(onlineDefinitionsList):
+      markups = self.markupWordInText(word,d.definition)
+      onlineDefinitionsList[i] = dictT.Definition(d.definition , d.type , markups )
+    self.onlineDefController.update(onlineDefinitionsList)
     self.definitionListView.setEnabled(True)
 
   def selectedWordChanged(self,index):
@@ -591,15 +606,15 @@ class Ui_MainWindow(QtCore.QObject):
     self.wordController.updateOnTag(selectedTag)
 
   def saveDefinition(self):
-    definition  = self.getSelectedDefinition()
+    definition  = self.getSelectedOnlineDefinition()
     word        = self.getSelectedWord()
     if not self.defDataModel.definitionExists(word,definition.definition):
-      self._saveDefinition(definition.definition,definition.type,word)
+      self._saveDefinition(definition.definition,definition.type,word,definition.markups)
     self.savedDefController.updateOnWord(word)
 
-  def _saveDefinition(self,definitionText,definitionType,word):
+  def _saveDefinition(self,definitionText,definitionType,word,markups):
     dictionary  = self.dictSelect.currentText()
-    self.defDataModel.addDefinition(word,definitionText,dictionary,definitionType)
+    self.defDataModel.addDefinition(word,definitionText,dictionary,definitionType,markups)
     self.setDirtyState()
   
   def _removeSelectedDefinition(self):
@@ -637,9 +652,9 @@ class Ui_MainWindow(QtCore.QObject):
     definition = self.savedDefController.getDefinition(index)
     return definition
 
-  def getSelectedDefinition(self):
+  def getSelectedOnlineDefinition(self):
     index = self.definitionListView.currentIndex()
-    definition = self.defController.getDefinition(index)
+    definition = self.onlineDefController.getDefinition(index)
     return definition
   
   def getSelectedTag(self,viewIndex=None):
@@ -694,15 +709,18 @@ class Ui_MainWindow(QtCore.QObject):
     newDefinition = widget.text()
     word = self.getSelectedWord()
     if definition.type == "_newUserDefinition":  #Dont'replace, add to the model
-      self._saveDefinition(newDefinition,"User Definition", word)
+      markups  = self.markupWordInText(word,newDefinition)
+      self._saveDefinition(newDefinition,"User Definition", word,markups)
       self.savedDefController.deleteTmpDefinition()
     else:
+      markups  = self.markupWordInText(word,newDefinition)
       self.defDataModel.replaceDefinition(word,definition.definition,newDefinition)
+      self.defDataModel.replaceMarkups(word,newDefinition,markups)
       self.setDirtyState()
     self.savedDefController.updateOnWord(word)
   
   def addDefinition(self):
-    index = self.savedDefController.addDefinition()
+    index = self.savedDefController.addTmpDefinition()
     self.savedDefinitionsView.setCurrentIndex(index)
     self.savedDefinitionsView.edit(index)
 
@@ -756,5 +774,34 @@ class Ui_MainWindow(QtCore.QObject):
     stylesheet="stylesheet_compl.css"
     with open(stylesheet,"r") as fh:
       self.mainWindow.setStyleSheet(fh.read())
+
+
+  def markupSavedDefinitions(self):
+    df = self.defDataModel.savedDefinitionsTable
+    for row in df.itertuples(index=True, name='Pandas'):
+      markups = self.markupWordInText(row.text,row.definition)
+      self.defDataModel.replaceMarkups(row.text,row.definition,markups)
+  
+  def markupWordInText(self,word , text):
+    maxDist = int(len(word) / 3)
+    #matches = fnm(phrase.lower(),text.lower(),max_l_dist = maxDist)
+    matches = fnm(word.lower(),text.lower(),max_deletions = maxDist,max_insertions = maxDist,max_substitutions=0)
+    if len(matches) == 0:
+      return None
+    else:
+      markups = []
+      for match in matches:
+        markup = Markup(match.start,match.end,"bold")
+        markups.append(markup)
+      return markups
+      
+      # prevEnd = 0
+      # newText = ""
+      # for match in matches:
+      #   newText += text[prevEnd:match.start] + "<b>" +  text[match.start:match.end]+"</b>"
+      #   prevEnd = match.end
+      # return newText
+
+
 
 from PyQt5 import QtWebEngineWidgets 
