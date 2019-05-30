@@ -324,8 +324,7 @@ class Ui_MainWindow(QtCore.QObject):
       print('Rejected')
 
   def showEditWordDialog(self,event):
-    wordIndex = self.wordview.currentIndex()
-    word      = self.wordview.model().data(wordIndex,QtCore.Qt.DisplayRole)
+    word = self.getSelectedWord()
     if isinstance(word,QtCore.QVariant):
       return
     tags      = self.tagDataModel.getTagsFromIndex(word)
