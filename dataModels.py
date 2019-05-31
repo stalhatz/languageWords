@@ -95,6 +95,8 @@ class OnlineDefinitionDataModel(QObject):
     obj = cls()
     obj.version      = 0.02
     obj.enableCaching= True
+    obj.cacheExpires = True
+    obj.cacheExpirationPeriod = pd.Timedelta(weeks=1)
     if obj.enableCaching:
       obj.requestCache  = pd.DataFrame(columns = ["html" , "timestamp"])
     obj.session      = FuturesSession(max_workers=1)
@@ -102,6 +104,7 @@ class OnlineDefinitionDataModel(QObject):
     obj.url          = None
     obj.findModules(modulePath)
     obj.selectedDicts = {}
+    
     return obj
 
   def selectDictsFromNames(self,dictNames):
@@ -169,9 +172,13 @@ class OnlineDefinitionDataModel(QObject):
     url       = self.createUrl(word,dictName)  
     if self.enableCaching:
       try:
-        html = self.requestCache.loc[url,:].html
+        cacheRecord = self.requestCache.loc[url,:]
+        if self.cacheExpires:
+          if self.cacheExpirationPeriod < pd.Timestamp.now() - cacheRecord.timestamp:
+            self.requestCache.drop(url , inplace = True)
+            raise KeyError("Cache expired")
         self.showMessage.emit("Loaded " + url + " from cached copy")
-        self.parseHtml(html,dictName,isDefinition)
+        self.parseHtml(cacheRecord.html,dictName,isDefinition)
         return
       except KeyError:
         pass
@@ -190,7 +197,7 @@ class OnlineDefinitionDataModel(QObject):
 
   def loadAsync(self, url,dictName,isDefinition=True):
     self.url = url
-    future = self.session.get(url)
+    future = self.session.get(url,timeout = 1)
     future.add_done_callback(partial(self._load,url,dictName,isDefinition))
     self.lastRequest = future
     self.showMessage.emit("Loading from " + url)
@@ -213,11 +220,8 @@ class OnlineDefinitionDataModel(QObject):
     else:
       html =  request.text
       if self.enableCaching:
-        try:
-          html = self.requestCache.loc[url,:].html
-        except KeyError:
-          newRecord         = pd.Series({"html":html , "timestamp":pd.Timestamp.now()}, name = url)
-          self.requestCache = self.requestCache.append(newRecord)
+        newRecord         = pd.Series({"html":html , "timestamp":pd.Timestamp.now()}, name = url)
+        self.requestCache = self.requestCache.append(newRecord)
       self.showMessage.emit("Finished loading from " + url)
       self.parseHtml(html,dictName,isDefinition)
   

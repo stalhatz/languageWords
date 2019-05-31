@@ -5,7 +5,7 @@ from PyQt5.QtCore import QTimer
 # Connectivity:
 #TODO: [FEATURE_2] Request asynchronously more than one web page
 #TODO: [FEATURE_1] Dictionaries can return more results when user scrolls
-#TODO: [FEATURE_3] Add option to refresh cached pages / We should not cache pages from non-successful requests (not sure if we're doing it right now...)
+#TODO: [FEATURE_3] Add user options for Enabling caching / Cache expiration period
 #Documentation:
 #TODO: [FEATURE_0] Write README.md
 #Machine Learning:
