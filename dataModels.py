@@ -300,6 +300,11 @@ class DefinitionDataModel():
     condition = self.definitionCondition(word,definition)
     return self.savedDefinitionsTable[condition]
   
+  def replaceWord(self,oldWord,newWord):
+    condition = (self.savedDefinitionsTable.text == oldWord)
+    self.savedDefinitionsTable.loc[condition,"text"] = newWord
+    print(self.savedDefinitionsTable[condition])
+
   def replaceDefinition(self,word,oldDefinition,newDefinition):
     condition = self.definitionCondition(word,oldDefinition)
     self.savedDefinitionsTable.loc[condition,"definition"] = newDefinition

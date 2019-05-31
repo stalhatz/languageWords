@@ -165,7 +165,13 @@ class Ui_MainWindow(QtCore.QObject):
     self.wordview = QtWidgets.QListView(parentWidget)
     self.wordview.setMaximumSize(QtCore.QSize(400, 400))
     self.wordview.setObjectName("wordview")
-        
+
+    self.wordFilter = QtWidgets.QLineEdit(parentWidget)
+    self.wordFilter.setObjectName("wordFilter")
+    self.wordFilter.setPlaceholderText("Enter text to filter phrases")
+    self.wordFilter.setMaximumSize(QtCore.QSize(400, 30))
+    self.wordFilter.installEventFilter(self) #Catch Enter
+
     self.tagview = QtWidgets.QListView(parentWidget)
     self.tagview.setMaximumSize(QtCore.QSize(400, 400))
     self.tagview.setObjectName("tagview")
@@ -186,6 +192,7 @@ class Ui_MainWindow(QtCore.QObject):
     uiUtils.addLabeledWidget("Tag List", self.tagview,verticalLayout)
     verticalLayout.addWidget(self.tagFilter)
     uiUtils.addLabeledWidget("Phrases by tag", self.wordview,verticalLayout)
+    verticalLayout.addWidget(self.wordFilter)
     uiUtils.addLabeledWidget("Tags by Phrase", self.elementTagview,verticalLayout)
     
     self.savedDefinitionsView = QtWidgets.QListView(parentWidget)
@@ -254,15 +261,20 @@ class Ui_MainWindow(QtCore.QObject):
     self.onlineDefDataModel = onlineDefDataModel
     #Controllers
     self.wordController     = WordController(wordDataModel,self.tagDataModel)
-    self.wordview.setModel(self.wordController)
     self.wordview.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+    self.wordFilterController   = QtCore.QSortFilterProxyModel()
+    self.wordFilterController.setSourceModel(self.wordController)
+    self.wordFilterController.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
     self.wordController.addView(self.wordview)
+    self.wordview.setModel(self.wordFilterController)
+
     self.tagController      = TagController(self.tagDataModel)
     self.tagview.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-    self.filterController   = QtCore.QSortFilterProxyModel()
-    self.filterController.setSourceModel(self.tagController)
-    self.filterController.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
-    self.tagview.setModel(self.filterController)
+    self.tagFilterController   = QtCore.QSortFilterProxyModel()
+    self.tagFilterController.setSourceModel(self.tagController)
+    self.tagFilterController.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
+    self.tagview.setModel(self.tagFilterController)
+    
     self.onlineDefController      = DefinitionController(self.onlineDefDataModel)
     self.onlineDefController.addView(self.definitionListView)
     self.definitionListView.setModel(self.onlineDefController)
@@ -289,8 +301,8 @@ class Ui_MainWindow(QtCore.QObject):
     #self.wordController.clearSelection.connect(self.disableEditWordButton)
     
     #View->Controller signals
-    self.tagFilter.textChanged.connect(self.filterController.setFilterFixedString)
-    
+    self.tagFilter.textChanged.connect(self.tagFilterController.setFilterFixedString)
+    self.wordFilter.textChanged.connect(self.wordFilterController.setFilterFixedString)
     #Data models->Ui signals
     self.onlineDefDataModel.dictNamesUpdated.connect(self.updateDictNames)
     self.onlineDefDataModel.definitionsUpdated.connect(self._updateOnlineDefinition)
@@ -329,9 +341,17 @@ class Ui_MainWindow(QtCore.QObject):
       self.setDirtyState()
       self.tagFilter.setText("")
       tagIndex = self.tagController.getTagIndex(tags[0])
-      tagIndex = self.filterController.mapFromSource(tagIndex)
+      tagIndex = self.tagFilterController.mapFromSource(tagIndex)
       self.tagview.setCurrentIndex(tagIndex)
-      self.wordview.setCurrentIndex(self.wordController.getWordIndex(newWord))
+      #When the tag has not changed setCurrentIndex does not trigger a refresh of the word list
+      if tagIndex == self.tagview.currentIndex():
+        self.wordController.updateOnTag(tags[0])
+
+      self.wordFilter.setText("")
+      wordIndex = self.wordController.getWordIndex(newWord)
+      viewIndex = self.wordFilterController.mapFromSource(wordIndex)
+      self.wordview.setCurrentIndex(viewIndex)
+
     elif dialogCode == QtWidgets.QDialog.Rejected:
       print('Rejected')
 
@@ -352,11 +372,17 @@ class Ui_MainWindow(QtCore.QObject):
         newTags    = self.editWordDialog.getTags()
         self.tagDataModel.addTagging(editedWord,newTags)
         self.wordDataModel.addWord(editedWord)
+        self.defDataModel.replaceWord(word,editedWord)
         print('Accepted. Existing word:' + editedWord)
         print("Tags: " + str(newTags))
       else:
         print('Accepted. Deleted word')
       self.tagController.updateTags()
+      self.wordController.updateOnTag(self.getSelectedTag())
+      wordIndex = self.wordController.getWordIndex(editedWord)
+      viewIndex = self.wordFilterController.mapFromSource(wordIndex)
+      self.wordview.setCurrentIndex(viewIndex)
+
     elif dialogCode == QtWidgets.QDialog.Rejected:
       print('Rejected')
 
@@ -647,7 +673,8 @@ class Ui_MainWindow(QtCore.QObject):
     self.tagview.edit(index)
   
   def getSelectedWord(self):
-    index = self.wordview.currentIndex()
+    viewIndex = self.wordview.currentIndex()
+    index = self.wordFilterController.mapToSource(viewIndex)
     selectedWord  = self.wordController.data(index,WordController.DataRole)
     if isinstance(selectedWord,str):
       return selectedWord
@@ -667,7 +694,7 @@ class Ui_MainWindow(QtCore.QObject):
   def getSelectedTag(self,viewIndex=None):
     if viewIndex is None:
       viewIndex = self.tagview.currentIndex()
-    index = self.filterController.mapToSource(viewIndex)
+    index = self.tagFilterController.mapToSource(viewIndex)
     selectedTag = self.tagController.data(index,TagController.DataRole)
     if isinstance(selectedTag,str):
       return selectedTag 

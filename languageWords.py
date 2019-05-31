@@ -16,11 +16,10 @@ from PyQt5.QtCore import QTimer
 #TODO: [FEATURE_1] Sort ListViews by interacting with their corresponding Label
 #TODO: [FEATURE_2] Translate interface
 #TODO: [FEATURE_3] Implement rename word action
-#TODO: [FEATURE_3] Filter phrases
+#TODO: [FEATURE_3] Show in bold the matching part of the elements of a list view relating to the filter being applied
 #FIXME: Calibrate the stepping of the scrollbar
 #FIXME: When switching dictionaries the scrollbar should return to the start
 #FIXME: Erase custom tag from textbox after 'Add tag' button has been clicked
-#FIXME: When adding a phrase to the tag that is already being dispayed, the 'Phrases by tag' does not get refreshed with the newly-added word
 #Data Model:
 #TODO: [FEATURE_2] Enable Online definitions to return markups and preserve them during automatic marking up
 #TODO: [FEATURE_2] Create table to hold markup per definition. Add field to distinguish between automatically created and markups provided by online definitions.
