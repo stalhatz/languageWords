@@ -12,3 +12,4 @@ languageWords.code-workspace
 Signals_Slots.odp
 .pytest_cache
 tmp_*
+*conflicted copy*

@@ -16,7 +16,6 @@ from PyQt5.QtCore import QTimer
 #TODO: [FEATURE_1] Sort ListViews by interacting with their corresponding Label
 #TODO: [FEATURE_2] Translate interface
 #TODO: [FEATURE_3] Implement rename word action
-#TODO: [FEATURE_3] Implement rename definition action (now uses single click (not that intuitive))
 #TODO: [FEATURE_3] Filter phrases
 #FIXME: Calibrate the stepping of the scrollbar
 #FIXME: When switching dictionaries the scrollbar should return to the start

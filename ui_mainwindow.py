@@ -111,6 +111,10 @@ class Ui_MainWindow(QtCore.QObject):
     self.removeDefinitionAction.setObjectName("removeDefinitionAction")
     self.removeDefinitionAction.triggered.connect(self.removeDefinition)
 
+    self.editDefinitionAction = QtWidgets.QAction ("Edit Definition", self.mainWindow)
+    self.editDefinitionAction.setObjectName("editDefinitionAction")
+    self.editDefinitionAction.triggered.connect(self.editDefinition)
+
     self.renameTagAction = QtWidgets.QAction ("Rename Tag", self.mainWindow)
     self.renameTagAction.setObjectName("renameTagAction")
     self.renameTagAction.triggered.connect(self.editSelectedTag)
@@ -188,7 +192,6 @@ class Ui_MainWindow(QtCore.QObject):
     self.savedDefinitionsView.setObjectName("savedDefinitionListView")
     self.savedDefinitionsView.setItemDelegate(HTMLDelegate())
     self.savedDefinitionsView.setWordWrap(True)
-    self.savedDefinitionsView.setEditTriggers(QtWidgets.QAbstractItemView.SelectedClicked)
     self.savedDefinitionsView.itemDelegate().commitData.connect(self.handleEditedDefinition)
 
     self.tabwidget = QtWidgets.QTabWidget(parentWidget)
@@ -627,6 +630,10 @@ class Ui_MainWindow(QtCore.QObject):
     self._removeSelectedDefinition()
     self.savedDefController.updateOnWord(self.getSelectedWord())
   
+  def editDefinition(self):
+    index = self.savedDefinitionsView.currentIndex()
+    self.savedDefinitionsView.edit(index)
+
   def handleEditedTag(self,widget):
     if (widget.isModified()):
       oldTag  = self.getSelectedTag()
@@ -680,6 +687,8 @@ class Ui_MainWindow(QtCore.QObject):
       contextMenu.addAction(self.addDefinitionAction)
       if int(self.savedDefController.flags(index) & QtCore.Qt.ItemIsSelectable) != 0:
         contextMenu.addAction(self.removeDefinitionAction)
+      if int(self.savedDefController.flags(index) & QtCore.Qt.ItemIsEditable) != 0:
+        contextMenu.addAction(self.editDefinitionAction)
       contextMenu.exec(self.savedDefinitionsView.mapToGlobal(point))
 
   def wordViewContextMenuRequested(self,point):
