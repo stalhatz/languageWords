@@ -675,10 +675,10 @@ class Ui_MainWindow(QtCore.QObject):
 
   def savedDefViewContextMenuRequested(self,point):
     if self.getSelectedWord() is not None:
-      index = self.savedDefinitionsView.indexAt(point).row()
+      index = self.savedDefinitionsView.indexAt(point)
       contextMenu = QtWidgets.QMenu ("Context menu", self.savedDefinitionsView)
       contextMenu.addAction(self.addDefinitionAction)
-      if (index >= 0):
+      if int(self.savedDefController.flags(index) & QtCore.Qt.ItemIsSelectable) != 0:
         contextMenu.addAction(self.removeDefinitionAction)
       contextMenu.exec(self.savedDefinitionsView.mapToGlobal(point))
 
