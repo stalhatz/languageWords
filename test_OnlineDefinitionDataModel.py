@@ -60,6 +60,8 @@ def test_findModules(dictDirectory):
   assert aDicts["fake1"].languages[1] == "Lang2"
   assert aDicts["fake1"].getDefinitionsFromHtml("")[0] == "fake1Definition1"
 
+#getAvailableLanguages()
+#availableDicts()
 def test_getAvailable(dictDirectory):
   a = OnlineDefinitionDataModel()
   a.findModules(str(dictDirectory) , "dicts")
@@ -85,5 +87,30 @@ def test_createUrl(dictDirectory):
   with pytest.raises(KeyError) as e_info:
     a.createUrl("word","fake2")
 
-#def test_getDefinition(dictDirectory):
+
+# class OnlineDefinitionDataModel(QObject):
+#   dictNamesUpdated    = pyqtSignal(list)
+#   tagsUpdated         = pyqtSignal(list)
+#   definitionsUpdated  = pyqtSignal(list)
+#   showMessage         = pyqtSignal(str)
   
+#   def __init__(self):
+#   def getInstance(cls,modulePath = "./dictionaries"):
+#   def getSelectedDicts(self):
+#   def getTagsFromHtml(self,dictName, html):
+#   def getDefinitionsFromHtml(self,dictName, html):
+#   def updateDictNames(self):
+#   def getDictNames(self):
+#   def loadDefinition(self,word,dictName):
+#   def loadTags(self, word):
+#   def load(self,word, dictName,isDefinition=False,_async= False):
+#   def loadSequential(self, url,dictName,isDefinition=False):
+#   def loadAsync(self, url,dictName,isDefinition=True):
+#   def _load(self,url,dictName,isDefinition,future):
+#   def handleRequest(self,request,url,dictName,isDefinition=True):
+#   def parseHtml(self,html,dictName,isDefinition):
+#   def saveData(self,output):
+#   def loadData(self,_input,noVersion):
+#   def toFile(self,file):
+#   def _fromFile(self,file,noVersion = False):
+#   def fromFile(cls,file,noVersion = False):
