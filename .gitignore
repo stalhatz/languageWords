@@ -13,3 +13,5 @@ Signals_Slots.odp
 .pytest_cache
 tmp_*
 *conflicted copy*
+.vscode/.ropeproject/config.py
+.vscode/.ropeproject/objectdb
