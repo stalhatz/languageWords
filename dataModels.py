@@ -89,6 +89,8 @@ class OnlineDefinitionDataModel(QObject):
   
   def __init__(self):
     super(OnlineDefinitionDataModel, self).__init__()
+    self.enableCaching = False
+    self.session      = FuturesSession(max_workers=1)
   
   @classmethod
   def getInstance(cls,modulePath = "./dictionaries"):
@@ -160,8 +162,8 @@ class OnlineDefinitionDataModel(QObject):
     return url
 
   def loadDefinition(self,word,dictName):
-    self.definitionsList = []
-    self.load(self, word, dictName,isDefinition = True , _async = True)
+
+    self.load(word, dictName,isDefinition = True , _async = True)
 
   def loadTags(self, word):
     for dictName in self.selectedDicts:
@@ -193,7 +195,7 @@ class OnlineDefinitionDataModel(QObject):
     except requests.exceptions.RequestException as a:
       self.showMessage.emit("Connexion to " + str(url) + " failed. " + str(a))
       return
-    self.handleRequest(response,url,dictName,isDefinition)
+    self.handleResponse(response,url,dictName,isDefinition)
 
   def loadAsync(self, url,dictName,isDefinition=True):
     self.url = url
@@ -212,13 +214,13 @@ class OnlineDefinitionDataModel(QObject):
     except requests.exceptions.RequestException as a:
       self.showMessage.emit("Connexion to " + str(url) + " failed. " + str(a))
       return
-    self.handleRequest(request,url,dictName,isDefinition)
+    self.handleResponse(request,url,dictName,isDefinition)
 
-  def handleRequest(self,request,url,dictName,isDefinition=True):
-    if request.status_code > 200:
-      self.showMessage.emit("Error while loading from " + url + " Code :: " + str(request.status_code))
+  def handleResponse(self,response,url,dictName,isDefinition=True):
+    if response.status_code > 200:
+      self.showMessage.emit("Error while loading from " + url + " Code :: " + str(response.status_code))
     else:
-      html =  request.text
+      html =  response.text
       if self.enableCaching:
         newRecord         = pd.Series({"html":html , "timestamp":pd.Timestamp.now()}, name = url)
         self.requestCache = self.requestCache.append(newRecord)
@@ -227,12 +229,12 @@ class OnlineDefinitionDataModel(QObject):
   
   def parseHtml(self,html,dictName,isDefinition):
     if isDefinition:
-      self.definitionsList = self.getDefinitionsFromHtml(dictName, html)
-      self.definitionsUpdated.emit(self.definitionsList)
+      definitionsList = self.getDefinitionsFromHtml(dictName, html)
+      self.definitionsUpdated.emit(definitionsList)
     else: #Update tags
-      self.tagsList = self.getTagsFromHtml(dictName,html)
-      if self.tagsList:
-        self.tagsUpdated.emit(self.tagsList)
+      tagsList = self.getTagsFromHtml(dictName,html)
+      if tagsList:
+        self.tagsUpdated.emit(tagsList)
 
   def saveData(self,output):
     saveToPickle(self.version, output)

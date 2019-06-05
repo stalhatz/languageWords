@@ -4,6 +4,23 @@ import pytest
 import io
 import pandas
 import sys
+import requests
+from functools import partial
+
+@pytest.fixture#(scope="session")
+def patched_requests(monkeypatch):
+    # store a reference to the old get method
+    old_get = requests.get
+    def mocked_get(uri, *args, **kwargs):
+        # create a mocked requests object
+        word = uri.split("/")[-1].split(".")[0]   
+        mock = type('MockedResponse', (), {})()
+        mock.status_code = 200
+        mock.text        = "MockedHtml_" + word
+        # assign obj to mock
+        return mock
+    # finally, patch Requests.get with patched version
+    monkeypatch.setattr(requests, 'get', mocked_get)
 
 fake_dictionary1_file_contents = """
 name = "fake1"
@@ -13,10 +30,13 @@ dictUrls     = ["https://fake1_1.com","https://fake1_2.com"]
 def createUrl(word,requestLang):
   return dictUrls[0] + "/" + word
 
-def getDefinitionsFromHtml(html):
+def getDefinitionsFromHtml(html,language):
   definitionsList = []
-  definitionsList.append("fake1Definition1")
+  definitionsList.append("def1_" + html + "_" + language)
   return definitionsList
+
+def getTagsFromHtml(html,language):
+  return ["tag1_"+html +"_" + language]
   """
 fake_dictionary2_file_contents = """
 name = "fake2"
@@ -26,11 +46,15 @@ dictUrls     = ["https://fake2_2.com","https://fake2_3.com"]
 def createUrl(word,requestLang):
   return dictUrls[0] + "/" + word
 
-def getDefinitionsFromHtml(html):
+def getDefinitionsFromHtml(html,language):
   definitionsList = []
-  definitionsList.append("fake2Definition1")
+  definitionsList.append("def2_" + html + "_" + language)
   return definitionsList
+
+def getTagsFromHtml(html,language):
+  return ["tag2_"+ html + "_" + language]
   """
+
 fake_dict_contents = []
 fake_dict_contents.append(fake_dictionary1_file_contents)
 fake_dict_contents.append(fake_dictionary2_file_contents)
@@ -58,7 +82,7 @@ def test_findModules(dictDirectory):
   assert aDicts["fake1"].name == "fake1"
   assert aDicts["fake1"].languages[0] == "Lang1"
   assert aDicts["fake1"].languages[1] == "Lang2"
-  assert aDicts["fake1"].getDefinitionsFromHtml("")[0] == "fake1Definition1"
+  assert aDicts["fake1"].getDefinitionsFromHtml("fakeHtml","fakeLang")[0] == "def1_fakeHtml_fakeLang"
 
 #getAvailableLanguages()
 #availableDicts()
@@ -87,30 +111,37 @@ def test_createUrl(dictDirectory):
   with pytest.raises(KeyError) as e_info:
     a.createUrl("word","fake2")
 
+def test_getContentFromDict(dictDirectory):
+  a = OnlineDefinitionDataModel()
+  a.findModules(str(dictDirectory) , "dicts")
+  language = a.getAvailableLanguages()[0]
+  a.language = language
+  a.selectDictsFromNames(["fake1"])
+  assert ( a.getDefinitionsFromHtml("fake1","fakehtml")[0] == "def1_fakehtml_" + language )
+  assert ( a.getTagsFromHtml("fake1","fakehtml")[0] == "tag1_fakehtml_" + language )
 
-# class OnlineDefinitionDataModel(QObject):
-#   dictNamesUpdated    = pyqtSignal(list)
-#   tagsUpdated         = pyqtSignal(list)
-#   definitionsUpdated  = pyqtSignal(list)
-#   showMessage         = pyqtSignal(str)
+def updateOnlineTags(result , tagsList): #Callback from onlineDefDataModel
+  assert (result == tagsList[0])
+
+def updateOnlineDef(result , defList):
+  assert(False)
+  assert( result == defList[0] )
+
+def test_requestHtml(patched_requests):
+  a = OnlineDefinitionDataModel()
+  a.findModules(str(dictDirectory) , "dicts")
+  language = a.getAvailableLanguages()[0]
+  a.language = language
+  a.selectDictsFromNames(["fake1"])
   
-#   def __init__(self):
-#   def getInstance(cls,modulePath = "./dictionaries"):
-#   def getSelectedDicts(self):
-#   def getTagsFromHtml(self,dictName, html):
-#   def getDefinitionsFromHtml(self,dictName, html):
-#   def updateDictNames(self):
-#   def getDictNames(self):
-#   def loadDefinition(self,word,dictName):
-#   def loadTags(self, word):
-#   def load(self,word, dictName,isDefinition=False,_async= False):
-#   def loadSequential(self, url,dictName,isDefinition=False):
-#   def loadAsync(self, url,dictName,isDefinition=True):
-#   def _load(self,url,dictName,isDefinition,future):
-#   def handleRequest(self,request,url,dictName,isDefinition=True):
-#   def parseHtml(self,html,dictName,isDefinition):
-#   def saveData(self,output):
-#   def loadData(self,_input,noVersion):
-#   def toFile(self,file):
-#   def _fromFile(self,file,noVersion = False):
-#   def fromFile(cls,file,noVersion = False):
+  word = "fakeWord"
+  
+  #Setup callbacks and validation variables
+  bound_uod = partial(updateOnlineDef, "def1_MockedHtml_" + word + "_" + language)
+  a.definitionsUpdated.connect(bound_uod)
+  bound_uot = partial(updateOnlineTags, "tag1_MockedHtml_" + word +"_"+language)
+  a.tagsUpdated.connect(bound_uot)
+  #Call methods for tags. This creates an HTML request.
+  a.loadTags(word)
+  #TODO: Mock the asyncronous call system
+  #a.loadDefinition(word,"fake1")
