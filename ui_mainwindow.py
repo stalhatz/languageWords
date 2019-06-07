@@ -206,11 +206,11 @@ class Ui_MainWindow(QtCore.QObject):
     self.tabwidget.setTabPosition(QtWidgets.QTabWidget.South)
     self.tabwidget.setObjectName("tabwidget")
     
-    self.definitionListView = QtWidgets.QListView(self.tabwidget)
-    self.definitionListView.setObjectName("onlineDefinitionListView")
-    self.definitionListView.setItemDelegate(HTMLDelegate())
-    self.definitionListView.setWordWrap(True)
-    self.tabwidget.addTab(self.definitionListView , "List")
+    self.onlineDefinitionsView = QtWidgets.QListView(self.tabwidget)
+    self.onlineDefinitionsView.setObjectName("onlineDefinitionListView")
+    self.onlineDefinitionsView.setItemDelegate(HTMLDelegate())
+    self.onlineDefinitionsView.setWordWrap(True)
+    self.tabwidget.addTab(self.onlineDefinitionsView , "List")
 
     self.webView = QtWebEngineWidgets.QWebEngineView(self.tabwidget)
     self.webView.setUrl(QtCore.QUrl("about:blank"))
@@ -277,8 +277,8 @@ class Ui_MainWindow(QtCore.QObject):
     self.tagview.setModel(self.tagFilterController)
     
     self.onlineDefController      = DefinitionController(self.onlineDefDataModel)
-    self.onlineDefController.addView(self.definitionListView)
-    self.definitionListView.setModel(self.onlineDefController)
+    self.onlineDefController.addView(self.onlineDefinitionsView)
+    self.onlineDefinitionsView.setModel(self.onlineDefController)
     self.elementController  = ElementTagController(tagDataModel)
     self.elementTagview.setModel(self.elementController)
     self.savedDefController = SavedDefinitionsController(defDataModel)
@@ -286,7 +286,7 @@ class Ui_MainWindow(QtCore.QObject):
     #Set signals/slots views to controllers
     self.elementTagview.selectionModel().currentChanged.connect(self.elementController.selected)
     #View->Ui signals
-    self.definitionListView.doubleClicked.connect(self.saveDefinition)
+    self.onlineDefinitionsView.doubleClicked.connect(self.saveDefinition)
     self.tagview.itemDelegate().commitData.connect(self.handleEditedTag)
     self.tagview.customContextMenuRequested.connect(self.tagViewMenuRequested)
     self.tagview.selectionModel().currentChanged.connect(self.selectedTagChanged)
@@ -595,7 +595,7 @@ class Ui_MainWindow(QtCore.QObject):
 
   def requestWebPage(self,word,_dict,activeTab):
     if activeTab == 0:
-      self.definitionListView.setEnabled(False)
+      self.onlineDefinitionsView.setEnabled(False)
       self.onlineDefDataModel.load(word,_dict,isDefinition=True,_async= True)
     elif activeTab == 1:
       url = self.onlineDefDataModel.createUrl(word,_dict)
@@ -617,7 +617,7 @@ class Ui_MainWindow(QtCore.QObject):
       markups = self.markupWordInText(word,d.definition)
       onlineDefinitionsList[i] = dictT.Definition(d.definition , d.type , markups )
     self.onlineDefController.update(onlineDefinitionsList)
-    self.definitionListView.setEnabled(True)
+    self.onlineDefinitionsView.setEnabled(True)
 
   def selectedWordChanged(self,index):
     if index.isValid():
@@ -691,7 +691,7 @@ class Ui_MainWindow(QtCore.QObject):
     return definition
 
   def getSelectedOnlineDefinition(self):
-    index = self.definitionListView.currentIndex()
+    index = self.onlineDefinitionsView.currentIndex()
     definition = self.onlineDefController.getDefinition(index)
     return definition
   
