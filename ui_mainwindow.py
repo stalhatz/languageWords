@@ -200,6 +200,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.savedDefinitionsView.setItemDelegate(HTMLDelegate())
     self.savedDefinitionsView.setWordWrap(True)
     self.savedDefinitionsView.itemDelegate().commitData.connect(self.handleEditedDefinition)
+    self.savedDefinitionsView.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
 
     self.tabwidget = QtWidgets.QTabWidget(parentWidget)
     self.tabwidget.setTabPosition(QtWidgets.QTabWidget.South)
@@ -290,7 +291,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.tagview.customContextMenuRequested.connect(self.tagViewMenuRequested)
     self.tagview.selectionModel().currentChanged.connect(self.selectedTagChanged)
     self.savedDefinitionsView.setModel(self.savedDefController)
-    self.savedDefinitionsView.doubleClicked.connect(self.removeDefinition)
+    #self.savedDefinitionsView.doubleClicked.connect(self.removeDefinition)
     self.wordview.customContextMenuRequested.connect(self.wordViewContextMenuRequested)
     self.wordview.selectionModel().currentChanged.connect(self.selectedWordChanged)
     self.savedDefinitionsView.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
