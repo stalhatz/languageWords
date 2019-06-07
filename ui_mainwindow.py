@@ -637,19 +637,22 @@ class Ui_MainWindow(QtCore.QObject):
   def saveDefinition(self):
     definition  = self.getSelectedOnlineDefinition()
     word        = self.getSelectedWord()
-    if not self.defDataModel.definitionExists(word,definition.definition):
+    query = self.getDefDMQuery(word,definition.definition)
+    if not self.defDataModel.definitionExists(query):
       self._saveDefinition(definition.definition,definition.type,word,definition.markups)
     self.savedDefController.updateOnWord(word)
 
   def _saveDefinition(self,definitionText,definitionType,word,markups):
     dictionary  = self.dictSelect.currentText()
-    self.defDataModel.addDefinition(word,definitionText,dictionary,definitionType,markups)
+    defTuple = DefinitionDataModel.Definition(word,definitionText,None,dictionary,definitionType,[markups])
+    self.defDataModel.addDefinition(defTuple)
     self.setDirtyState()
   
   def _removeSelectedDefinition(self):
     definition  = self.getSelectedSavedDefinition().definition
     word        = self.getSelectedWord()
-    self.defDataModel.removeDefinition(word,definition)
+    query = self.getDefDMQuery(word,definition)
+    self.defDataModel.removeDefinition(query)
     self.setDirtyState()
 
   def removeDefinition(self):
@@ -740,6 +743,10 @@ class Ui_MainWindow(QtCore.QObject):
     self.wordController.updateOnTag(self.getSelectedTag())
     self.tagController.updateTags()
   
+  @staticmethod
+  def getDefDMQuery(word = None , _def = None):
+    return DefinitionDataModel.Definition(text = word, definition = _def)
+
   def handleEditedDefinition(self,widget):
     definition  = self.getSelectedSavedDefinition()
     newDefinition = widget.text()
@@ -750,8 +757,10 @@ class Ui_MainWindow(QtCore.QObject):
       self.savedDefController.deleteTmpDefinition()
     else:
       markups  = self.markupWordInText(word,newDefinition)
-      self.defDataModel.replaceDefinition(word,definition.definition,newDefinition)
-      self.defDataModel.replaceMarkups(word,newDefinition,markups)
+      query = self.getDefDMQuery(word,definition.definition)
+      self.defDataModel.replaceDefinition(query,newDefinition)
+      query = self.getDefDMQuery(word, newDefinition)
+      self.defDataModel.replaceMarkups(query,markups)
       self.setDirtyState()
     self.savedDefController.updateOnWord(word)
   

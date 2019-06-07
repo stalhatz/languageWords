@@ -11,7 +11,7 @@ from requests_futures.sessions import FuturesSession
 import requests
 from concurrent.futures import ThreadPoolExecutor
 import copy
-
+from collections import namedtuple
 def saveToPickle(a , file):
   if isinstance(file,str):
     with open(file, 'wb') as output:
@@ -278,47 +278,64 @@ class DefinitionDataModel():
   def __init__(self):
     super(DefinitionDataModel, self).__init__()
 
+
+  Definition = namedtuple('Definition',['text' , 'definition', 'timestamp' , 'dictionary','type','markups'])
+  Definition.__new__.__defaults__ = (None,) * len(Definition._fields)
+
   @classmethod
-  def getInstance(cls, columns = ["text" , "definition", "timestamp" , "dictionary","type","markups"]):
+  def getInstance(cls):
     obj = cls()
     obj.version      = 0.05
-    obj.savedDefinitionsTable = pd.DataFrame(columns = columns)
+    obj.savedDefinitionsTable = pd.DataFrame()
     return obj
 
-  def definitionCondition(self,word,definition):
-    return (self.savedDefinitionsTable.text == word) & (self.savedDefinitionsTable.definition == definition)
+  def definitionCondition(self,d):
+    condition = None
+    for value,field in zip(d,d._fields):
+      if value is not None:
+        fieldCondition = (self.savedDefinitionsTable[field] == value)
+        if condition is not None:
+          condition = fieldCondition & condition
+        else:
+          condition = fieldCondition
+    return condition
 
-  def definitionExists(self,word,definition):
-    return self.definitionCondition(word,definition).any()
+  def definitionExists(self,d):
+    return self.definitionCondition(d).any()
 
-  def addDefinition(self, word, definition, dictionary,_type, markups=[]):
-    record = {"text" : word ,"definition":definition, "timestamp": pd.Timestamp.now() , "dictionary": dictionary , "type":_type, "markups":[markups]}
-    self.savedDefinitionsTable = self.savedDefinitionsTable.append(record, ignore_index = True)
+  def addDefinition(self, record):
+    if type(record) != DefinitionDataModel.Definition:
+      raise ValueError('Expected' + str(Definition) + " ,got " + str(record.type))
+    rSeries = pd.Series(record,record._fields)
+    if record.timestamp is None:
+      rSeries.timestamp = pd.Timestamp.now()
+    self.savedDefinitionsTable = self.savedDefinitionsTable.append(rSeries, ignore_index = True)
   
-  def getSavedDefinitions(self,word):
+  def getDefinitionsForWord(self,word):
     return self.savedDefinitionsTable[ self.savedDefinitionsTable.text == word]
   
-  def getSavedDefinition(self,word,definition):
-    condition = self.definitionCondition(word,definition)
+  def getDefinition(self,query):
+    condition = self.definitionCondition(query)
     return self.savedDefinitionsTable[condition]
   
   def replaceWord(self,oldWord,newWord):
     condition = (self.savedDefinitionsTable.text == oldWord)
     self.savedDefinitionsTable.loc[condition,"text"] = newWord
-    print(self.savedDefinitionsTable[condition])
+    #print(self.savedDefinitionsTable[condition])
 
-  def replaceDefinition(self,word,oldDefinition,newDefinition):
-    condition = self.definitionCondition(word,oldDefinition)
+  def replaceDefinition(self,query,newDefinition):
+    condition = self.definitionCondition(query)
     self.savedDefinitionsTable.loc[condition,"definition"] = newDefinition
-    print(self.savedDefinitionsTable[condition])
+    #print(self.savedDefinitionsTable[condition])
   
-  def replaceMarkups(self,word,definition,markups):
-    condition = self.definitionCondition(word,definition)
+  def replaceMarkups(self,query,markups):
+    condition = self.definitionCondition(query)
+    #Temporary hack: Will only set the first record corresponding to the query. Should switch to a Markup DataFrame.
     i = self.savedDefinitionsTable.where(condition).dropna(how = "all").index.tolist()[0]
     self.savedDefinitionsTable.at[i,"markups"] = [markups]
 
-  def removeDefinition(self,word,definition):
-    condition = self.definitionCondition(word,definition)
+  def removeDefinition(self,query):
+    condition = self.definitionCondition(query)
     index = self.savedDefinitionsTable[condition].index
     self.savedDefinitionsTable.drop(index, inplace = True)
 

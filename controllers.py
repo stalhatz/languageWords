@@ -88,7 +88,7 @@ class SavedDefinitionsController(QAbstractListModel):
   def updateOnWord(self,word):
     self.currentElement = word
     self.layoutAboutToBeChanged.emit()
-    self.definitionsTable = self.defModel.getSavedDefinitions(word).copy(True)
+    self.definitionsTable = self.defModel.getDefinitionsForWord(word).copy(True)
     self.definitionsTable.sort_values(by=["type"] , inplace = True)
     self.definitionsList  = [x for x in self.definitionsTable.itertuples()]
     self.sortDefList()
