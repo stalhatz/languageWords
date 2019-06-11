@@ -829,7 +829,7 @@ class Ui_MainWindow(QtCore.QObject):
       self.defDataModel.replaceMarkups(row.text,row.definition,markups)
   
   def markupWordInText(self,word , text):
-    maxDist = int(len(word) / 3)
+    maxDist = min( int(len(word) / 3) , 4 )
     #matches = fnm(phrase.lower(),text.lower(),max_l_dist = maxDist)
     matches = fnm(word.lower(),text.lower(),max_deletions = maxDist,max_insertions = maxDist,max_substitutions=0)
     if len(matches) == 0:
