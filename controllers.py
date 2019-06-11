@@ -6,7 +6,7 @@ import pandas as pd
 
 from dataModels import DefinitionDataModel
 import unidecode
-
+import textwrap
 from collections import Counter
 from operator import attrgetter
 from collections import namedtuple
@@ -69,6 +69,12 @@ class SavedDefinitionsController(QAbstractListModel):
       if not isinstance(self.definitionsList[index.row()] , str):
         a  = self.definitionsList[index.row()].definition
         return a
+    if role==Qt.ToolTipRole:
+      if not isinstance(self.definitionsList[index.row()] , str):
+        a  = self.definitionsList[index.row()]
+        wrapper = textwrap.TextWrapper()
+        wrapper.width = 80
+        return wrapper.fill(str(a))
 
   def flags(self,index):
     flags = super(SavedDefinitionsController,self).flags(index)
@@ -89,7 +95,7 @@ class SavedDefinitionsController(QAbstractListModel):
     self.currentElement = word
     self.layoutAboutToBeChanged.emit()
     self.definitionsTable = self.defModel.getDefinitionsForWord(word).copy(True)
-    self.definitionsTable.sort_values(by=["type"] , inplace = True)
+      self.definitionsTable.sort_values(by=["type"] , inplace = True)
     self.definitionsList  = [x for x in self.definitionsTable.itertuples()]
     self.sortDefList()
     self.html = []
@@ -207,6 +213,11 @@ class TagController(QAbstractListModel):
       return self.getTag(index)
     if role==self.DataRole:
       return self.getTag(index)
+    if role==Qt.ToolTipRole:
+      a  = self.tagIndex.iloc[index.row(),:]
+      wrapper = textwrap.TextWrapper()
+      wrapper.width = 80
+      return wrapper.fill(str(a))
 
   def getTag(self,index):
     if isinstance(index,int):
