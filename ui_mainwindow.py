@@ -416,7 +416,7 @@ class Ui_MainWindow(QtCore.QObject):
         self.language     = self.welcomeDialog.languageComboBox.currentText()
         self.wordDataModel.language   = self.language
         self.defDataModel.language    = self.language
-        self.onlineDefModel.language  = self.language
+        self.onlineDefDataModel.language  = self.language
         self.projectName  = self.welcomeDialog.nameLineEdit.text()
         self.setWindowTitle()
         self.setDirtyState()
@@ -429,12 +429,12 @@ class Ui_MainWindow(QtCore.QObject):
   def defaultInit(cls,app,window):
     wordDataModel   = WordDataModel()
     defDataModel    = DefinitionDataModel.getInstance()
-    onlineDefModel  = OnlineDefinitionDataModel.getInstance()
+    onlineDefDataModel  = OnlineDefinitionDataModel.getInstance()
     tagDataModel    = TagDataModel()
 
     obj = cls()
     obj.setupUi(window)
-    obj.setupDataModels(wordDataModel,tagDataModel, defDataModel, onlineDefModel)
+    obj.setupDataModels(wordDataModel,tagDataModel, defDataModel, onlineDefDataModel)
     obj.dictionary  = None
     obj.language    = None
     obj.app         = app
