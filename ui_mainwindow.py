@@ -29,13 +29,19 @@ class Ui_MainWindow(QtCore.QObject):
     self.language = "N/A"
     self.projectName = "Untitled"
     self.programName = "LanguageWords"
-    self.sessionFile = "." + self.programName + "_" + "session" + ".pkl"
-    self.autoSaveTimer = QtCore.QTimer()
-    self.autoSaveTimer.timeout.connect(self.autoSave)
-    self.autoSaveTimerInterval = 3000
-    self.projectFile = None 
-    self.unsavedChanges = False 
-    self.tempProjectFile = None
+    # Filename of file that stores session details in case the program exits in an abrupt manner
+    self.sessionFile = "." + self.programName + "_" + "session" + ".pkl" 
+    # Timer to trigger autosave in presence of unsaved changes 
+    self.autoSaveTimer = QtCore.QTimer() 
+    self.autoSaveTimer.timeout.connect(self.autoSave) 
+    #Interval in ms to trigger autosave in presence of unsaved changes
+    self.autoSaveTimerInterval = 3000 
+    # Perm file where the project is stored
+    self.projectFile = None       
+    # Are there changes that have not been written to the perm file?
+    self.unsavedChanges = False   
+    # Filename of temp file in case of unsaved changes
+    self.tempProjectFile = None   
     self.applyCss()
     self.setWindowTitle()
     self.defineActions()
@@ -69,47 +75,47 @@ class Ui_MainWindow(QtCore.QObject):
 
     self.actionOpen = QtWidgets.QAction(self.mainWindow)
     self.actionOpen.setObjectName("actionOpen")
-    self.actionOpen.triggered.connect(self.openFile)
+    self.actionOpen.triggered.connect(self.loadProject_ui)
     self.actionOpen.setShortcut("Ctrl+O")
 
     self.actionSaveAs = QtWidgets.QAction(self.mainWindow)
     self.actionSaveAs.setObjectName("actionSave")
-    self.actionSaveAs.triggered.connect(self.saveFileAs)
+    self.actionSaveAs.triggered.connect(self.saveProject_ui_as)
     self.actionSaveAs.setShortcut("Ctrl+Shift+S")
 
     self.actionSave = QtWidgets.QAction(self.mainWindow)
     self.actionSave.setObjectName("actionSave")
-    self.actionSave.triggered.connect(self.saveFile)
+    self.actionSave.triggered.connect(self.saveProject_ui_quick)
     self.actionSave.setShortcut("Ctrl+S")
     #self.actionSave.setEnabled(False)
 
     self.addWordAction = QtWidgets.QAction ("Add Word", self.mainWindow)
     self.addWordAction.setObjectName("addWordAction")
-    self.addWordAction.triggered.connect(self.showAddWordDialog)
+    self.addWordAction.triggered.connect(self.addWord_ui)
     self.addWordAction.setShortcut("Ctrl+Shift+A")
     self.addWordAction.setToolTip("Show a dialog to add a new word to the project")
 
     self.editWordAction = QtWidgets.QAction ("Edit Word", self.mainWindow)
     self.editWordAction.setObjectName("editWordAction")
-    self.editWordAction.triggered.connect(self.showEditWordDialog)
+    self.editWordAction.triggered.connect(self.editWord_ui)
     self.editWordAction.setShortcut("Ctrl+Shift+E")
     self.editWordAction.setEnabled(False)
     self.editWordAction.setToolTip("Show a dialog to edit the selected word")
 
     self.removeWordAction = QtWidgets.QAction ("Remove Word", self.mainWindow)
     self.removeWordAction.setObjectName("removeWordAction")
-    self.removeWordAction.triggered.connect(self.removeWord)
+    self.removeWordAction.triggered.connect(self.removeWord_ui)
     self.removeWordAction.setShortcut("Ctrl+Shift+R")
     self.removeWordAction.setEnabled(False)
     self.removeWordAction.setToolTip("Remove selected word from the project")
     
     self.addDefinitionAction = QtWidgets.QAction ("Add Custom Definition", self.mainWindow)
     self.addDefinitionAction.setObjectName("addDefinitionAction")
-    self.addDefinitionAction.triggered.connect(self.addDefinition)
+    self.addDefinitionAction.triggered.connect(self.addTmpDefinitionToEdit)
 
     self.removeDefinitionAction = QtWidgets.QAction ("Remove Definition", self.mainWindow)
     self.removeDefinitionAction.setObjectName("removeDefinitionAction")
-    self.removeDefinitionAction.triggered.connect(self.removeDefinition)
+    self.removeDefinitionAction.triggered.connect(self.removeSelectedDefinition_ui)
 
     self.editDefinitionAction = QtWidgets.QAction ("Edit Definition", self.mainWindow)
     self.editDefinitionAction.setObjectName("editDefinitionAction")
@@ -286,7 +292,7 @@ class Ui_MainWindow(QtCore.QObject):
     #Set signals/slots views to controllers
     self.elementTagview.selectionModel().currentChanged.connect(self.elementController.selected)
     #View->Ui signals
-    self.onlineDefinitionsView.doubleClicked.connect(self.saveDefinition)
+    self.onlineDefinitionsView.doubleClicked.connect(self.saveDefinition_ui)
     self.tagview.itemDelegate().commitData.connect(self.handleEditedTag)
     self.tagview.customContextMenuRequested.connect(self.tagViewMenuRequested)
     self.tagview.selectionModel().currentChanged.connect(self.selectedTagChanged)
@@ -296,8 +302,8 @@ class Ui_MainWindow(QtCore.QObject):
     self.wordview.selectionModel().currentChanged.connect(self.selectedWordChanged)
     self.savedDefinitionsView.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
     self.savedDefinitionsView.customContextMenuRequested.connect(self.savedDefViewContextMenuRequested)
-    self.dictSelect.currentTextChanged.connect(self.updateOnlineDefinition)
-    self.tabwidget.currentChanged.connect(self.updateOnlineDefinition)
+    self.dictSelect.currentTextChanged.connect(self.requestOnlineDefinition_ui)
+    self.tabwidget.currentChanged.connect(self.requestOnlineDefinition_ui)
     #Controller->Ui signals
     #self.wordController.clearSelection.connect(self.disableEditWordButton)
     
@@ -306,7 +312,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.wordFilter.textChanged.connect(self.wordFilterController.setFilterFixedString)
     #Data models->Ui signals
     self.onlineDefDataModel.dictNamesUpdated.connect(self.updateDictNames)
-    self.onlineDefDataModel.definitionsUpdated.connect(self._updateOnlineDefinition)
+    self.onlineDefDataModel.definitionsUpdated.connect(self.updateOnlineDefinition_ui)
     self.onlineDefDataModel.showMessage.connect(self.statusBar.showMessage) #Not really needed...
 
     self.dictSelect.insertItems(0,self.onlineDefDataModel.getDictNames())
@@ -329,17 +335,20 @@ class Ui_MainWindow(QtCore.QObject):
     else:
       print("Rejected")
 
-  def showAddWordDialog(self,event):
+  def addWord(self, newWord, tags):
+    self.tagDataModel.addTagging(newWord,tags)
+    self.wordDataModel.addWord(newWord)
+    self.setDirtyState()
+
+  def addWord_ui(self,event):
     self.addWordDialog = WordDialog(self.centralwidget,self.wordDataModel,self.tagDataModel,self.onlineDefDataModel,self.dictionary,
                                     WordDialog.CREATE_DIALOG)
     dialogCode = self.addWordDialog.exec()
     if dialogCode == QtWidgets.QDialog.Accepted:
       newWord = self.addWordDialog.getWord()
       tags    = self.addWordDialog.getTags()
-      self.tagDataModel.addTagging(newWord,tags)
-      self.wordDataModel.addWord(newWord)
-      self.tagController.updateTags()
-      self.setDirtyState()
+      self.addWord(newWord, tags)
+      self.tagController.updateTags()   
       self.tagFilter.setText("")
       tagIndex = self.tagController.getTagIndex(tags[0])
       tagIndex = self.tagFilterController.mapFromSource(tagIndex)
@@ -347,7 +356,6 @@ class Ui_MainWindow(QtCore.QObject):
       #When the tag has not changed setCurrentIndex does not trigger a refresh of the word list
       if tagIndex == self.tagview.currentIndex():
         self.wordController.updateOnTag(tags[0])
-
       self.wordFilter.setText("")
       wordIndex = self.wordController.getWordIndex(newWord)
       viewIndex = self.wordFilterController.mapFromSource(wordIndex)
@@ -356,7 +364,15 @@ class Ui_MainWindow(QtCore.QObject):
     elif dialogCode == QtWidgets.QDialog.Rejected:
       print('Rejected')
 
-  def showEditWordDialog(self,event):
+  def editWord(self, word,tags, editedWord , newTags):
+    #Remove word and tags
+    self.removeWord(word,tags)
+    if editedWord != "":
+      self.tagDataModel.addTagging(editedWord,newTags)
+      self.wordDataModel.addWord(editedWord)
+      self.defDataModel.replaceWord(word,editedWord)
+
+  def editWord_ui(self,event):
     word = self.getSelectedWord()
     if isinstance(word,QtCore.QVariant):
       return
@@ -365,19 +381,9 @@ class Ui_MainWindow(QtCore.QObject):
                                       WordDialog.EDIT_DIALOG , word, tags)
     dialogCode = self.editWordDialog.exec()
     if dialogCode == QtWidgets.QDialog.Accepted:
-      #Remove word and tags
-      self._removeWord(word,tags)
-      #Add new word and tags
       editedWord = self.editWordDialog.getWord()
-      if editedWord != "":
-        newTags    = self.editWordDialog.getTags()
-        self.tagDataModel.addTagging(editedWord,newTags)
-        self.wordDataModel.addWord(editedWord)
-        self.defDataModel.replaceWord(word,editedWord)
-        print('Accepted. Existing word:' + editedWord)
-        print("Tags: " + str(newTags))
-      else:
-        print('Accepted. Deleted word')
+      newTags    = self.editWordDialog.getTags()
+      self.editWord(word,tags,editedWord,newTags)
       self.tagController.updateTags()
       self.wordController.updateOnTag(self.getSelectedTag())
       wordIndex = self.wordController.getWordIndex(editedWord)
@@ -413,13 +419,9 @@ class Ui_MainWindow(QtCore.QObject):
     dialogCode = self.welcomeDialog.exec()
     if dialogCode == QtWidgets.QDialog.Accepted:
       if not self.welcomeDialog.loadedFile: #New Project
-        self.language     = self.welcomeDialog.languageComboBox.currentText()
-        self.wordDataModel.language   = self.language
-        self.defDataModel.language    = self.language
-        self.onlineDefDataModel.language  = self.language
-        self.projectName  = self.welcomeDialog.nameLineEdit.text()
-        self.setWindowTitle()
-        self.setDirtyState()
+        language     = self.welcomeDialog.languageComboBox.currentText()
+        projectName  = self.welcomeDialog.nameLineEdit.text()
+        self.newProject_ui(language,projectName)
     elif dialogCode == QtWidgets.QDialog.Rejected:
       self.exitAppAction.trigger()
   # def disableEditWordButton(self):
@@ -433,12 +435,12 @@ class Ui_MainWindow(QtCore.QObject):
     tagDataModel    = TagDataModel()
 
     obj = cls()
-    obj.setupUi(window)
+    if window is not None:
+      obj.setupUi(window)
     obj.setupDataModels(wordDataModel,tagDataModel, defDataModel, onlineDefDataModel)
     obj.dictionary  = None
     obj.language    = None
     obj.app         = app
-    #self.activeConnections = []
     return obj
 
   def loadDictionary(self,dicFilename, affFilename):
@@ -513,8 +515,6 @@ class Ui_MainWindow(QtCore.QObject):
     obj.projectName             = projectName
     obj.dictionary              = None
     obj.activeConnections       = []
-    if obj.defDataModel.version <= 0.04:
-      obj.markupSavedDefinitions()
     if language is not None:
       obj.dicPath       = "/usr/share/hunspell/"
       dicPath,affPath   = obj.findDictionary(obj.dicPath,obj.language)
@@ -522,57 +522,92 @@ class Ui_MainWindow(QtCore.QObject):
         obj.dictionary    = obj.loadDictionary(dicPath, affPath)
     return obj
   
-  def openFile(self,fileName = None, isTmpFile = False):
+  def openFile(self,fileName = None):
     if (fileName is None) | (fileName is False):
       fileName,fileType = QtWidgets.QFileDialog.getOpenFileName(self.centralwidget,"Open File", ".", "Pickle Files (*.pkl)")
     if fileName == "" or fileName is None:
-      return
+      return None
     else:
-      Ui_MainWindow.fromFile(fileName,None,self)
-      self.setWindowTitle()
-      self.tagController.updateTags()
-      if not isTmpFile:
-        self.projectFile = fileName
-      self.actionSave.setEnabled(True)
-      if self.welcomeDialog.isVisible():
-        self.welcomeDialog.loadedFile = True
-        self.welcomeDialog.accept()
-  def newProject(self):
+      return fileName
+
+  def loadProject_ui(self, fileName=None, isTmpFile=False):
+    if fileName is None:
+      fileName = self.openFile(fileName)
+      if fileName is None: return
+    self.loadProject(fileName, isTmpFile)
+    #Create html markups if they are not there
+    self.markupSavedDefinitions()
+    self.setWindowTitle()
+    self.tagController.updateTags()
+    self.statusBar.showMessage("Loaded from "+ fileName , 2000)
+    if self.welcomeDialog.isVisible():
+      self.welcomeDialog.loadedFile = True
+      self.welcomeDialog.accept()
+
+  def loadProject(self,fileName,isTmpFile):
+    Ui_MainWindow.fromFile(fileName,None,self)
+    if not isTmpFile:
+      self.projectFile = fileName
+      self.writeSessionFile()
+    self.actionSave.setEnabled(True)
+  
+  def newProject_ui(self , language , projectName):
+    self.newProject(language,projectName)
+    self.setWindowTitle()
+    
+  def newProject(self,language,projectName):
+    self.wordDataModel.language   = language
+    self.defDataModel.language    = language
+    self.onlineDefDataModel.language  = language
+    self.projectName = projectName
     self.projectFile = None
+    self.setDirtyState()
 
   def setWindowTitle(self):
     self.mainWindow.setWindowTitle(self.projectName + " - " + "(" + str(self.language) + ")" + " - " + str(self.programName) )
   
-  def saveFile(self):
-    self.saveFileAs(False, self.projectFile)
 
-  def saveFileAs(self , checked, fileName = None):
-    if self._saveFileAs(checked, fileName):
-      self.unsavedChanges = False
-      self.projectFile = fileName
-      self.autoSaveTimer.stop()
-      self.writeSessionFile()
-
-  def _saveFileAs(self , checked, fileName = None):
-    if fileName is None:
-      fileName,fileType = QtWidgets.QFileDialog.getSaveFileName(self.centralwidget,"Save File",".","Pickle Files (*.pkl)")
-      if fileName is not None:
-        if not fileName.endswith(".pkl"):
-          fileName += ".pkl"
-    if fileName == "" or fileName is None:
-      return False
+  def saveFileAs(self , extension = None):
+    if extension is None:
+      fileName,fileType = QtWidgets.QFileDialog.getSaveFileName(self.centralwidget,"Save File",".")
     else:
-      fName = fileName
-      with open(fName, 'wb') as output:
-        pickle.dump(self.version, output, pickle.HIGHEST_PROTOCOL) #Version
-        pickle.dump(self.projectName, output, pickle.HIGHEST_PROTOCOL) #ProjectName
-        pickle.dump(self.language, output , pickle.HIGHEST_PROTOCOL) #Language
-        self.wordDataModel.toFile(output)
-        self.tagDataModel.toFile(output)
-        self.onlineDefDataModel.toFile(output)
-        self.defDataModel.toFile(output)
-        self.statusBar.showMessage("Saved to "+ fileName , 2000)
-        return True
+      fileName,fileType = QtWidgets.QFileDialog.getSaveFileName(self.centralwidget,"Save File",".","(*" +extension +")")
+    if fileName is not None:
+      if fileType is not None: 
+        if not fileName.endswith(extension):
+          fileName += extension
+    if fileName == "" or fileName is None:
+      return None
+    else:
+      return fileName
+
+  def saveProject_ui_quick(self):
+    self.saveProject_ui(self.projectFile)
+
+  def saveProject_ui_as(self):
+    self.saveProject_ui(None)
+
+  def saveProject_ui(self , fileName = None ,isTmpFile = False):
+    if fileName is None:
+      fileName = self.saveFileAs(".pkl")
+      if fileName is None : return
+    self.saveProject(fileName , isTmpFile)
+    self.statusBar.showMessage("Saved to "+ fileName , 2000)
+
+  def saveProject(self, fName , isTmpFile = False):
+    with open(fName, 'wb') as output:
+      pickle.dump(self.version, output, pickle.HIGHEST_PROTOCOL) #Version
+      pickle.dump(self.projectName, output, pickle.HIGHEST_PROTOCOL) #ProjectName
+      pickle.dump(self.language, output , pickle.HIGHEST_PROTOCOL) #Language
+      self.wordDataModel.toFile(output)
+      self.tagDataModel.toFile(output)
+      self.onlineDefDataModel.toFile(output)
+      self.defDataModel.toFile(output)
+    if not isTmpFile:
+      self.unsavedChanges = False
+      self.projectFile = fName
+    self.autoSaveTimer.stop()
+    self.writeSessionFile()     
 
   def updateDictNames(self,dictNames):
     self.dictSelect.clear()
@@ -593,15 +628,10 @@ class Ui_MainWindow(QtCore.QObject):
           return True
     return False
 
-  def requestWebPage(self,word,_dict,activeTab):
-    if activeTab == 0:
-      self.onlineDefinitionsView.setEnabled(False)
-      self.onlineDefDataModel.load(word,_dict,isDefinition=True,_async= True)
-    elif activeTab == 1:
-      url = self.onlineDefDataModel.createUrl(word,_dict)
-      self.webView.load(QtCore.QUrl(url))
+  def requestOnlineDefinition(self,word,_dict):
+    self.onlineDefDataModel.load(word,_dict,isDefinition=True,_async= True)
 
-  def updateOnlineDefinition(self,index):
+  def requestOnlineDefinition_ui(self,index):
     activeTab   = self.tabwidget.currentIndex()
     activeDict  = self.dictSelect.currentText()
     if activeDict == "":
@@ -609,9 +639,14 @@ class Ui_MainWindow(QtCore.QObject):
     selectedWord = self.getSelectedWord()
     if selectedWord is None:
       return
-    self.requestWebPage(selectedWord,activeDict,activeTab)
+    if activeTab == 0:
+      self.onlineDefinitionsView.setEnabled(False)
+      self.requestOnlineDefinition(selectedWord,activeDict)
+    elif activeTab == 1:
+      url = self.onlineDefDataModel.createUrl(selectedWord,activeDict)
+      self.webView.load(QtCore.QUrl(url))
 
-  def _updateOnlineDefinition(self,onlineDefinitionsList):
+  def updateOnlineDefinition_ui(self,onlineDefinitionsList):
     word = self.getSelectedWord()
     for i,d in enumerate(onlineDefinitionsList):
       markups = self.markupWordInText(word,d.definition)
@@ -629,35 +664,36 @@ class Ui_MainWindow(QtCore.QObject):
     selectedWord = self.getSelectedWord()
     self.elementController.updateOnWord(selectedWord)
     self.savedDefController.updateOnWord(selectedWord)
-    self.updateOnlineDefinition(index)
+    self.requestOnlineDefinition_ui(index)
 
   def selectedTagChanged(self,index):
     selectedTag = self.getSelectedTag()
     self.wordController.updateOnTag(selectedTag)
 
-  def saveDefinition(self):
+  def saveDefinition_ui(self):
     definition  = self.getSelectedOnlineDefinition()
     word        = self.getSelectedWord()
     query = self.getDefDMQuery(word,definition.definition)
     if not self.defDataModel.definitionExists(query):
-      self._saveDefinition(definition.definition,definition.type,word,definition.markups)
+      dictionary  = self.dictSelect.currentText()
+      self.saveDefinition(definition.definition,definition.type,word,definition.markups,dictionary)
     self.savedDefController.updateOnWord(word)
 
-  def _saveDefinition(self,definitionText,definitionType,word,markups):
-    dictionary  = self.dictSelect.currentText()
+  def saveDefinition(self,definitionText,definitionType,word,markups,dictionary):
+    #Try to check every element of the query before adding the definition
     defTuple = DefinitionDataModel.Definition(word,definitionText,None,dictionary,definitionType,[markups])
     self.defDataModel.addDefinition(defTuple)
     self.setDirtyState()
   
-  def _removeSelectedDefinition(self):
-    definition  = self.getSelectedSavedDefinition().definition
-    word        = self.getSelectedWord()
+  def removeDefinition(self,word,definition):
     query = self.getDefDMQuery(word,definition)
     self.defDataModel.removeDefinition(query)
     self.setDirtyState()
 
-  def removeDefinition(self):
-    self._removeSelectedDefinition()
+  def removeSelectedDefinition_ui(self):
+    selectedDefinition  = self.getSelectedSavedDefinition().definition
+    word                = self.getSelectedWord()
+    self.removeDefinition(word,selectedDefinition)
     self.savedDefController.updateOnWord(self.getSelectedWord())
   
   def editDefinition(self):
@@ -732,15 +768,15 @@ class Ui_MainWindow(QtCore.QObject):
       contextMenu.addAction(self.removeWordAction)
     contextMenu.exec(self.wordview.mapToGlobal(point))
 
-  def _removeWord(self,word,tags):
+  def removeWord(self,word,tags):
     self.tagDataModel.removeTagging(word,tags)
     self.wordDataModel.removeWord(word)
     self.setDirtyState()
 
-  def removeWord(self):
+  def removeWord_ui(self):
     word = self.getSelectedWord()
     tags = self.tagDataModel.getTagsFromIndex(word)
-    self._removeWord(word,tags)
+    self.removeWord(word,tags)
     self.wordController.updateOnTag(self.getSelectedTag())
     self.tagController.updateTags()
   
@@ -754,7 +790,8 @@ class Ui_MainWindow(QtCore.QObject):
     word = self.getSelectedWord()
     if definition.type == "_newUserDefinition":  #Dont'replace, add to the model
       markups  = self.markupWordInText(word,newDefinition)
-      self._saveDefinition(newDefinition,"User Definition", word,markups)
+      dictionary  = self.dictSelect.currentText()
+      self.saveDefinition(newDefinition,"User Definition", word,markups,dictionary)
       self.savedDefController.deleteTmpDefinition()
     else:
       markups  = self.markupWordInText(word,newDefinition)
@@ -765,7 +802,7 @@ class Ui_MainWindow(QtCore.QObject):
       self.setDirtyState()
     self.savedDefController.updateOnWord(word)
   
-  def addDefinition(self):
+  def addTmpDefinitionToEdit(self):
     index = self.savedDefController.addTmpDefinition()
     self.savedDefinitionsView.setCurrentIndex(index)
     self.savedDefinitionsView.edit(index)
@@ -779,7 +816,7 @@ class Ui_MainWindow(QtCore.QObject):
 
   def autoSave(self):
     self.autoSaveTimer.stop()
-    self._saveFileAs(False,self.tempProjectFile)
+    self.saveProject_ui(self.tempProjectFile , True)
     self.writeSessionFile()
   
   def readSessionFile(self):
@@ -797,8 +834,8 @@ class Ui_MainWindow(QtCore.QObject):
         except EOFError:
           pass
         if self.unsavedChanges:
-          tempCallback          = partial(self.openFile,self.tempProjectFile,True)
-        lastOpenedCallback    = partial(self.openFile,self.projectFile)
+          tempCallback          = partial(self.loadProject_ui,self.tempProjectFile,True)
+        lastOpenedCallback    = partial(self.loadProject_ui,self.projectFile)
     return tempCallback,lastOpenedCallback
 
   def writeSessionFile(self):
@@ -825,8 +862,10 @@ class Ui_MainWindow(QtCore.QObject):
   def markupSavedDefinitions(self):
     df = self.defDataModel.savedDefinitionsTable
     for row in df.itertuples(index=True, name='Pandas'):
-      markups = self.markupWordInText(row.text,row.definition)
-      self.defDataModel.replaceMarkups(row.text,row.definition,markups)
+      if row.markups is None:
+        markups = self.markupWordInText(row.text,row.definition)
+        query = self.getDefDMQuery(row.text,row.definition)
+        self.defDataModel.replaceMarkups(query,markups)
   
   def markupWordInText(self,word , text):
     maxDist = min( int(len(word) / 3) , 4 )

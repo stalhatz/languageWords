@@ -35,7 +35,7 @@ from PyQt5.QtCore import QTimer
 #TODO: [FEATURE_2] Change saved information category / Add user example category.
 #TODO: [FEATURE_3] Have a default metatag "All" applied to all words. Should not be renamable or deletable.
 #Testing
-#TODO: [FEATURE_1] Separate interactive UI and state modifying functions. State changes should be able to be tested in a top-down manner. Example: Create new project, Add word , Add dictionary , Add definition
+
 #TODO: [FEATURE_2] Create an interactive CLI.
 
 
