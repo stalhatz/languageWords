@@ -301,7 +301,11 @@ class DefinitionDataModel():
     return condition
 
   def definitionExists(self,d):
-    return self.definitionCondition(d).any()
+    try:
+      return self.definitionCondition(d).any()
+    except KeyError:
+      return False
+    
 
   def addDefinition(self, record):
     if type(record) != DefinitionDataModel.Definition:
@@ -312,7 +316,15 @@ class DefinitionDataModel():
     self.savedDefinitionsTable = self.savedDefinitionsTable.append(rSeries, ignore_index = True)
   
   def getDefinitionsForWord(self,word):
-    return self.savedDefinitionsTable[ self.savedDefinitionsTable.text == word]
+    try:
+      return self.savedDefinitionsTable[ self.savedDefinitionsTable.text == word]
+    except AttributeError err:
+      if self.savedDefinitionsTable.empty():
+        return self.savedDefinitionsTable
+      else
+        raise err
+
+    
   
   def getDefinition(self,query):
     condition = self.definitionCondition(query)
@@ -615,7 +627,10 @@ class TagDataModel():
     predNode.subjects.remove(subNode)
 
   def removeTag(self,tag):
-    node = self.tagNodes[tag]
+    try:
+      node = self.tagNodes[tag]
+    except KeyError:
+      return
     preds = node.predicatives.copy()
     for n in preds:
       self.removeNodeRelation(node,n)

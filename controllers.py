@@ -95,7 +95,11 @@ class SavedDefinitionsController(QAbstractListModel):
     self.currentElement = word
     self.layoutAboutToBeChanged.emit()
     self.definitionsTable = self.defModel.getDefinitionsForWord(word).copy(True)
+    try:
       self.definitionsTable.sort_values(by=["type"] , inplace = True)
+    except KeyError:
+      self.layoutChanged.emit()
+      return
     self.definitionsList  = [x for x in self.definitionsTable.itertuples()]
     self.sortDefList()
     self.html = []
