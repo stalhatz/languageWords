@@ -21,10 +21,26 @@ Markup = namedtuple('Markup', ('start', 'stop','tagType'))
 
 class Ui_MainWindow(QtCore.QObject):
 
-  def setupUi(self, MainWindow):
-    MainWindow.setObjectName("MainWindow")
-    MainWindow.resize(720, 1024)
-    self.mainWindow = MainWindow
+  @classmethod
+  def defaultInit(cls,app=None,window=None):
+    wordDataModel   = WordDataModel()
+    defDataModel    = DefinitionDataModel.getInstance()
+    onlineDefDataModel  = OnlineDefinitionDataModel.getInstance()
+    tagDataModel    = TagDataModel()
+
+    obj = cls()
+    obj.init()
+    if window is not None:
+      obj.setupUi(window)
+    obj.setupDataModels(wordDataModel,tagDataModel, defDataModel, onlineDefDataModel)
+    obj.dictionary  = None
+    obj.language    = None
+    obj.app         = app
+    return obj
+
+
+  def init(self):
+    self.mainWindow = None
     self.version = 0.03
     self.language = "N/A"
     self.projectName = "Untitled"
@@ -42,6 +58,11 @@ class Ui_MainWindow(QtCore.QObject):
     self.unsavedChanges = False   
     # Filename of temp file in case of unsaved changes
     self.tempProjectFile = None   
+
+  def setupUi(self, MainWindow):
+    MainWindow.setObjectName("MainWindow")
+    MainWindow.resize(720, 1024)
+    self.mainWindow = MainWindow
     self.applyCss()
     self.setWindowTitle()
     self.defineActions()
@@ -266,56 +287,57 @@ class Ui_MainWindow(QtCore.QObject):
     self.defDataModel       = defDataModel
     self.tagDataModel       = tagDataModel
     self.onlineDefDataModel = onlineDefDataModel
-    #Controllers
-    self.wordController     = WordController(wordDataModel,self.tagDataModel)
-    self.wordview.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-    self.wordFilterController   = QtCore.QSortFilterProxyModel()
-    self.wordFilterController.setSourceModel(self.wordController)
-    self.wordFilterController.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
-    self.wordController.addView(self.wordview)
-    self.wordview.setModel(self.wordFilterController)
+    if self.mainWindow is not None:
+      #Controllers
+      self.wordController     = WordController(wordDataModel,self.tagDataModel)
+      self.wordview.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+      self.wordFilterController   = QtCore.QSortFilterProxyModel()
+      self.wordFilterController.setSourceModel(self.wordController)
+      self.wordFilterController.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
+      self.wordController.addView(self.wordview)
+      self.wordview.setModel(self.wordFilterController)
 
-    self.tagController      = TagController(self.tagDataModel)
-    self.tagview.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-    self.tagFilterController   = QtCore.QSortFilterProxyModel()
-    self.tagFilterController.setSourceModel(self.tagController)
-    self.tagFilterController.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
-    self.tagview.setModel(self.tagFilterController)
+      self.tagController      = TagController(self.tagDataModel)
+      self.tagview.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+      self.tagFilterController   = QtCore.QSortFilterProxyModel()
+      self.tagFilterController.setSourceModel(self.tagController)
+      self.tagFilterController.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
+      self.tagview.setModel(self.tagFilterController)
+      
+      self.onlineDefController      = DefinitionController(self.onlineDefDataModel)
+      self.onlineDefController.addView(self.onlineDefinitionsView)
+      self.onlineDefinitionsView.setModel(self.onlineDefController)
+      self.elementController  = ElementTagController(tagDataModel)
+      self.elementTagview.setModel(self.elementController)
+      self.savedDefController = SavedDefinitionsController(defDataModel)
     
-    self.onlineDefController      = DefinitionController(self.onlineDefDataModel)
-    self.onlineDefController.addView(self.onlineDefinitionsView)
-    self.onlineDefinitionsView.setModel(self.onlineDefController)
-    self.elementController  = ElementTagController(tagDataModel)
-    self.elementTagview.setModel(self.elementController)
-    self.savedDefController = SavedDefinitionsController(defDataModel)
-    
-    #Set signals/slots views to controllers
-    self.elementTagview.selectionModel().currentChanged.connect(self.elementController.selected)
-    #View->Ui signals
-    self.onlineDefinitionsView.doubleClicked.connect(self.saveDefinition_ui)
-    self.tagview.itemDelegate().commitData.connect(self.handleEditedTag)
-    self.tagview.customContextMenuRequested.connect(self.tagViewMenuRequested)
-    self.tagview.selectionModel().currentChanged.connect(self.selectedTagChanged)
-    self.savedDefinitionsView.setModel(self.savedDefController)
-    #self.savedDefinitionsView.doubleClicked.connect(self.removeDefinition)
-    self.wordview.customContextMenuRequested.connect(self.wordViewContextMenuRequested)
-    self.wordview.selectionModel().currentChanged.connect(self.selectedWordChanged)
-    self.savedDefinitionsView.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-    self.savedDefinitionsView.customContextMenuRequested.connect(self.savedDefViewContextMenuRequested)
-    self.dictSelect.currentTextChanged.connect(self.requestOnlineDefinition_ui)
-    self.tabwidget.currentChanged.connect(self.requestOnlineDefinition_ui)
-    #Controller->Ui signals
-    #self.wordController.clearSelection.connect(self.disableEditWordButton)
-    
-    #View->Controller signals
-    self.tagFilter.textChanged.connect(self.tagFilterController.setFilterFixedString)
-    self.wordFilter.textChanged.connect(self.wordFilterController.setFilterFixedString)
-    #Data models->Ui signals
-    self.onlineDefDataModel.dictNamesUpdated.connect(self.updateDictNames)
-    self.onlineDefDataModel.definitionsUpdated.connect(self.updateOnlineDefinition_ui)
-    self.onlineDefDataModel.showMessage.connect(self.statusBar.showMessage) #Not really needed...
+      #Set signals/slots views to controllers
+      self.elementTagview.selectionModel().currentChanged.connect(self.elementController.selected)
+      #View->Ui signals
+      self.onlineDefinitionsView.doubleClicked.connect(self.saveDefinition_ui)
+      self.tagview.itemDelegate().commitData.connect(self.handleEditedTag)
+      self.tagview.customContextMenuRequested.connect(self.tagViewMenuRequested)
+      self.tagview.selectionModel().currentChanged.connect(self.selectedTagChanged)
+      self.savedDefinitionsView.setModel(self.savedDefController)
+      #self.savedDefinitionsView.doubleClicked.connect(self.removeDefinition)
+      self.wordview.customContextMenuRequested.connect(self.wordViewContextMenuRequested)
+      self.wordview.selectionModel().currentChanged.connect(self.selectedWordChanged)
+      self.savedDefinitionsView.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+      self.savedDefinitionsView.customContextMenuRequested.connect(self.savedDefViewContextMenuRequested)
+      self.dictSelect.currentTextChanged.connect(self.requestOnlineDefinition_ui)
+      self.tabwidget.currentChanged.connect(self.requestOnlineDefinition_ui)
+      #Controller->Ui signals
+      #self.wordController.clearSelection.connect(self.disableEditWordButton)
+      
+      #View->Controller signals
+      self.tagFilter.textChanged.connect(self.tagFilterController.setFilterFixedString)
+      self.wordFilter.textChanged.connect(self.wordFilterController.setFilterFixedString)
+      #Data models->Ui signals
+      self.onlineDefDataModel.dictNamesUpdated.connect(self.updateDictNames)
+      self.onlineDefDataModel.definitionsUpdated.connect(self.updateOnlineDefinition_ui)
+      self.onlineDefDataModel.showMessage.connect(self.statusBar.showMessage) #Not really needed...
 
-    self.dictSelect.insertItems(0,self.onlineDefDataModel.getDictNames())
+      self.dictSelect.insertItems(0,self.onlineDefDataModel.getDictNames())
       
   def retranslateUi(self, MainWindow):
     _translate = QtCore.QCoreApplication.translate
@@ -426,22 +448,6 @@ class Ui_MainWindow(QtCore.QObject):
       self.exitAppAction.trigger()
   # def disableEditWordButton(self):
   #   self.editWordButton.setEnabled(False)
-
-  @classmethod
-  def defaultInit(cls,app,window):
-    wordDataModel   = WordDataModel()
-    defDataModel    = DefinitionDataModel.getInstance()
-    onlineDefDataModel  = OnlineDefinitionDataModel.getInstance()
-    tagDataModel    = TagDataModel()
-
-    obj = cls()
-    if window is not None:
-      obj.setupUi(window)
-    obj.setupDataModels(wordDataModel,tagDataModel, defDataModel, onlineDefDataModel)
-    obj.dictionary  = None
-    obj.language    = None
-    obj.app         = app
-    return obj
 
   def loadDictionary(self,dicFilename, affFilename):
     dictionary = HunSpell(dicFilename,affFilename)
