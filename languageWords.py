@@ -2,6 +2,7 @@ import argparse
 from ui_mainwindow import Ui_MainWindow
 from PyQt5.QtWidgets import (QApplication, QMainWindow)
 from PyQt5.QtCore import QTimer
+
 # Connectivity:
 #TODO: [FEATURE_2] Request asynchronously more than one web page
 #TODO: [FEATURE_1] Dictionaries can return more results when user scrolls
@@ -18,13 +19,11 @@ from PyQt5.QtCore import QTimer
 #TODO: [FEATURE_2] Translate interface
 #TODO: [FEATURE_3] Implement rename word action
 #TODO: [FEATURE_3] Show in bold the matching part of the elements of a list view relating to the filter being applied
-#TODO: [FEATURE_3] Extend bold algorithm to full-words.
 #TODO: [FEATURE_3] Option to add quotation marks in query to Online Dictionary
 #FIXME: Calibrate the stepping of the scrollbar
 #FIXME: When switching dictionaries the scrollbar should return to the start
 #FIXME: Erase custom tag from textbox after 'Add tag' button has been clicked
 #FIXME: Ctrl+s works sometimes as Save As...
-#FIXME: Bold algorithm takes too long for long phrases
 #Data Model:
 #TODO: [FEATURE_2] Enable Online definitions to return markups and preserve them during automatic marking up
 #TODO: [FEATURE_2] Create table to hold markup per definition. Add field to distinguish between automatically created and markups provided by online definitions.
@@ -36,7 +35,6 @@ from PyQt5.QtCore import QTimer
 #TODO: [FEATURE_2] Change saved information category / Add user example category.
 #TODO: [FEATURE_3] Have a default metatag "All" applied to all words. Should not be renamable or deletable.
 #Testing
-
 #TODO: [FEATURE_2] Create an interactive CLI.
 
 
