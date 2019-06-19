@@ -8,9 +8,9 @@ import os
 from hunspell import HunSpell
 import uiUtils
 from functools import partial
-from fuzzysearch import find_near_matches as fnm
 from collections import namedtuple
 from dictionaries import dict_types as dictT
+from fuzzyPhraseMatch import matchphrases as mp
 
 #TODO : Setup keyboard shortcuts for easily navigating between ListViews/ListEdits etc.
 #TODO : [UI] Move tabs to the right/left of QTabWidget with horizontal text. Calling setTabPosition(QtWidgets.QTabWidget.West) produces vertical text
@@ -876,7 +876,7 @@ class Ui_MainWindow(QtCore.QObject):
   def markupWordInText(self,word , text):
     maxDist = min( int(len(word) / 3) , 4 )
     #matches = fnm(phrase.lower(),text.lower(),max_l_dist = maxDist)
-    matches = fnm(word.lower(),text.lower(),max_deletions = maxDist,max_insertions = maxDist,max_substitutions=0)
+    matches = mp(word.lower(),text.lower(),0.25)
     if len(matches) == 0:
       return None
     else:

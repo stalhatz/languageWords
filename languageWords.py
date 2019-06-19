@@ -11,6 +11,7 @@ from PyQt5.QtCore import QTimer
 #Machine Learning:
 #TODO: [FEATURE_0] Use word embeddings to propose new words given a tag
 #TODO: [FEATURE_0] Use word embeddings to propose tags for new words
+#TODO: [FEATURE_2] Use MRF model for fuzzy phrase matching
 #Interface:
 #TODO: [FEATURE_0] Use a QStackedLayout to show alternative layouts for manipulating/viewing/experimenting with data
 #TODO: [FEATURE_1] Sort ListViews by interacting with their corresponding Label
