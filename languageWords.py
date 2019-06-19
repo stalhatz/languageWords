@@ -21,7 +21,6 @@ from PyQt5.QtCore import QTimer
 #TODO: [FEATURE_3] Show in bold the matching part of the elements of a list view relating to the filter being applied
 #TODO: [FEATURE_3] Option to add quotation marks in query to Online Dictionary
 #FIXME: Calibrate the stepping of the scrollbar
-#FIXME: When switching dictionaries the scrollbar should return to the start
 #FIXME: Ctrl+s works sometimes as Save As...
 #Data Model:
 #TODO: [FEATURE_2] Enable Online definitions to return markups and preserve them during automatic marking up

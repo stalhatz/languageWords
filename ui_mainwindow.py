@@ -661,6 +661,7 @@ class Ui_MainWindow(QtCore.QObject):
       markups = self.markupWordInText(word,d.definition)
       onlineDefinitionsList[i] = dictT.Definition(d.definition , d.type , markups )
     self.onlineDefController.update(onlineDefinitionsList)
+    self.onlineDefinitionsView.scrollToTop()
     self.onlineDefinitionsView.setEnabled(True)
 
   def selectedWordChanged(self,index):
