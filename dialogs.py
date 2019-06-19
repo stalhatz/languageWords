@@ -209,6 +209,7 @@ class WordDialog(QtWidgets.QDialog):
     tag = self.tLineEdit.text()
     self.tLineEdit.clear()
     self.removeTagButton.setEnabled(True)
+    self.tLineEdit.setFocus()
     self.addTag(tag)
   
   def addTag(self,tag):
@@ -219,9 +220,9 @@ class WordDialog(QtWidgets.QDialog):
     self.tagController.setStringList(stringList)
     self.enableOKButton()
 
-  def addTagFromLineEdit(self,event):
-    tag = self.tLineEdit.text()
-    self.addTag(tag)
+  # def addTagFromLineEdit(self,event):
+  #   tag = self.tLineEdit.text()
+  #   self.addTag(tag)
 
   def removeTag(self,event):
     stringList = self.tagController.stringList()
