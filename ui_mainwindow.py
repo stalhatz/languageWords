@@ -96,7 +96,7 @@ class Ui_MainWindow(QtCore.QObject):
 
     self.actionOpen = QtWidgets.QAction(self.mainWindow)
     self.actionOpen.setObjectName("actionOpen")
-    self.actionOpen.triggered.connect(self.loadProject_ui)
+    self.actionOpen.triggered.connect(self.loadProject_ui_noArg)
     self.actionOpen.setShortcut("Ctrl+O")
 
     self.actionSaveAs = QtWidgets.QAction(self.mainWindow)
@@ -536,6 +536,9 @@ class Ui_MainWindow(QtCore.QObject):
     else:
       return fileName
 
+  def loadProject_ui_noArg(self):
+    self.loadProject_ui()
+
   def loadProject_ui(self, fileName=None, isTmpFile=False):
     if fileName is None:
       fileName = self.openFile(fileName)
@@ -872,7 +875,7 @@ class Ui_MainWindow(QtCore.QObject):
         markups = self.markupWordInText(row.text,row.definition)
         query = self.getDefDMQuery(row.text,row.definition)
         self.defDataModel.replaceMarkups(query,markups)
-  
+
   def markupWordInText(self,word , text):
     maxDist = min( int(len(word) / 3) , 4 )
     #matches = fnm(phrase.lower(),text.lower(),max_l_dist = maxDist)
