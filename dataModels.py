@@ -318,10 +318,10 @@ class DefinitionDataModel():
   def getDefinitionsForWord(self,word):
     try:
       return self.savedDefinitionsTable[ self.savedDefinitionsTable.text == word]
-    except AttributeError err:
+    except AttributeError as err:
       if self.savedDefinitionsTable.empty():
         return self.savedDefinitionsTable
-      else
+      else:
         raise err
 
     
