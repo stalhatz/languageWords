@@ -130,6 +130,12 @@ class Ui_MainWindow(QtCore.QObject):
     self.removeWordAction.setEnabled(False)
     self.removeWordAction.setToolTip("Remove selected word from the project")
     
+    self.renameWordAction = QtWidgets.QAction ("Rename Word", self.mainWindow)
+    self.renameWordAction.setObjectName("renameWordAction")
+    self.renameWordAction.triggered.connect(self.editSelectedWord)    
+    self.removeWordAction.setEnabled(False)
+    self.removeWordAction.setToolTip("Rename selected selected word")
+    
     self.addDefinitionAction = QtWidgets.QAction ("Add Custom Definition", self.mainWindow)
     self.addDefinitionAction.setObjectName("addDefinitionAction")
     self.addDefinitionAction.triggered.connect(self.addTmpDefinitionToEdit)
@@ -322,6 +328,7 @@ class Ui_MainWindow(QtCore.QObject):
       #self.savedDefinitionsView.doubleClicked.connect(self.removeDefinition)
       self.wordview.customContextMenuRequested.connect(self.wordViewContextMenuRequested)
       self.wordview.selectionModel().currentChanged.connect(self.selectedWordChanged)
+      self.wordview.itemDelegate().commitData.connect(self.handleEditedWord)
       self.savedDefinitionsView.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
       self.savedDefinitionsView.customContextMenuRequested.connect(self.savedDefViewContextMenuRequested)
       self.dictSelect.currentTextChanged.connect(self.requestOnlineDefinition_ui)
@@ -640,7 +647,7 @@ class Ui_MainWindow(QtCore.QObject):
   def requestOnlineDefinition(self,word,_dict):
     self.onlineDefDataModel.load(word,_dict,isDefinition=True,_async= True)
 
-  def requestOnlineDefinition_ui(self,index):
+  def requestOnlineDefinition_ui(self):
     activeTab   = self.tabwidget.currentIndex()
     activeDict  = self.dictSelect.currentText()
     if activeDict == "":
@@ -657,6 +664,7 @@ class Ui_MainWindow(QtCore.QObject):
 
   def updateOnlineDefinition_ui(self,onlineDefinitionsList):
     word = self.getSelectedWord()
+    if word is None: return
     for i,d in enumerate(onlineDefinitionsList):
       markups = self.markupWordInText(word,d.definition)
       onlineDefinitionsList[i] = dictT.Definition(d.definition , d.type , markups )
@@ -674,7 +682,7 @@ class Ui_MainWindow(QtCore.QObject):
     selectedWord = self.getSelectedWord()
     self.elementController.updateOnWord(selectedWord)
     self.savedDefController.updateOnWord(selectedWord)
-    self.requestOnlineDefinition_ui(index)
+    self.requestOnlineDefinition_ui()
 
   def selectedTagChanged(self,index):
     selectedTag = self.getSelectedTag()
@@ -718,10 +726,26 @@ class Ui_MainWindow(QtCore.QObject):
       self.tagController.updateTags()
       self.setDirtyState()
 
+  def handleEditedWord(self,widget):
+    if (widget.isModified()):
+      oldWord  = self.getSelectedWord()
+      newWord = widget.text()
+      self.renameWord(oldWord,newWord)
+      self.wordController.updateOnTag(self.getSelectedTag())
+      sourceIndex = self.wordController.getWordIndex(newWord)
+      viewIndex = self.wordFilterController.mapFromSource(sourceIndex)
+      #Trigger a refresh of the part of the UI depending on the selected word
+      self.selectedWordChanged(viewIndex)
+
   def editSelectedTag(self):
     index = self.tagview.currentIndex()
     self.tagview.edit(index)
   
+
+  def editSelectedWord(self):
+    index = self.wordview.currentIndex()
+    self.wordview.edit(index)
+
   def getSelectedWord(self):
     viewIndex = self.wordview.currentIndex()
     index = self.wordFilterController.mapToSource(viewIndex)
@@ -769,13 +793,13 @@ class Ui_MainWindow(QtCore.QObject):
       contextMenu.exec(self.savedDefinitionsView.mapToGlobal(point))
 
   def wordViewContextMenuRequested(self,point):
-    print("wordViewContextMenuRequested")
     index = self.wordview.indexAt(point).row()
     contextMenu = QtWidgets.QMenu ("Context menu", self.wordview)
     contextMenu.addAction(self.addWordAction)
     if (index >= 0):
       contextMenu.addAction(self.editWordAction)
       contextMenu.addAction(self.removeWordAction)
+      contextMenu.addAction(self.renameWordAction)
     contextMenu.exec(self.wordview.mapToGlobal(point))
 
   def removeWord(self,word,tags):
@@ -790,6 +814,12 @@ class Ui_MainWindow(QtCore.QObject):
     self.wordController.updateOnTag(self.getSelectedTag())
     self.tagController.updateTags()
   
+  def renameWord(self,oldWord,word):
+    self.wordDataModel.renameWord(oldWord,word)
+    self.tagDataModel.replaceWord(oldWord,word)
+    self.defDataModel.replaceWord(oldWord,word)
+    self.setDirtyState()
+
   @staticmethod
   def getDefDMQuery(word = None , _def = None):
     return DefinitionDataModel.Definition(text = word, definition = _def)
@@ -890,13 +920,5 @@ class Ui_MainWindow(QtCore.QObject):
         markups.append(markup)
       return markups
       
-      # prevEnd = 0
-      # newText = ""
-      # for match in matches:
-      #   newText += text[prevEnd:match.start] + "<b>" +  text[match.start:match.end]+"</b>"
-      #   prevEnd = match.end
-      # return newText
-
-
 
 from PyQt5 import QtWebEngineWidgets 

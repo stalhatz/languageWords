@@ -285,6 +285,8 @@ class WordController(QAbstractListModel):
       return QVariant()
     if role==Qt.DisplayRole:
       return str(self.df_image.iloc[index.row(),0]).capitalize()
+    if role==Qt.EditRole:
+      return str(self.df_image.iloc[index.row(),0])
     if role==self.DataRole:
       return str(self.df_image.iloc[index.row(),0])
 
@@ -293,8 +295,6 @@ class WordController(QAbstractListModel):
     tagList = self.tagModel.getAllChildTags(tag)
     tagList.append(tag)
     tagIndexTable = self.tagModel.getIndexesFromTagList(tagList)
-    for view in self.viewList:
-      view.selectionModel().setCurrentIndex(QModelIndex(),QItemSelectionModel.Deselect)
 
     self.df_image = pd.merge(self.wordModel.wordTable, tagIndexTable, on=['text','text'])
     self.layoutChanged.emit()
@@ -307,6 +307,13 @@ class WordController(QAbstractListModel):
     else:
       index =  int( result.index.values[0] )
       return self.createIndex(index,0)
+
+  def flags(self,index):
+    flags = super(WordController,self).flags(index)
+    if index.row() <     len(self.df_image.index):
+      if flags & Qt.ItemIsEditable == (flags & 0): # If is not editable
+        flags = flags ^ Qt.ItemIsEditable
+    return flags
 
 
 #TODO: Augment internal list with non-selectable elements ("INHERITED TAGS") to simplify indexing
