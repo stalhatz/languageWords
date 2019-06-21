@@ -79,7 +79,11 @@ class WordDataModel():
     self.wordTable.set_index("text",inplace = True)
     self.wordTable.drop(word , inplace = True)
     self.wordTable.reset_index(inplace = True)
-    
+  
+  def renameWord(self,oldWord,newWord):
+    condition = (self.wordTable.text == oldWord)
+    self.wordTable.loc[condition,"text"] = newWord
+
 #FIXME: Sequential loading for suggested tags. Should be moved to threaded requests.
 class OnlineDefinitionDataModel(QObject):
   dictNamesUpdated    = pyqtSignal(list)
@@ -445,6 +449,10 @@ class TagDataModel():
     condition = self.tagTable.tag == oldTag
     print (self.tagTable[condition])
     self.tagTable.loc[condition,"tag"] = newTag
+
+  def replaceWord(self,oldWord,newWord):
+    condition = self.tagTable.text == oldWord
+    self.tagTable.loc[condition,"text"] = newWord
 
   def addTagging(self,word,tags):
     if len(tags) > 0:
