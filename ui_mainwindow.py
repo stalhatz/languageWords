@@ -651,10 +651,10 @@ class Ui_MainWindow(QtCore.QObject):
     activeTab   = self.tabwidget.currentIndex()
     activeDict  = self.dictSelect.currentText()
     if activeDict == "":
-      return
+      activeDict = None
     selectedWord = self.getSelectedWord()
-    if selectedWord is None:
-      return
+    # if selectedWord is None:
+    #   return
     if activeTab == 0:
       self.onlineDefinitionsView.setEnabled(False)
       self.requestOnlineDefinition(selectedWord,activeDict)
@@ -664,7 +664,7 @@ class Ui_MainWindow(QtCore.QObject):
 
   def updateOnlineDefinition_ui(self,onlineDefinitionsList):
     word = self.getSelectedWord()
-    if word is None: return
+    # if word is None: return
     for i,d in enumerate(onlineDefinitionsList):
       markups = self.markupWordInText(word,d.definition)
       onlineDefinitionsList[i] = dictT.Definition(d.definition , d.type , markups )
@@ -674,10 +674,10 @@ class Ui_MainWindow(QtCore.QObject):
 
   def selectedWordChanged(self,index):
     if index.isValid():
-      self.editWordAction.setEnabled(True)
+      self.editTagsOfWordAction.setEnabled(True)
       self.removeWordAction.setEnabled(True)
     else:
-      self.editWordAction.setEnabled(False)
+      self.editTagsOfWordAction.setEnabled(False)
       self.removeWordAction.setEnabled(False)
     selectedWord = self.getSelectedWord()
     self.elementController.updateOnWord(selectedWord)
@@ -685,8 +685,17 @@ class Ui_MainWindow(QtCore.QObject):
     self.requestOnlineDefinition_ui()
 
   def selectedTagChanged(self,index):
+    oldIndex = self.wordview.currentIndex()
     selectedTag = self.getSelectedTag()
     self.wordController.updateOnTag(selectedTag)
+    index = self.wordview.currentIndex()
+    if index.isValid():
+      self.wordview.selectionModel().setCurrentIndex(QtCore.QModelIndex(),QtCore.QItemSelectionModel.Deselect)
+      self.wordview.selectionModel().setCurrentIndex(QtCore.QModelIndex(),QtCore.QItemSelectionModel.Clear)
+    else:
+      if oldIndex.isValid():
+        self.selectedWordChanged(index)
+
 
   def saveDefinition_ui(self):
     definition  = self.getSelectedOnlineDefinition()

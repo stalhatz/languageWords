@@ -95,6 +95,7 @@ class OnlineDefinitionDataModel(QObject):
     super(OnlineDefinitionDataModel, self).__init__()
     self.enableCaching = False
     self.session      = FuturesSession(max_workers=1)
+    self.language     = None
   
   @classmethod
   def getInstance(cls,modulePath = "./dictionaries"):
@@ -162,6 +163,8 @@ class OnlineDefinitionDataModel(QObject):
     return list(self.selectedDicts.keys())
 
   def createUrl(self,word,dictName):
+    if (word is None) or (self.language is None):
+      return None
     url = self.selectedDicts[dictName].createUrl(word,self.language)
     return url
 
@@ -173,9 +176,20 @@ class OnlineDefinitionDataModel(QObject):
     for dictName in self.selectedDicts:
       if hasattr(self.selectedDicts[dictName], 'getTagsFromHtml'):
         self.load(word,dictName,isDefinition = False , _async = False) 
-
+  
+  def triggerEmptyUpdate(self, isDefinition):
+    if isDefinition:
+      self.definitionsUpdated.emit([])
+    else:
+      self.tagsUpdated.emit([])
   def load(self,word, dictName,isDefinition=False,_async= False):
+    if (word is None) or (dictName is None):
+      self.triggerEmptyUpdate(isDefinition)
+      return
     url       = self.createUrl(word,dictName)  
+    if url is None:
+      self.triggerEmptyUpdate(isDefinition)
+      return
     if self.enableCaching:
       try:
         cacheRecord = self.requestCache.loc[url,:]
@@ -469,6 +483,11 @@ class TagDataModel():
         tagTableList.append({"tag":tag , "text" : word})
       self.tagTable = self.tagTable.append(tagTableList, ignore_index = True)
       self.tagTable.drop_duplicates(keep=False, inplace = True)
+  
+  def replaceTagging(self,word,newTags):
+    oldTags = self.getTagsFromIndex(word)
+    self.removeTagging(word,oldTags)
+    self.addTagging(word,newTags)
 
   def getIndexesFromTagList(self,tagList):
     #print(tagList)
