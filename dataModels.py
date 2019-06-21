@@ -222,6 +222,10 @@ class OnlineDefinitionDataModel(QObject):
     else:
       html =  response.text
       if self.enableCaching:
+        try:
+          self.requestCache.drop(url , inplace = True)
+        except KeyError:
+          pass
         newRecord         = pd.Series({"html":html , "timestamp":pd.Timestamp.now()}, name = url)
         self.requestCache = self.requestCache.append(newRecord)
       self.showMessage.emit("Finished loading from " + url)
