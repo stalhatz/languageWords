@@ -19,6 +19,15 @@ QListView {
     color: #C2C7CB;    
 }
 
+QLineEdit{
+  background: #2B2B2B;
+}
+
+QLineEdit:disabled{
+  background: #82878B;
+}
+
+
 QListView::item:disabled{
   background: #3B3B3B;
   font-style: italic;

@@ -116,12 +116,12 @@ class Ui_MainWindow(QtCore.QObject):
     self.addWordAction.setShortcut("Ctrl+Shift+A")
     self.addWordAction.setToolTip("Show a dialog to add a new word to the project")
 
-    self.editWordAction = QtWidgets.QAction ("Edit Word", self.mainWindow)
-    self.editWordAction.setObjectName("editWordAction")
-    self.editWordAction.triggered.connect(self.editWord_ui)
-    self.editWordAction.setShortcut("Ctrl+Shift+E")
-    self.editWordAction.setEnabled(False)
-    self.editWordAction.setToolTip("Show a dialog to edit the selected word")
+    self.editTagsOfWordAction = QtWidgets.QAction ("Edit Tags", self.mainWindow)
+    self.editTagsOfWordAction.setObjectName("editTagsOfWordAction")
+    self.editTagsOfWordAction.triggered.connect(self.editTagsOfWord_ui)
+    self.editTagsOfWordAction.setShortcut("Ctrl+Shift+E")
+    self.editTagsOfWordAction.setEnabled(False)
+    self.editTagsOfWordAction.setToolTip("Show a dialog to edit the selected word")
 
     self.removeWordAction = QtWidgets.QAction ("Remove Word", self.mainWindow)
     self.removeWordAction.setObjectName("removeWordAction")
@@ -166,11 +166,6 @@ class Ui_MainWindow(QtCore.QObject):
     self.addWordButton.setMaximumSize(QtCore.QSize(100,50))
     self.addWordButton.setDefaultAction(self.addWordAction)
     
-    self.editWordButton = QtWidgets.QToolButton(parentWidget)
-    self.editWordButton.setObjectName("editWordButton")
-    self.editWordButton.setMaximumSize(QtCore.QSize(100,50))
-    self.editWordButton.setDefaultAction(self.editWordAction)
-
     self.editDictsButton = QtWidgets.QPushButton(parentWidget)
     self.editDictsButton.setObjectName("editDictButton")
     self.editDictsButton.setMaximumSize(QtCore.QSize(150,50))
@@ -183,7 +178,6 @@ class Ui_MainWindow(QtCore.QObject):
     self.editMetaTagsButton.clicked.connect(self.showEditMetaTagsDialog)
 
     layout.addWidget(self.addWordButton)
-    layout.addWidget(self.editWordButton)
     layout.addWidget(self.editDictsButton)
     layout.addWidget(self.editMetaTagsButton)
 
@@ -271,7 +265,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.menuWord = QtWidgets.QMenu(self.menubar)
     self.menuWord.setObjectName("menuWord")
     self.menuWord.addAction(self.addWordAction)
-    self.menuWord.addAction(self.editWordAction)
+    self.menuWord.addAction(self.editTagsOfWordAction)
     self.menuWord.addAction(self.removeWordAction)
 
     self.menuEdit = QtWidgets.QMenu(self.menubar)
@@ -393,15 +387,11 @@ class Ui_MainWindow(QtCore.QObject):
     elif dialogCode == QtWidgets.QDialog.Rejected:
       print('Rejected')
 
-  def editWord(self, word,tags, editedWord , newTags):
+  def editTagsOfWord(self, word,newTags):
     #Remove word and tags
-    self.removeWord(word,tags)
-    if editedWord != "":
-      self.tagDataModel.addTagging(editedWord,newTags)
-      self.wordDataModel.addWord(editedWord)
-      self.defDataModel.replaceWord(word,editedWord)
+    self.tagDataModel.replaceTagging(word,newTags)
 
-  def editWord_ui(self,event):
+  def editTagsOfWord_ui(self,event):
     word = self.getSelectedWord()
     if isinstance(word,QtCore.QVariant):
       return
@@ -410,12 +400,11 @@ class Ui_MainWindow(QtCore.QObject):
                                       WordDialog.EDIT_DIALOG , word, tags)
     dialogCode = self.editWordDialog.exec()
     if dialogCode == QtWidgets.QDialog.Accepted:
-      editedWord = self.editWordDialog.getWord()
       newTags    = self.editWordDialog.getTags()
-      self.editWord(word,tags,editedWord,newTags)
+      self.editTagsOfWord(word,newTags)
       self.tagController.updateTags()
       self.wordController.updateOnTag(self.getSelectedTag())
-      wordIndex = self.wordController.getWordIndex(editedWord)
+      wordIndex = self.wordController.getWordIndex(word)
       viewIndex = self.wordFilterController.mapFromSource(wordIndex)
       self.wordview.setCurrentIndex(viewIndex)
 
@@ -639,7 +628,7 @@ class Ui_MainWindow(QtCore.QObject):
           return True
     if _object == self.tagview:
       if event.type() == QtCore.QEvent.KeyPress:
-        if (event.key() == QtCore.Qt.Key_Enter) or (event.key() == QtCore.Qt.Key_Return):
+        if (event.key()  == QtCore.Qt.Key_Enter) or (event.key() == QtCore.Qt.Key_Return):
           #self.wordview.setFocus()
           return True
     return False
@@ -806,7 +795,7 @@ class Ui_MainWindow(QtCore.QObject):
     contextMenu = QtWidgets.QMenu ("Context menu", self.wordview)
     contextMenu.addAction(self.addWordAction)
     if (index >= 0):
-      contextMenu.addAction(self.editWordAction)
+      contextMenu.addAction(self.editTagsOfWordAction)
       contextMenu.addAction(self.removeWordAction)
       contextMenu.addAction(self.renameWordAction)
     contextMenu.exec(self.wordview.mapToGlobal(point))

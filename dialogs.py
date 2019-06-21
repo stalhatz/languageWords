@@ -90,11 +90,11 @@ class WordDialog(QtWidgets.QDialog):
     self.wLineEdit = QtWidgets.QLineEdit(self)
     self.wLineEdit.setMaximumSize(QtCore.QSize(400, 25))
     self.wLineEdit.setFocus()
-    self.wLineEdit.editingFinished.connect(self.loadOnlineTags)
     if self.dialogType == self.CREATE_DIALOG:
       self.wLineEdit.setPlaceholderText("Enter a new word")
+      self.wLineEdit.editingFinished.connect(self.loadOnlineTags)
     if self.dialogType == self.EDIT_DIALOG:
-      self.wLineEdit.setPlaceholderText("Leave this blank to delete the word")
+      self.wLineEdit.setEnabled(False)
     self.wLineEdit.textChanged.connect(self.wordTextChanged)
     vLeftLayout.addStretch()
 
@@ -137,6 +137,8 @@ class WordDialog(QtWidgets.QDialog):
   
     if self.dialogType == self.EDIT_DIALOG:
       self.wLineEdit.setText(self.existingWord)
+      self.wordSpelledCorrectly = True
+      self.loadOnlineTags()
 
   def loadOnlineTags(self):
     if self.wordSpelledCorrectly:
