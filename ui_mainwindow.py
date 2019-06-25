@@ -160,6 +160,16 @@ class Ui_MainWindow(QtCore.QObject):
     self.showPreferencesAction.setObjectName("showPreferencesAction")
     self.showPreferencesAction.triggered.connect(self.showPreferencesDialog)
 
+    self.toggleSpellingAction = QtWidgets.QAction ("Enable spelling", self.mainWindow)
+    self.toggleSpellingAction.setObjectName("toggleSpellingAction")
+    self.toggleSpellingAction.setCheckable(True)
+    self.toggleSpellingAction.setChecked(True)
+    #self.useSpelling          = True
+    #self.toggleSpellingAction.changed.connect(lambda: self.useSpelling)
+
+    
+
+
   def addTopButtons(self , layout ,parentWidget):
     self.addWordButton = QtWidgets.QToolButton(parentWidget)
     self.addWordButton.setObjectName("addWordButton")
@@ -271,6 +281,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.menuEdit = QtWidgets.QMenu(self.menubar)
     self.menuEdit.setObjectName("menuEdit")
     self.menuEdit.addAction(self.showPreferencesAction)
+    self.menuEdit.addAction(self.toggleSpellingAction)
 
     self.menubar.addAction(self.menuFile.menuAction())
     self.menubar.addAction(self.menuWord.menuAction())
@@ -364,7 +375,10 @@ class Ui_MainWindow(QtCore.QObject):
     self.setDirtyState()
 
   def addWord_ui(self,event):
-    self.addWordDialog = WordDialog(self.centralwidget,self.wordDataModel,self.tagDataModel,self.onlineDefDataModel,self.dictionary,
+    dictionary = None
+    if self.toggleSpellingAction.isChecked():
+      dictionary = self.dictionary
+    self.addWordDialog = WordDialog(self.centralwidget,self.wordDataModel,self.tagDataModel,self.onlineDefDataModel,dictionary,
                                     WordDialog.CREATE_DIALOG)
     dialogCode = self.addWordDialog.exec()
     if dialogCode == QtWidgets.QDialog.Accepted:
