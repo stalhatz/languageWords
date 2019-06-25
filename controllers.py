@@ -95,6 +95,7 @@ class SavedDefinitionsController(QAbstractListModel):
     self.currentElement = word
     self.layoutAboutToBeChanged.emit()
     self.definitionsTable = self.defModel.getDefinitionsForWord(word).copy(True)
+    self.html = []
     try:
       self.definitionsTable.sort_values(by=["type"] , inplace = True)
     except KeyError:
@@ -102,7 +103,6 @@ class SavedDefinitionsController(QAbstractListModel):
       return
     self.definitionsList  = [x for x in self.definitionsTable.itertuples()]
     self.sortDefList()
-    self.html = []
     for x in self.definitionsList:
       if isinstance(x , str):
         self.html.append(None)
