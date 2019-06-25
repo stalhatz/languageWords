@@ -561,6 +561,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.setWindowTitle()
     
   def newProject(self,language,projectName):
+    self.language                 = language
     self.wordDataModel.language   = language
     self.defDataModel.language    = language
     self.onlineDefDataModel.language  = language
