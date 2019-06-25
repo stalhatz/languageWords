@@ -341,7 +341,7 @@ class DefinitionDataModel():
     try:
       return self.savedDefinitionsTable[ self.savedDefinitionsTable.text == word]
     except AttributeError as err:
-      if self.savedDefinitionsTable.empty():
+      if self.savedDefinitionsTable.empty:
         return self.savedDefinitionsTable
       else:
         raise err
