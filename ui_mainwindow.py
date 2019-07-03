@@ -11,6 +11,7 @@ from functools import partial
 from collections import namedtuple
 from dictionaries import dict_types as dictT
 from fuzzyPhraseMatch import matchphrases as mp
+import pandas as pd
 
 #TODO : Setup keyboard shortcuts for easily navigating between ListViews/ListEdits etc.
 #TODO : [UI] Move tabs to the right/left of QTabWidget with horizontal text. Calling setTabPosition(QtWidgets.QTabWidget.West) produces vertical text
@@ -326,10 +327,13 @@ class Ui_MainWindow(QtCore.QObject):
       self.elementTagview.selectionModel().currentChanged.connect(self.elementController.selected)
       #View->Ui signals
       self.onlineDefinitionsView.doubleClicked.connect(self.saveDefinition_ui)
+      self.onlineDefinitionsView.clicked.connect(self.onlineDefinitionsView_clicked)     
       self.tagview.itemDelegate().commitData.connect(self.handleEditedTag)
       self.tagview.customContextMenuRequested.connect(self.tagViewMenuRequested)
       self.tagview.selectionModel().currentChanged.connect(self.selectedTagChanged)
       self.savedDefinitionsView.setModel(self.savedDefController)
+      self.savedDefinitionsView.clicked.connect(self.savedDefinitionsView_clicked)     
+
       #self.savedDefinitionsView.doubleClicked.connect(self.removeDefinition)
       self.wordview.customContextMenuRequested.connect(self.wordViewContextMenuRequested)
       self.wordview.selectionModel().currentChanged.connect(self.selectedWordChanged)
@@ -632,7 +636,27 @@ class Ui_MainWindow(QtCore.QObject):
   def updateDictNames(self,dictNames):
     self.dictSelect.clear()
     self.dictSelect.insertItems(0,dictNames)
-    
+
+
+  def onlineDefinitionsView_clicked(self,index):
+    if int( QtGui.QGuiApplication.instance().queryKeyboardModifiers() & QtCore.Qt.ControlModifier) != 0:
+      definition = self.onlineDefController.data(index,DefinitionController.DataRole)
+      if definition.hyperlink is not None:
+        QtGui.QDesktopServices.openUrl(QtCore.QUrl(definition.hyperlink))
+      else:
+        self.statusBar.showMessage("No hyperlink to follow "+ fileName , 1000)
+        
+
+  def savedDefinitionsView_clicked(self,index):
+    if int( QtGui.QGuiApplication.instance().queryKeyboardModifiers() & QtCore.Qt.ControlModifier) != 0:
+      definition = self.savedDefController.data(index,SavedDefinitionsController.DataRole)
+      try:
+        if (definition.hyperlink is not None) and (pd.notna(definition.hyperlink) ):
+          QtGui.QDesktopServices.openUrl(QtCore.QUrl(definition.hyperlink))
+        else:
+          self.statusBar.showMessage("No hyperlink to follow " , 1000)
+      except AttributeError:
+        self.statusBar.showMessage("No hyperlink to follow ", 1000)
   # def showEditWordDialog(self,event):
   #FIXME: When editing Enter key is not consumed in Delegate of TagView and is falsely propagated up to this filter. Reactivate filters when fixed.
   def eventFilter(self,_object, event):
@@ -671,7 +695,7 @@ class Ui_MainWindow(QtCore.QObject):
     # if word is None: return
     for i,d in enumerate(onlineDefinitionsList):
       markups = self.markupWordInText(word,d.definition)
-      onlineDefinitionsList[i] = dictT.Definition(d.definition , d.type , markups )
+      onlineDefinitionsList[i] = dictT.Definition(d.definition , d.type , markups , d.hyperlink )
     self.onlineDefController.update(onlineDefinitionsList)
     self.onlineDefinitionsView.scrollToTop()
     self.onlineDefinitionsView.setEnabled(True)
@@ -707,12 +731,12 @@ class Ui_MainWindow(QtCore.QObject):
     query = self.getDefDMQuery(word,definition.definition)
     if not self.defDataModel.definitionExists(query):
       dictionary  = self.dictSelect.currentText()
-      self.saveDefinition(definition.definition,definition.type,word,definition.markups,dictionary)
+      self.saveDefinition(definition.definition,definition.type,word,definition.markups,dictionary,definition.hyperlink)
     self.savedDefController.updateOnWord(word)
 
-  def saveDefinition(self,definitionText,definitionType,word,markups,dictionary):
+  def saveDefinition(self,definitionText,definitionType,word,markups,dictionary=None,hyperlink=None):
     #Try to check every element of the query before adding the definition
-    defTuple = DefinitionDataModel.Definition(word,definitionText,None,dictionary,definitionType,[markups])
+    defTuple = DefinitionDataModel.Definition(word,definitionText,None,dictionary,definitionType,[markups],hyperlink)
     self.defDataModel.addDefinition(defTuple)
     self.setDirtyState()
   
@@ -843,8 +867,7 @@ class Ui_MainWindow(QtCore.QObject):
     word = self.getSelectedWord()
     if definition.type == "_newUserDefinition":  #Dont'replace, add to the model
       markups  = self.markupWordInText(word,newDefinition)
-      dictionary  = self.dictSelect.currentText()
-      self.saveDefinition(newDefinition,"User Definition", word,markups,dictionary)
+      self.saveDefinition(newDefinition,"User Definition", word,markups)
       self.savedDefController.deleteTmpDefinition()
     else:
       markups  = self.markupWordInText(word,newDefinition)

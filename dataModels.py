@@ -301,7 +301,7 @@ class DefinitionDataModel():
     super(DefinitionDataModel, self).__init__()
 
 
-  Definition = namedtuple('Definition',['text' , 'definition', 'timestamp' , 'dictionary','type','markups'])
+  Definition = namedtuple('Definition',['text' , 'definition', 'timestamp' , 'dictionary','type','markups','hyperlink'])
   Definition.__new__.__defaults__ = (None,) * len(Definition._fields)
 
   @classmethod

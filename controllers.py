@@ -41,6 +41,7 @@ def htmlFromMarkups(text,markups):
 
 #TODO: Merge with DefinitionController
 class SavedDefinitionsController(QAbstractListModel):
+  DataRole = Qt.UserRole + 1
   def __init__(self,defModel):
     super(SavedDefinitionsController,self).__init__()
     self.defModel = defModel
@@ -75,6 +76,10 @@ class SavedDefinitionsController(QAbstractListModel):
         wrapper = textwrap.TextWrapper()
         wrapper.width = 80
         return wrapper.fill(str(a))
+    if role==self.DataRole:
+      if not isinstance(self.definitionsList[index.row()] , str):
+        pandas = self.definitionsList[index.row()]
+        return pandas
 
   def flags(self,index):
     flags = super(SavedDefinitionsController,self).flags(index)
@@ -142,6 +147,7 @@ class SavedDefinitionsController(QAbstractListModel):
 
 
 class DefinitionController(QAbstractListModel):
+  DataRole = Qt.UserRole
   def __init__(self,defModel):
     super(DefinitionController,self).__init__()
     self.definitionsList  = []
@@ -159,8 +165,10 @@ class DefinitionController(QAbstractListModel):
       if isinstance(self.definitionsList[index.row()] , str):
         return self.definitionsList[index.row()].upper()
       else:
-        #return self.definitionsList[index.row()].definition 
-        return htmlFromMarkups( self.definitionsList[index.row()].definition, self.definitionsList[index.row()].markups)
+       return htmlFromMarkups( self.definitionsList[index.row()].definition, self.definitionsList[index.row()].markups)
+    if role==self.DataRole:
+      return self.definitionsList[index.row()]
+
   def getDefinition(self,index):
     if not index.isValid() or not (0<=index.row()<len(self.definitionsList)):  
       raise IndexError("Invalid index or index out of range")
