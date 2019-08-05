@@ -15,7 +15,7 @@ def createUrl(word,requestLang):
   raise ValueError("Could not find " + requestLang + " in " + name + "'s language list. Available langs : " + str(languages) )
 
 
-def getDefinitionsFromHtml(html,language):
+def getDefinitions(html,language):
   definitionsList = []
   s = BeautifulSoup(html,"html.parser")
   for element in s.find_all("li",class_ = "DivisionDefinition"):

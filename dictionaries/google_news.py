@@ -23,7 +23,7 @@ def getUrlFromHrefArg(hrefArg):
   return hrefArg[httpPos:endPos]
 
 
-def getDefinitionsFromHtml(html,language):
+def getDefinitions(html,language):
   definitionsList = []
   titles = []
   texts  = []

@@ -148,12 +148,11 @@ class OnlineDefinitionDataModel(QObject):
 
   def getTagsFromHtml(self,dictName, html):
     tagList = []
-    if hasattr(self.selectedDicts[dictName], 'getTagsFromHtml'):
-      tagsList        = self.selectedDicts[dictName].getTagsFromHtml(html,self.language)
+    if hasattr(self.selectedDicts[dictName], 'getTags'):
+      tagsList        = self.selectedDicts[dictName].getTags(data,self.language)
     return tagsList
 
-  def getDefinitionsFromHtml(self,dictName, html):
-    definitionsList = self.selectedDicts[dictName].getDefinitionsFromHtml(html,self.language)
+    definitionsList = self.selectedDicts[dictName].getDefinitions(data,self.language)
     return definitionsList
 
   def updateDictNames(self):

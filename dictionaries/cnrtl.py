@@ -30,7 +30,7 @@ def createUrl(word,requestLang):
       return dictUrls[i] + word.lower()
   raise ValueError("Could not find " + requestLang + " in " + name + "'s language list. Available langs : " + str(languages) )
 
-def getDefinitionsFromHtml(html,language):
+def getDefinitions(html,language):
   
   definitionsList = []
   s = BeautifulSoup(html,"html.parser")
@@ -40,7 +40,7 @@ def getDefinitionsFromHtml(html,language):
     definitionsList.append(dt.Definition(element.text.split("\n")[0] , "example") )
   return definitionsList
 
-def getTagsFromHtml(html,language):
+def getTags(html,language):
   tagsList = []
   s = BeautifulSoup(html,"html.parser")
   for element in s.select(".tlf_cdomaine > i"):
