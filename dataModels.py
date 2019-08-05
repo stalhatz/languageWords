@@ -12,6 +12,9 @@ import requests
 from concurrent.futures import ThreadPoolExecutor
 import copy
 from collections import namedtuple
+
+from wikipedia.exceptions import WikipediaException
+
 def saveToPickle(a , file):
   if isinstance(file,str):
     with open(file, 'wb') as output:
@@ -95,6 +98,7 @@ class OnlineDefinitionDataModel(QObject):
     super(OnlineDefinitionDataModel, self).__init__()
     self.enableCaching = False
     self.session      = FuturesSession(max_workers=1)
+    self.executor     = ThreadPoolExecutor(max_workers=1)
     self.language     = None
   
   @classmethod
@@ -146,12 +150,19 @@ class OnlineDefinitionDataModel(QObject):
   def getSelectedDicts(self):
     return list(self.selectedDicts.values())
 
-  def getTagsFromHtml(self,dictName, html):
+  def canDictHandleDataLoading(self,dictName):
+    return hasattr(self.selectedDicts[dictName], 'loadData')
+  
+  def loadDataFromDict(self,dictName,url):
+    return self.selectedDicts[dictName].loadData(url)
+
+  def getTagsFromDict(self,dictName, data):
     tagList = []
     if hasattr(self.selectedDicts[dictName], 'getTags'):
       tagsList        = self.selectedDicts[dictName].getTags(data,self.language)
     return tagsList
 
+  def getDefinitionsFromDict(self,dictName, data):
     definitionsList = self.selectedDicts[dictName].getDefinitions(data,self.language)
     return definitionsList
 
@@ -168,7 +179,6 @@ class OnlineDefinitionDataModel(QObject):
     return url
 
   def loadDefinition(self,word,dictName):
-
     self.load(word, dictName,isDefinition = True , _async = True)
 
   def loadTags(self, word):
@@ -181,6 +191,7 @@ class OnlineDefinitionDataModel(QObject):
       self.definitionsUpdated.emit([])
     else:
       self.tagsUpdated.emit([])
+
   def load(self,word, dictName,isDefinition=False,_async= False):
     if (word is None) or (dictName is None):
       self.triggerEmptyUpdate(isDefinition)
@@ -197,7 +208,7 @@ class OnlineDefinitionDataModel(QObject):
             self.requestCache.drop(url , inplace = True)
             raise KeyError("Cache expired")
         self.showMessage.emit("Loaded " + url + " from cached copy")
-        self.parseHtml(cacheRecord.html,dictName,isDefinition)
+        self.parseOnlineData(cacheRecord.html,dictName,isDefinition)
         return
       except KeyError:
         pass
@@ -207,53 +218,76 @@ class OnlineDefinitionDataModel(QObject):
       self.loadSequential(url,dictName,isDefinition)
 
   def loadSequential(self, url,dictName,isDefinition=False):
-    try:
-      response  = requests.get(url,timeout = 1)
-    except requests.exceptions.RequestException as a:
-      self.showMessage.emit("Connexion to " + str(url) + " failed. " + str(a))
-      return
+    if canDictHandleDataLoading(dictName):
+      try:
+        response = loadDataFromDict(dictName,url)
+      except ConnectionError as a:
+        self.showMessage.emit("Connexion to " + str(url) + " failed. " + str(a))
+        return
+    else:
+      try:
+        response  = requests.get(url,timeout = 1)
+      except requests.exceptions.RequestException as a:
+        self.showMessage.emit("Connexion to " + str(url) + " failed. " + str(a))
+        return
+      if response.status_code > 200:
+        self.showMessage.emit("Error while loading from " + url + " Code :: " + str(response.status_code))
+        return
+      response = response.text
     self.handleResponse(response,url,dictName,isDefinition)
 
   def loadAsync(self, url,dictName,isDefinition=True):
-    self.url = url
-    future = self.session.get(url,timeout = 1)
-    future.add_done_callback(partial(self._load,url,dictName,isDefinition))
-    self.lastRequest = future
-    self.showMessage.emit("Loading from " + url)
+    if self.canDictHandleDataLoading(dictName):
+      loadDataFunc = partial(self.loadDataFromDict,dictName,url)
+      future = self.executor.submit(loadDataFunc)
+      future.add_done_callback(partial(self._loadAsyncFromDictionary,url,dictName,isDefinition))
+    else:
+      self.url = url
+      future = self.session.get(url,timeout = 1)
+      future.add_done_callback(partial(self._loadAsyncHtml,url,dictName,isDefinition))
+      self.lastRequest = future
+      self.showMessage.emit("Loading from " + url)
   
   #This is run by a thread other the main one. Though interpreter lock is in place, we should make sure there are no race conditions...
-  def _load(self,url,dictName,isDefinition,future):
+  def _loadAsyncHtml(self,url,dictName,isDefinition,future):
     if url != self.url:
       future.cancel() #Should cancel itself when issuing the next request as max_workers = 1
       return
     try:
-      request = future.result()
-    except requests.exceptions.RequestException as a:
-      self.showMessage.emit("Connexion to " + str(url) + " failed. " + str(a))
+      response = future.result()
+    except requests.exceptions.RequestException as e:
+      self.showMessage.emit("Connexion to " + str(url) + " failed. " + str(e))
       return
-    self.handleResponse(request,url,dictName,isDefinition)
-
-  def handleResponse(self,response,url,dictName,isDefinition=True):
     if response.status_code > 200:
       self.showMessage.emit("Error while loading from " + url + " Code :: " + str(response.status_code))
+      return
     else:
-      html =  response.text
-      if self.enableCaching:
-        try:
-          self.requestCache.drop(url , inplace = True)
-        except KeyError:
-          pass
-        newRecord         = pd.Series({"html":html , "timestamp":pd.Timestamp.now()}, name = url)
-        self.requestCache = self.requestCache.append(newRecord)
-      self.showMessage.emit("Finished loading from " + url)
-      self.parseHtml(html,dictName,isDefinition)
+      self.handleResponse(response.text,url,dictName,isDefinition)
+  def _loadAsyncFromDictionary(self,url,dictName,isDefinition,future):
+    try:
+      response = future.result()
+    except ConnectionError as e:
+      self.showMessage.emit("Connexion to " + str(url) + " failed. " + str(e))
+      return
+    self.handleResponse(response,url,dictName,isDefinition)
+
+  def handleResponse(self,data,url,dictName,isDefinition=True):
+    if self.enableCaching:
+      try:
+        self.requestCache.drop(url , inplace = True)
+      except KeyError:
+        pass
+      newRecord         = pd.Series({"html":data , "timestamp":pd.Timestamp.now()}, name = url)
+      self.requestCache = self.requestCache.append(newRecord)
+    self.showMessage.emit("Finished loading from " + url)
+    self.parseOnlineData(data,dictName,isDefinition)
   
-  def parseHtml(self,html,dictName,isDefinition):
+  def parseOnlineData(self,data,dictName,isDefinition):
     if isDefinition:
-      definitionsList = self.getDefinitionsFromHtml(dictName, html)
+      definitionsList = self.getDefinitionsFromDict(dictName, data)
       self.definitionsUpdated.emit(definitionsList)
     else: #Update tags
-      tagsList = self.getTagsFromHtml(dictName,html)
+      tagsList        = self.getTagsFromDict(dictName,data)
       if tagsList:
         self.tagsUpdated.emit(tagsList)
 
