@@ -9,6 +9,7 @@
 
 QWidget{
   background: #5B5B5B;
+  color: #C2C7CB; 
 }
 
 QListView {
