@@ -72,6 +72,7 @@ class HTMLDelegate(QtWidgets.QStyledItemDelegate):
   def commitAndCloseEditor(self):
     editor = self.sender()
     self.commitData.emit(editor)
+    editor._changed = False
     self.closeEditor.emit(editor)
 
 
@@ -90,6 +91,7 @@ class TextEdit(QtWidgets.QTextEdit):
       self._changed = False
       self.setTabChangesFocus( True )
       self.textChanged.connect( self._handle_text_changed )
+      self.setMinimumHeight(50)
 
     def keyPressEvent(self , event):
       if (event.key() == QtCore.Qt.Key_Enter) or (event.key() == QtCore.Qt.Key_Return):
@@ -106,10 +108,10 @@ class TextEdit(QtWidgets.QTextEdit):
       super(TextEdit, self).focusInEvent( event )
       self.receivedFocus.emit()
 
-    def focusOutEvent(self, event):
-      if self._changed:
-          self.editingFinished.emit()
-      super(TextEdit, self).focusOutEvent( event )
+    # def focusOutEvent(self, event):
+    #   if self._changed:
+    #       self.editingFinished.emit()
+    #   super(TextEdit, self).focusOutEvent( event )
 
     def _handle_text_changed(self):
       self._changed = True
