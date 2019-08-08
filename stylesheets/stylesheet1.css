@@ -12,6 +12,11 @@ QWidget{
   color: #C2C7CB; 
 }
 
+QMenu::item:selected, QMenuBar::item:selected , QPushButton:hover {
+  background-color: #C2C7CB;
+  color : #2B2B2B
+}
+
 QListView {
     show-decoration-selected: 1; /* make the selection span the entire width of the view */
     font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
