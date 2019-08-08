@@ -3,6 +3,7 @@ from controllers import (DefinitionController, TagController, WordController,Ele
 from dialogs import WordDialog,DictionaryDialog,TagEditDialog,WelcomeDialog,PreferencesDialog
 from dataModels import WordDataModel,DefinitionDataModel,TagDataModel,OnlineDefinitionDataModel
 from delegates import HTMLDelegate
+from widgets import myWebViewer
 import pickle
 import os
 from hunspell import HunSpell
@@ -39,13 +40,13 @@ class Ui_MainWindow(QtCore.QObject):
     obj.app         = app
     return obj
 
-
   def init(self):
     self.mainWindow = None
     self.version = 0.03
     self.language = "N/A"
     self.projectName = "Untitled"
     self.programName = "LanguageWords"
+    self.searchEngines = {"Google" : "www.google.com/search?q=", "Qwant":"www.qwant.com/?q=" , "DuckDuckGo" : "duckduckgo.com/?q="}
     # Filename of file that stores session details in case the program exits in an abrupt manner
     self.sessionFile = "." + self.programName + "_" + "session" + ".pkl" 
     # Timer to trigger autosave in presence of unsaved changes 
@@ -119,7 +120,7 @@ class Ui_MainWindow(QtCore.QObject):
 
     self.editTagsOfWordAction = QtWidgets.QAction ("Edit Tags", self.mainWindow)
     self.editTagsOfWordAction.setObjectName("editTagsOfWordAction")
-    self.editTagsOfWordAction.triggered.connect(self.editTagsOfWord_ui)
+    self.editTagsOfWordAction.triggered.connect(self.editTagsOfWord_dialog_ui)
     self.editTagsOfWordAction.setShortcut("Ctrl+Shift+E")
     self.editTagsOfWordAction.setEnabled(False)
     self.editTagsOfWordAction.setToolTip("Show a dialog to edit the selected word")
@@ -141,6 +142,18 @@ class Ui_MainWindow(QtCore.QObject):
     self.addDefinitionAction.setObjectName("addDefinitionAction")
     self.addDefinitionAction.triggered.connect(self.addTmpDefinitionToEdit)
 
+    self.addDefFromWebViewAction = QtWidgets.QAction ("Add Definition To Active Word", self.mainWindow)
+    self.addDefFromWebViewAction.setObjectName("addDefFromWebViewAction")
+    self.addDefFromWebViewAction.triggered.connect(self.addDefFromWebView)
+
+    self.addTagFromWebViewAction = QtWidgets.QAction ("Add Tag To Active Word", self.mainWindow)
+    self.addTagFromWebViewAction.setObjectName("addTagFromWebViewAction")
+    self.addTagFromWebViewAction.triggered.connect(self.addTagFromWebView)
+
+    self.addWordFromWebViewAction = QtWidgets.QAction ("Add Word...", self.mainWindow)
+    self.addWordFromWebViewAction.setObjectName("addWorfFromWebViewAction")
+    self.addWordFromWebViewAction.triggered.connect(self.addWordFromWebView)
+
     self.removeDefinitionAction = QtWidgets.QAction ("Remove Definition", self.mainWindow)
     self.removeDefinitionAction.setObjectName("removeDefinitionAction")
     self.removeDefinitionAction.triggered.connect(self.removeSelectedDefinition_ui)
@@ -161,14 +174,69 @@ class Ui_MainWindow(QtCore.QObject):
     self.showPreferencesAction.setObjectName("showPreferencesAction")
     self.showPreferencesAction.triggered.connect(self.showPreferencesDialog)
 
+    self.showSelectSearchEngineAction = QtWidgets.QAction ("Select search engine", self.mainWindow)
+    self.showSelectSearchEngineAction.setObjectName("showSelectSearchEngineAction")
+    self.showSelectSearchEngineAction.triggered.connect(self.showSelectSearchEngine)
+
     self.toggleSpellingAction = QtWidgets.QAction ("Enable spelling", self.mainWindow)
     self.toggleSpellingAction.setObjectName("toggleSpellingAction")
     self.toggleSpellingAction.setCheckable(True)
     self.toggleSpellingAction.setChecked(True)
-    #self.useSpelling          = True
-    #self.toggleSpellingAction.changed.connect(lambda: self.useSpelling)
 
+    self.useExternalBrowserAction = QtWidgets.QAction ("Use external browser", self.mainWindow)
+    self.useExternalBrowserAction.setObjectName("useExternalBrowserAction")
+    self.useExternalBrowserAction.setCheckable(True)
+    self.useExternalBrowserAction.setChecked(False)
     
+    self.followDefinitionHyperlinkAction = QtWidgets.QAction ("Open in browser ", self.mainWindow)
+    self.followDefinitionHyperlinkAction.setObjectName("followDefinitionHyperlinkAction")
+    self.followDefinitionHyperlinkAction.triggered.connect(partial(self.followDefinitionHyperlink,None) )
+    
+    defaultEngine = "Google"
+    self.createSearchForWordActions()
+    self.createSearchForWordAction_context(defaultEngine)
+  
+  def createSearchForWordActions(self):
+    self.selectEngineActions  = []
+    for engine in self.searchEngines:
+      selectEngineAction = QtWidgets.QAction (engine, self.mainWindow)
+      selectEngineAction.setObjectName("Select"+engine+"Action")
+      selectEngineAction.triggered.connect(partial(self.createSearchForWordAction_context,engine) )
+      self.selectEngineActions.append(selectEngineAction)
+
+  def followDefinitionHyperlink(self,index = None):
+    if index is None:
+      index = self.savedDefinitionsView.currentIndex()
+    definition = self.onlineDefController.data(index,DefinitionController.DataRole)
+    if definition.hyperlink is not None:
+      self.openLinkInBrowser(definition.hyperlink)
+    else:
+      self.statusBar.showMessage("No hyperlink to follow "+ fileName , 1000)
+
+  def openLinkInBrowser(self,link):
+    if ( self.useExternalBrowserAction.isChecked() ):
+      QtGui.QDesktopServices.openUrl(QtCore.QUrl(link))
+    else:
+      url = QtCore.QUrl.fromUserInput(link)
+      self.webView.load(url)
+      self.statusBar.showMessage("Loading page from : " + str(url.toDisplayString() ))
+      self.tabwidget.setCurrentIndex(1)
+
+  def createSearchForWordAction_context(self,engine):
+    engineUrl = self.searchEngines[engine]
+    self.searchForWordAction = QtWidgets.QAction ("Search using "+ engine, self.mainWindow)
+    self.searchForWordAction.setObjectName("searchForWordAction")
+    self.searchForWordAction.triggered.connect(partial(self.searchForWordInBrowser,engineUrl))
+  
+  def searchForWordInBrowser(self , engineUrl, index = None):
+    if index is None:
+      index = self.wordview.currentIndex()
+      modelIndex = self.wordFilterController.mapToSource(index)
+      word = self.wordController.data(index,WordController.DataRole)
+    else:
+      word = self.getSelectedWord()
+    url = engineUrl + word
+    self.openLinkInBrowser(url)
 
 
   def addTopButtons(self , layout ,parentWidget):
@@ -239,6 +307,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.savedDefinitionsView.setWordWrap(True)
     self.savedDefinitionsView.itemDelegate().commitData.connect(self.handleEditedDefinition)
     self.savedDefinitionsView.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+    self.savedDefinitionsView.setMaximumWidth(560)
 
     self.tabwidget = QtWidgets.QTabWidget(parentWidget)
     self.tabwidget.setTabPosition(QtWidgets.QTabWidget.South)
@@ -250,9 +319,10 @@ class Ui_MainWindow(QtCore.QObject):
     self.onlineDefinitionsView.setWordWrap(True)
     self.tabwidget.addTab(self.onlineDefinitionsView , "List")
 
-    self.webView = QtWebEngineWidgets.QWebEngineView(self.tabwidget)
+    self.webView = myWebViewer(self.tabwidget , [self.addDefFromWebViewAction,self.addTagFromWebViewAction,self.addWordFromWebViewAction])
     self.webView.setUrl(QtCore.QUrl("about:blank"))
     self.webView.setObjectName("webView")
+
     self.tabwidget.addTab(self.webView , "Web page")
 
     layout.addLayout(verticalLayout)
@@ -282,7 +352,12 @@ class Ui_MainWindow(QtCore.QObject):
     self.menuEdit = QtWidgets.QMenu(self.menubar)
     self.menuEdit.setObjectName("menuEdit")
     self.menuEdit.addAction(self.showPreferencesAction)
+    selectEngineMenu = self.menuEdit.addMenu("Search Engine")
+    for action in self.selectEngineActions:
+      selectEngineMenu.addAction(action)
+
     self.menuEdit.addAction(self.toggleSpellingAction)
+    self.menuEdit.addAction(self.useExternalBrowserAction)
 
     self.menubar.addAction(self.menuFile.menuAction())
     self.menubar.addAction(self.menuWord.menuAction())
@@ -373,17 +448,27 @@ class Ui_MainWindow(QtCore.QObject):
     else:
       print("Rejected")
 
+  def showSelectSearchEngine(self):
+    self.selectSearchEngineDialog = SelectSearchEngineDialog(self.centralwidget , self)
+    dialogCode = self.selectSearchEngineDialog.exec()
+    if dialogCode == QtWidgets.QDialog.Accepted:
+      print("Accepted")
+    else:
+      print("Rejected")
+
   def addWord(self, newWord, tags):
     self.tagDataModel.addTagging(newWord,tags)
     self.wordDataModel.addWord(newWord)
     self.setDirtyState()
 
-  def addWord_ui(self,event):
+  def addWord_ui(self, word = None):
+    if word is False:
+      word = None
     dictionary = None
     if self.toggleSpellingAction.isChecked():
       dictionary = self.dictionary
     self.addWordDialog = WordDialog(self.centralwidget,self.wordDataModel,self.tagDataModel,self.onlineDefDataModel,dictionary,
-                                    WordDialog.CREATE_DIALOG)
+                                    WordDialog.CREATE_DIALOG , word)
     dialogCode = self.addWordDialog.exec()
     if dialogCode == QtWidgets.QDialog.Accepted:
       newWord = self.addWordDialog.getWord()
@@ -405,11 +490,19 @@ class Ui_MainWindow(QtCore.QObject):
     elif dialogCode == QtWidgets.QDialog.Rejected:
       print('Rejected')
 
-  def editTagsOfWord(self, word,newTags):
+  def replaceTagsOfWord(self, word,newTags):
     #Remove word and tags
     self.tagDataModel.replaceTagging(word,newTags)
 
-  def editTagsOfWord_ui(self,event):
+  def replaceTagsOfWord_ui(self, word, newTags): 
+    self.replaceTagsOfWord(word,newTags)
+    self.tagController.updateTags()
+    self.wordController.updateOnTag(self.getSelectedTag())
+    wordIndex = self.wordController.getWordIndex(word)
+    viewIndex = self.wordFilterController.mapFromSource(wordIndex)
+    self.wordview.setCurrentIndex(viewIndex)
+
+  def editTagsOfWord_dialog_ui(self,event):
     word = self.getSelectedWord()
     if isinstance(word,QtCore.QVariant):
       return
@@ -419,13 +512,7 @@ class Ui_MainWindow(QtCore.QObject):
     dialogCode = self.editWordDialog.exec()
     if dialogCode == QtWidgets.QDialog.Accepted:
       newTags    = self.editWordDialog.getTags()
-      self.editTagsOfWord(word,newTags)
-      self.tagController.updateTags()
-      self.wordController.updateOnTag(self.getSelectedTag())
-      wordIndex = self.wordController.getWordIndex(word)
-      viewIndex = self.wordFilterController.mapFromSource(wordIndex)
-      self.wordview.setCurrentIndex(viewIndex)
-
+      self.replaceTagsOfWord_ui(word,newTags)
     elif dialogCode == QtWidgets.QDialog.Rejected:
       print('Rejected')
 
@@ -640,12 +727,7 @@ class Ui_MainWindow(QtCore.QObject):
 
   def onlineDefinitionsView_clicked(self,index):
     if int( QtGui.QGuiApplication.instance().queryKeyboardModifiers() & QtCore.Qt.ControlModifier) != 0:
-      definition = self.onlineDefController.data(index,DefinitionController.DataRole)
-      if definition.hyperlink is not None:
-        QtGui.QDesktopServices.openUrl(QtCore.QUrl(definition.hyperlink))
-      else:
-        self.statusBar.showMessage("No hyperlink to follow "+ fileName , 1000)
-        
+      self.followDefinitionHyperlink(index)        
 
   def savedDefinitionsView_clicked(self,index):
     if int( QtGui.QGuiApplication.instance().queryKeyboardModifiers() & QtCore.Qt.ControlModifier) != 0:
@@ -724,9 +806,12 @@ class Ui_MainWindow(QtCore.QObject):
       if oldIndex.isValid():
         self.selectedWordChanged(index)
 
-
-  def saveDefinition_ui(self):
+  def saveDefinitionFromLV_ui():
+    'Save selected definition from the onlineDefinitions ListView widget'
     definition  = self.getSelectedOnlineDefinition()
+    self.saveDefinition_ui(definition)
+
+  def saveDefinition_ui(self , definition):    
     word        = self.getSelectedWord()
     query = self.getDefDMQuery(word,definition.definition)
     if not self.defDataModel.definitionExists(query):
@@ -825,6 +910,7 @@ class Ui_MainWindow(QtCore.QObject):
       contextMenu.addAction(self.addDefinitionAction)
       if int(self.savedDefController.flags(index) & QtCore.Qt.ItemIsSelectable) != 0:
         contextMenu.addAction(self.removeDefinitionAction)
+        contextMenu.addAction(self.followDefinitionHyperlinkAction)
       if int(self.savedDefController.flags(index) & QtCore.Qt.ItemIsEditable) != 0:
         contextMenu.addAction(self.editDefinitionAction)
       contextMenu.exec(self.savedDefinitionsView.mapToGlobal(point))
@@ -837,6 +923,7 @@ class Ui_MainWindow(QtCore.QObject):
       contextMenu.addAction(self.editTagsOfWordAction)
       contextMenu.addAction(self.removeWordAction)
       contextMenu.addAction(self.renameWordAction)
+      contextMenu.addAction(self.searchForWordAction)
     contextMenu.exec(self.wordview.mapToGlobal(point))
 
   def removeWord(self,word,tags):
@@ -955,6 +1042,22 @@ class Ui_MainWindow(QtCore.QObject):
         markup = Markup(match.start,match.end,"bold")
         markups.append(markup)
       return markups
-      
 
-from PyQt5 import QtWebEngineWidgets 
+  def addDefFromWebView(self):
+    selectedText = self.webView.selectedText()
+    definition = DefinitionDataModel.Definition(None,selectedText,None,None, "Web example",None,self.webView.url().toString() )
+    self.saveDefinition_ui(definition)
+
+  def addTagFromWebView(self):
+    newTag = self.webView.selectedText()
+    word = self.getSelectedWord()
+    tags = self.tagDataModel.getTagsFromIndex(word)
+    alreadyExists = any( tag for tag in tags if tag.lower() == newTag.lower() )
+    if not alreadyExists:
+      tags.append(newTag)
+      self.replaceTagsOfWord_ui(word,tags)
+  
+  def addWordFromWebView(self):
+    newWord = self.webView.selectedText()
+    self.addWord_ui(newWord)
+    

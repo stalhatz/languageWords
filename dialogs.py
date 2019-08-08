@@ -135,11 +135,13 @@ class WordDialog(QtWidgets.QDialog):
     tagHLayout.addWidget(self.addTagButton)
     tagHLayout.addWidget(self.removeTagButton)
   
-    if self.dialogType == self.EDIT_DIALOG:
+    if existingWord is not None:
       self.wLineEdit.setText(self.existingWord)
-      self.wordSpelledCorrectly = True
       self.loadOnlineTags()
-
+    
+    if self.dialogType == self.EDIT_DIALOG:
+      self.wordSpelledCorrectly = True
+      
   def loadOnlineTags(self):
     if self.wordSpelledCorrectly:
       self.onlineTagsController.clear()
