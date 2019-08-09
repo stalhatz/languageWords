@@ -550,8 +550,15 @@ class Ui_MainWindow(QtCore.QObject):
       self.exitAppAction.trigger()
   # def disableEditWordButton(self):
   #   self.editWordButton.setEnabled(False)
+  @staticmethod
+  def loadDictionary(obj,language):
+    if language is not None:
+      obj.dicPath       = "/usr/share/hunspell/"
+      dicPath,affPath   = obj.findDictionary(obj.dicPath,obj.language)
+      if (dicPath is not None) and (affPath is not None): 
+        obj.dictionary    = obj._loadDictionary(dicPath, affPath)
 
-  def loadDictionary(self,dicFilename, affFilename):
+  def _loadDictionary(self,dicFilename, affFilename):
     dictionary = HunSpell(dicFilename,affFilename)
     return dictionary
     
@@ -623,11 +630,7 @@ class Ui_MainWindow(QtCore.QObject):
     obj.projectName             = projectName
     obj.dictionary              = None
     obj.activeConnections       = []
-    if language is not None:
-      obj.dicPath       = "/usr/share/hunspell/"
-      dicPath,affPath   = obj.findDictionary(obj.dicPath,obj.language)
-      if (dicPath is not None) and (affPath is not None): 
-        obj.dictionary    = obj.loadDictionary(dicPath, affPath)
+    obj.loadDictionary(obj,obj.language)
     return obj
   
   def openFile(self,fileName = None):
@@ -671,6 +674,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.wordDataModel.language   = language
     self.defDataModel.language    = language
     self.onlineDefDataModel.language  = language
+    self.loadDictionary(self,self.language)
     self.projectName = projectName
     self.projectFile = None
     self.setDirtyState()
