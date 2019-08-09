@@ -268,6 +268,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.dictSelect = QtWidgets.QComboBox(parentWidget)
     self.dictSelect.setMaximumSize(QtCore.QSize(300, 30))
     self.dictSelect.setObjectName("dictSelect")
+    self.dictSelect.setVisible(False)
 
     self.wordview = QtWidgets.QListView(parentWidget)
     self.wordview.setMaximumSize(QtCore.QSize(400, 400))
@@ -522,7 +523,6 @@ class Ui_MainWindow(QtCore.QObject):
     dialogCode = self.editDictsDialog.exec()
     if dialogCode == QtWidgets.QDialog.Accepted:
       self.onlineDefDataModel.selectDictsFromNames(self.editDictsDialog.sController.getDictNames())
-      
     elif dialogCode == QtWidgets.QDialog.Rejected:
       print('Rejected')
   
@@ -728,6 +728,10 @@ class Ui_MainWindow(QtCore.QObject):
   def updateDictNames(self,dictNames):
     self.dictSelect.clear()
     self.dictSelect.insertItems(0,dictNames)
+    if len(dictNames) == 0:
+      self.dictSelect.setVisible(False)
+    else:
+      self.dictSelect.setVisible(True)
 
 
   def onlineDefinitionsView_clicked(self,index):
