@@ -736,8 +736,12 @@ class Ui_MainWindow(QtCore.QObject):
     self.dictSelect.insertItems(0,dictNames)
     if len(dictNames) == 0:
       self.dictSelect.setVisible(False)
+      self.tabwidget.setCurrentIndex(1)
+      self.tabwidget.removeTab(0)
     else:
       self.dictSelect.setVisible(True)
+      if self.tabwidget.count() == 1:
+        self.tabwidget.insertTab(0,self.onlineDefinitionsView , "List")
 
 
   def onlineDefinitionsView_clicked(self,index):
