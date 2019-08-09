@@ -55,8 +55,7 @@ QListView::item:disabled{
 }
 
 QStatusBar{
-  border: 0.5px double #C2C7CB;
-  background: #7E7E7E;
+  border-top: 0.5px groove #6B6B6B;
   color: #DEDEDE;
   font-family: monospace
 }
