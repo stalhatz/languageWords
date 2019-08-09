@@ -1054,8 +1054,10 @@ class Ui_MainWindow(QtCore.QObject):
       return markups
 
   def addDefFromWebView(self):
-    selectedText = self.webView.selectedText()
-    definition = DefinitionDataModel.Definition(None,selectedText,None,None, "Web " + self.definitionName,None,self.webView.url().toString() )
+    word          = self.getSelectedWord()
+    selectedText  = self.webView.selectedText()
+    markups       = self.markupWordInText(word,selectedText)
+    definition    = DefinitionDataModel.Definition(None,selectedText,None,None, "Web " + self.definitionName,markups,self.webView.url().toString() )
     self.saveDefinition_ui(definition)
 
   def addTagFromWebView(self):
