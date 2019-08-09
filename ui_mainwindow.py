@@ -43,6 +43,7 @@ class Ui_MainWindow(QtCore.QObject):
   def init(self):
     self.mainWindow = None
     self.version = 0.03
+    self.definitionName = "Textbite"
     self.language = "N/A"
     self.projectName = "Untitled"
     self.programName = "LanguageWords"
@@ -138,15 +139,15 @@ class Ui_MainWindow(QtCore.QObject):
     self.removeWordAction.setEnabled(False)
     self.removeWordAction.setToolTip("Rename selected selected word")
     
-    self.addDefinitionAction = QtWidgets.QAction ("Add Custom Definition", self.mainWindow)
+    self.addDefinitionAction = QtWidgets.QAction ("Add Custom " + self.definitionName, self.mainWindow)
     self.addDefinitionAction.setObjectName("addDefinitionAction")
     self.addDefinitionAction.triggered.connect(self.addTmpDefinitionToEdit)
 
-    self.addDefFromWebViewAction = QtWidgets.QAction ("Add Definition To Active Word", self.mainWindow)
+    self.addDefFromWebViewAction = QtWidgets.QAction ("Add " +  self.definitionName, self.mainWindow)
     self.addDefFromWebViewAction.setObjectName("addDefFromWebViewAction")
     self.addDefFromWebViewAction.triggered.connect(self.addDefFromWebView)
 
-    self.addTagFromWebViewAction = QtWidgets.QAction ("Add Tag To Active Word", self.mainWindow)
+    self.addTagFromWebViewAction = QtWidgets.QAction ("Add Tag", self.mainWindow)
     self.addTagFromWebViewAction.setObjectName("addTagFromWebViewAction")
     self.addTagFromWebViewAction.triggered.connect(self.addTagFromWebView)
 
@@ -328,8 +329,8 @@ class Ui_MainWindow(QtCore.QObject):
     self.tabwidget.addTab(self.webView , "Web page")
 
     layout.addLayout(verticalLayout)
-    uiUtils.addLabeledWidget("Saved Definitions", self.savedDefinitionsView,layout)
-    uiUtils.addLabeledWidget("Online Definitions", self.tabwidget,layout)
+    uiUtils.addLabeledWidget("Saved " + self.definitionName + "s", self.savedDefinitionsView,layout)
+    uiUtils.addLabeledWidget("Online" + self.definitionName + "s", self.tabwidget,layout)
 
   def addMenuBar(self,MainWindow):
     self.menubar = QtWidgets.QMenuBar(MainWindow)
@@ -963,7 +964,7 @@ class Ui_MainWindow(QtCore.QObject):
     word = self.getSelectedWord()
     if definition.type == "_newUserDefinition":  #Dont'replace, add to the model
       markups  = self.markupWordInText(word,newDefinition)
-      self.saveDefinition(newDefinition,"User Definition", word,markups)
+      self.saveDefinition(newDefinition,"User " + self.definitionName, word,markups)
       self.savedDefController.deleteTmpDefinition()
     else:
       markups  = self.markupWordInText(word,newDefinition)
@@ -1054,7 +1055,7 @@ class Ui_MainWindow(QtCore.QObject):
 
   def addDefFromWebView(self):
     selectedText = self.webView.selectedText()
-    definition = DefinitionDataModel.Definition(None,selectedText,None,None, "Web example",None,self.webView.url().toString() )
+    definition = DefinitionDataModel.Definition(None,selectedText,None,None, "Web " + self.definitionName,None,self.webView.url().toString() )
     self.saveDefinition_ui(definition)
 
   def addTagFromWebView(self):
