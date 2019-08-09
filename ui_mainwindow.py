@@ -13,6 +13,7 @@ from collections import namedtuple
 from dictionaries import dict_types as dictT
 from fuzzyPhraseMatch import matchphrases as mp
 import pandas as pd
+import re
 
 #TODO : Setup keyboard shortcuts for easily navigating between ListViews/ListEdits etc.
 #TODO : [UI] Move tabs to the right/left of QTabWidget with horizontal text. Calling setTabPosition(QtWidgets.QTabWidget.West) produces vertical text
@@ -705,7 +706,17 @@ class Ui_MainWindow(QtCore.QObject):
     else:
       return fileName
 
+  def filify(self,s):
+    """ Method copied from https://stackoverflow.com/questions/1007481/how-do-i-replace-whitespaces-with-underscore-and-vice-versa"""
+    # Remove all non-word characters (everything except numbers and letters)
+    s = re.sub(r"[^\w\s]", '', s)
+    # Replace all runs of whitespace with a single dash
+    s = re.sub(r"\s+", '_', s)
+    return s
+
   def saveProject_ui_quick(self):
+    if self.projectFile is None:
+      self.projectFile = self.filify(self.projectName) + ".pkl"
     self.saveProject_ui(self.projectFile)
 
   def saveProject_ui_as(self):
