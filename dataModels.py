@@ -173,7 +173,7 @@ class OnlineDefinitionDataModel(QObject):
     return list(self.selectedDicts.keys())
 
   def createUrl(self,word,dictName):
-    if (word is None) or (self.language is None):
+    if (word is None) or (self.language is None) or (dictName is None):
       return None
     url = self.selectedDicts[dictName].createUrl(word,self.language)
     return url
@@ -386,9 +386,13 @@ class DefinitionDataModel():
     return self.savedDefinitionsTable[condition]
   
   def replaceWord(self,oldWord,newWord):
-    condition = (self.savedDefinitionsTable.text == oldWord)
-    self.savedDefinitionsTable.loc[condition,"text"] = newWord
-    #print(self.savedDefinitionsTable[condition])
+    try:
+      condition = (self.savedDefinitionsTable.text == oldWord)
+    except AttributeError:
+      return
+    else:
+      self.savedDefinitionsTable.loc[condition,"text"] = newWord
+
 
   def replaceDefinition(self,query,newDefinition):
     condition = self.definitionCondition(query)
