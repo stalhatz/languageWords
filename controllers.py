@@ -54,7 +54,7 @@ class SavedDefinitionsController(QAbstractListModel):
     if not index.isValid() or not (0<=index.row()<len(self.definitionsList)):  
       raise IndexError("Invalid index or index out of bounds")
     if isinstance(self.definitionsList[index.row()] , str):
-      raise IndexError("Data where requested for a decorative index")
+      raise IndexError("Data in row " + str(index.row()) + " were requested but contained a label : " + self.definitionsList[index.row()])
     else:
       return self.definitionsList[index.row()]
       
