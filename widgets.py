@@ -10,9 +10,14 @@ class myWebViewer(QtWebEngineWidgets.QWebEngineView):
     else:
       self.actions = actions
     self.setMinimumWidth(100)
+    self.actionBack = QtWidgets.QAction("Back", self)
+    self.actionBack.setObjectName("myWebViewer.actionBack")
+    self.actionBack.triggered.connect(self.back)
 
+    
   def contextMenuEvent(self, event):
     menu = QtWidgets.QMenu(self)
     for action in self.actions:
       menu.addAction(action)
+    menu.addAction(self.actionBack)
     menu.exec_(event.globalPos())
