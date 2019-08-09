@@ -218,9 +218,10 @@ class Ui_MainWindow(QtCore.QObject):
       QtGui.QDesktopServices.openUrl(QtCore.QUrl(link))
     else:
       url = QtCore.QUrl.fromUserInput(link)
+      self.tabwidget.setCurrentIndex(1)
       self.webView.load(url)
       self.statusBar.showMessage("Loading page from : " + str(url.toDisplayString() ))
-      self.tabwidget.setCurrentIndex(1)
+      
 
   def createSearchForWordAction_context(self,engine):
     engineUrl = self.searchEngines[engine]
