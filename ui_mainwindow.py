@@ -241,6 +241,8 @@ class Ui_MainWindow(QtCore.QObject):
       word = self.wordController.data(index,WordController.DataRole)
     else:
       word = self.getSelectedWord()
+    if word == None:
+      return
     url = engineUrl + word
     self.openLinkInBrowser(url)
 
@@ -777,18 +779,22 @@ class Ui_MainWindow(QtCore.QObject):
     self.onlineDefDataModel.load(word,_dict,isDefinition=True,_async= True)
 
   def requestOnlineDefinition_ui(self):
-    activeTab   = self.tabwidget.currentIndex()
+    activeWidget   = self.tabwidget.currentWidget()
     activeDict  = self.dictSelect.currentText()
     if activeDict == "":
       activeDict = None
     selectedWord = self.getSelectedWord()
     # if selectedWord is None:
     #   return
-    if activeTab == 0:
+    if activeWidget == self.onlineDefinitionsView:
       self.onlineDefinitionsView.setEnabled(False)
       self.requestOnlineDefinition(selectedWord,activeDict)
-    elif activeTab == 1:
-      url = self.onlineDefDataModel.createUrl(selectedWord,activeDict)
+    elif activeWidget == self.webView:
+      if activeDict is not None:
+        url = self.onlineDefDataModel.createUrl(selectedWord,activeDict)
+      else:
+        self.searchForWordAction.trigger()
+        return
       self.webView.load(QtCore.QUrl(url))
 
   def updateOnlineDefinition_ui(self,onlineDefinitionsList):
