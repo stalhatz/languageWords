@@ -189,6 +189,10 @@ class Ui_MainWindow(QtCore.QObject):
     self.useExternalBrowserAction.setCheckable(True)
     self.useExternalBrowserAction.setChecked(False)
     
+    self.markupSavedDefinitionsAction = QtWidgets.QAction ("Markup saved " + self.definitionName + "s", self.mainWindow)
+    self.markupSavedDefinitionsAction.setObjectName("useExternalBrowserAction")
+    self.markupSavedDefinitionsAction.triggered.connect(self.reMarkupSDandRefreshView)
+
     self.followDefinitionHyperlinkAction = QtWidgets.QAction ("Open in browser ", self.mainWindow)
     self.followDefinitionHyperlinkAction.setObjectName("followDefinitionHyperlinkAction")
     self.followDefinitionHyperlinkAction.triggered.connect(partial(self.followDefinitionHyperlink,None) )
@@ -361,6 +365,7 @@ class Ui_MainWindow(QtCore.QObject):
 
     self.menuEdit.addAction(self.toggleSpellingAction)
     self.menuEdit.addAction(self.useExternalBrowserAction)
+    self.menuEdit.addAction(self.markupSavedDefinitionsAction)
 
     self.menubar.addAction(self.menuFile.menuAction())
     self.menubar.addAction(self.menuWord.menuAction())
@@ -651,7 +656,7 @@ class Ui_MainWindow(QtCore.QObject):
       if fileName is None: return
     self.loadProject(fileName, isTmpFile)
     #Create html markups if they are not there
-    self.markupSavedDefinitions()
+    self.markupSavedDefinitions(remarkup = False)
     self.setWindowTitle()
     self.tagController.updateTags()
     self.statusBar.showMessage("Loaded from "+ fileName , 2000)
@@ -1031,11 +1036,14 @@ class Ui_MainWindow(QtCore.QObject):
     with open(stylesheet,"r") as fh:
       self.mainWindow.setStyleSheet(fh.read())
 
-
-  def markupSavedDefinitions(self):
+  def reMarkupSDandRefreshView(self):    
+    self.markupSavedDefinitions(True)
+    self.savedDefController.updateOnWord(self.getSelectedWord())
+  
+  def markupSavedDefinitions(self, remarkup = False):
     df = self.defDataModel.savedDefinitionsTable
     for row in df.itertuples(index=True, name='Pandas'):
-      if row.markups is None:
+      if row.markups is None or remarkup:
         markups = self.markupWordInText(row.text,row.definition)
         query = self.getDefDMQuery(row.text,row.definition)
         self.defDataModel.replaceMarkups(query,markups)
