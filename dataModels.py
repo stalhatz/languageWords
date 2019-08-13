@@ -114,17 +114,8 @@ class OnlineDefinitionDataModel(QObject):
     obj.lastRequest  = None
     obj.url          = None
     obj.findModules(modulePath)
-    obj.selectedDicts = {}
     
     return obj
-
-  def selectDictsFromNames(self,dictNames):
-    #We will silently ignore all names not corresponding to available dictionaries
-    self.selectedDicts = {}
-    for name in dictNames:
-      if name in self.availableDicts:
-        self.selectedDicts[name] = self.availableDicts[name]
-    self.updateDictNames()
 
   def findModules(self,directory= None,packageName = "dictionaries"):
     self.availableDicts = {}
@@ -144,46 +135,63 @@ class OnlineDefinitionDataModel(QObject):
   def getAvailableLanguages(self):
     return list ( set( [l for d in self.availableDicts.values() for l in d.languages] ) )
 
-  def getAvailableDicts(self):
-    return list(self.availableDicts.values())
+  def getDictNames(self):
+    return list(self.availableDicts.keys())
 
-  def getSelectedDicts(self):
-    return list(self.selectedDicts.values())
+  def getDictNamesProvidingLanguage(self , language):
+    dictNames = [x for x in self.getDictNames() if self.canDictProvideLanguage(x,language)]
+    return dictNames
+
+  def getDictNamesProvidingUrls(self):
+    dictNames = [x for x in self.getDictNames() if self.canDictProvideUrls(x)]
+    return dictNames
+
+  def getDictNamesProvidingDefinitions(self):
+    dictNames = [x for x in self.getDictNames() if self.canDictProvideDefinitions(x)]
+    return dictNames
+
+  #TODO: Test for a dictionary without a languages attribute
+  def canDictProvideLanguage(self,dictName , language):
+    return (not hasattr(self.availableDicts[dictName], 'languages') ) \
+      or any( x for x in self.availableDicts[dictName].languages if x == language)
+
+  def canDictProvideUrls(self,dictName):
+    return hasattr(self.availableDicts[dictName], 'createUrl')
+  
+  def canDictProvideDefinitions(self,dictName):
+    return hasattr(self.availableDicts[dictName], 'getDefinitions')
 
   def canDictHandleDataLoading(self,dictName):
-    return hasattr(self.selectedDicts[dictName], 'loadData')
+    return hasattr(self.availableDicts[dictName], 'loadData')
   
   def loadDataFromDict(self,dictName,url):
-    return self.selectedDicts[dictName].loadData(url)
+    return self.availableDicts[dictName].loadData(url)
 
   def getTagsFromDict(self,dictName, data):
     tagList = []
-    if hasattr(self.selectedDicts[dictName], 'getTags'):
-      tagsList        = self.selectedDicts[dictName].getTags(data,self.language)
+    if hasattr(self.availableDicts[dictName], 'getTags'):
+      tagsList        = self.availableDicts[dictName].getTags(data,self.language)
     return tagsList
 
   def getDefinitionsFromDict(self,dictName, data):
-    definitionsList = self.selectedDicts[dictName].getDefinitions(data,self.language)
+    definitionsList = self.availableDicts[dictName].getDefinitions(data,self.language)
     return definitionsList
 
   def updateDictNames(self):
-    self.dictNamesUpdated.emit(list(self.selectedDicts.keys()))
-  
-  def getDictNames(self):
-    return list(self.selectedDicts.keys())
+    self.dictNamesUpdated.emit(list(self.availableDicts.keys()))
 
   def createUrl(self,word,dictName):
     if (word is None) or (self.language is None) or (dictName is None):
       return None
-    url = self.selectedDicts[dictName].createUrl(word,self.language)
+    url = self.availableDicts[dictName].createUrl(word,self.language)
     return url
 
   def loadDefinition(self,word,dictName):
     self.load(word, dictName,isDefinition = True , _async = True)
 
-  def loadTags(self, word):
-    for dictName in self.selectedDicts:
-      if hasattr(self.selectedDicts[dictName], 'getTagsFromHtml'):
+  def loadTags(self, word , dictNames = None):
+    for dictName in self.availableDicts:
+      if hasattr(self.availableDicts[dictName], 'getTagsFromHtml'):
         self.load(word,dictName,isDefinition = False , _async = False) 
   
   def triggerEmptyUpdate(self, isDefinition):
@@ -305,7 +313,6 @@ class OnlineDefinitionDataModel(QObject):
     print("Loading OnlineDefinitionDataModel version " + str(version))
     #version 0.01
     dictNames = loadFromPickle(_input)
-    self.selectDictsFromNames(dictNames)
     if version > 0.01:
       self.requestCache = loadFromPickle(_input)
 

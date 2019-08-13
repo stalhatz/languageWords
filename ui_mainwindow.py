@@ -33,9 +33,11 @@ class Ui_MainWindow(QtCore.QObject):
 
     obj = cls()
     obj.init()
+    obj.setupDataModels(wordDataModel,tagDataModel, defDataModel, onlineDefDataModel)
     if window is not None:
       obj.setupUi(window)
-    obj.setupDataModels(wordDataModel,tagDataModel, defDataModel, onlineDefDataModel)
+    obj.connectUIandDMs()
+    
     obj.dictionary  = None
     obj.language    = None
     obj.app         = app
@@ -61,7 +63,7 @@ class Ui_MainWindow(QtCore.QObject):
     # Are there changes that have not been written to the perm file?
     self.unsavedChanges = False   
     # Filename of temp file in case of unsaved changes
-    self.tempProjectFile = None   
+    self.tempProjectFile = None
 
   def setupUi(self, MainWindow):
     MainWindow.setObjectName("MainWindow")
@@ -198,17 +200,53 @@ class Ui_MainWindow(QtCore.QObject):
     self.followDefinitionHyperlinkAction.setObjectName("followDefinitionHyperlinkAction")
     self.followDefinitionHyperlinkAction.triggered.connect(partial(self.followDefinitionHyperlink,None) )
     
-    defaultEngine = "Google"
+  def defineDictionaryActions(self):
+    self.createGetDefinitionsActions()
+    self.selectDefinitionsProviderActions[0].trigger()
     self.createSearchForWordActions()
-    self.createSearchForWordAction_context(defaultEngine)
+    self.selectEngineActions[0].trigger()
+    self.searchForWordAction.setChecked(True)
+    self.addDictionaryActionsToMenuBar()
+
+  def createGetDefinitionsActions(self):
+    self.selectDefinitionsProviderActions  = []
+    defDicts = self.onlineDefDataModel.getDictNamesProvidingDefinitions()
+    langDicts = self.onlineDefDataModel.getDictNamesProvidingLanguage(self.language)
+    compatibleDicts = set(defDicts).intersection(langDicts) 
+    for dictionary in compatibleDicts:
+      selectDefinitionsProviderAction = QtWidgets.QAction (dictionary, self.mainWindow)
+      selectDefinitionsProviderAction.setObjectName("GetDefinitions"+dictionary+"Action")
+      selectDefinitionsProviderAction.triggered.connect( partial(self.selectDefinitionsProvider,dictionary , selectDefinitionsProviderAction) )
+      selectDefinitionsProviderAction.setCheckable(True)
+      selectDefinitionsProviderAction.setChecked(False)
+      self.selectDefinitionsProviderActions.append(selectDefinitionsProviderAction)
   
+  def selectDefinitionsProvider(self , dictionary , action):
+    self.createGetDefinitionsAction_context(dictionary)
+    self.selectedDefinitionsDict = dictionary
+    for a in self.selectDefinitionsProviderActions:
+      if a is not action:
+        a.setChecked(False)
+
   def createSearchForWordActions(self):
     self.selectEngineActions  = []
-    for engine in self.searchEngines:
-      selectEngineAction = QtWidgets.QAction (engine, self.mainWindow)
-      selectEngineAction.setObjectName("Select"+engine+"Action")
-      selectEngineAction.triggered.connect(partial(self.createSearchForWordAction_context,engine) )
+    urlDicts = self.onlineDefDataModel.getDictNamesProvidingUrls()
+    langDicts = self.onlineDefDataModel.getDictNamesProvidingLanguage(self.language)
+    compatibleDicts = set(urlDicts).intersection(langDicts) 
+    for dictionary in compatibleDicts:
+      selectEngineAction = QtWidgets.QAction (dictionary, self.mainWindow)
+      selectEngineAction.setObjectName("Select"+dictionary+"Action")
+      selectEngineAction.triggered.connect(partial(self.selectSearchEngine,dictionary,selectEngineAction) )
+      selectEngineAction.setCheckable(True)
+      selectEngineAction.setChecked(False)
       self.selectEngineActions.append(selectEngineAction)
+  
+  def selectSearchEngine(self,dictionary,action):
+    self.createSearchForWordAction_context(dictionary)
+    self.selectedSearchDict = dictionary
+    for a in self.selectEngineActions:
+      if a is not action:
+        a.setChecked(False)
 
   def followDefinitionHyperlink(self,index = None):
     if index is None:
@@ -227,26 +265,58 @@ class Ui_MainWindow(QtCore.QObject):
       self.tabwidget.setCurrentIndex(1)
       self.webView.load(url)
       self.statusBar.showMessage("Loading page from : " + str(url.toDisplayString() ))
-      
+
+  def requestOnlineDefinition(self,word,_dict):
+    self.onlineDefDataModel.load(word,_dict,isDefinition=True,_async= True)
+
+  def requestOnlineDefinition_ui(self,dictionary):
+    self.dictionaryContentType  = "definitionList"
+    self.selectedDict           = dictionary
+    self.searchForWordAction.setChecked(False)
+    self.getDefinitionsAction.setChecked(True)
+    index = self.tabwidget.indexOf(self.onlineDefinitionsView)
+    if index == -1:
+      self.tabwidget.insertTab(0,self.onlineDefinitionsView , "List")
+    self.tabwidget.setCurrentIndex(0)
+    self.onlineDefinitionsView.setEnabled(False)
+    self.requestOnlineDefinition(self.getSelectedWord(),self.selectedDefinitionsDict)
+
+  def createGetDefinitionsAction_context(self,dictionary):
+    try:
+      prevAction                = self.getDefinitionsAction
+    except AttributeError:
+      prevAction = None
+    self.getDefinitionsAction = QtWidgets.QAction ("Get Definitions from " + dictionary, self.mainWindow)
+    self.getDefinitionsAction.setObjectName("getDefinitionsAction")
+    self.getDefinitionsAction.triggered.connect(partial(self.requestOnlineDefinition_ui,dictionary) )
+    self.getDefinitionsAction.setCheckable(True)
+    if prevAction is not None:
+      self.getDefinitionsAction.setChecked(prevAction.isChecked())
+    self.dictionaryContentType  = "definitionList"
+    self.selectedDict           = dictionary
 
   def createSearchForWordAction_context(self,engine):
-    engineUrl = self.searchEngines[engine]
+    try:
+      prevAction                = self.searchForWordAction
+    except AttributeError:
+      prevAction = None
     self.searchForWordAction = QtWidgets.QAction ("Search using "+ engine, self.mainWindow)
     self.searchForWordAction.setObjectName("searchForWordAction")
-    self.searchForWordAction.triggered.connect(partial(self.searchForWordInBrowser,engineUrl))
-  
-  def searchForWordInBrowser(self , engineUrl, index = None):
-    if index is None:
-      index = self.wordview.currentIndex()
-      modelIndex = self.wordFilterController.mapToSource(index)
-      word = self.wordController.data(index,WordController.DataRole)
-    else:
-      word = self.getSelectedWord()
-    if word == None:
-      return
-    url = engineUrl + word
-    self.openLinkInBrowser(url)
+    self.searchForWordAction.triggered.connect(partial(self.searchForWordInBrowser,engine) )
+    self.searchForWordAction.setCheckable(True)
+    if prevAction is not None:
+      self.searchForWordAction.setChecked(prevAction.isChecked())
 
+    self.dictionaryContentType  = "urls"
+    self.selectedDict           = engine
+  
+  def searchForWordInBrowser(self , engine):
+    self.dictionaryContentType  = "urls"
+    self.selectedDict           = engine
+    self.searchForWordAction.setChecked(True)
+    self.getDefinitionsAction.setChecked(False)
+    url = self.onlineDefDataModel.createUrl(self.getSelectedWord(),self.selectedSearchDict)
+    self.openLinkInBrowser(url)  
 
   def addTopButtons(self , layout ,parentWidget):
     self.addWordButton = QtWidgets.QToolButton(parentWidget)
@@ -254,11 +324,6 @@ class Ui_MainWindow(QtCore.QObject):
     self.addWordButton.setMaximumSize(QtCore.QSize(100,50))
     self.addWordButton.setDefaultAction(self.addWordAction)
     
-    self.editDictsButton = QtWidgets.QPushButton(parentWidget)
-    self.editDictsButton.setObjectName("editDictButton")
-    self.editDictsButton.setMaximumSize(QtCore.QSize(150,50))
-    self.editDictsButton.setText("Edit &Dictionaries")
-    self.editDictsButton.clicked.connect(self.showEditDictsDialog)
     self.editMetaTagsButton = QtWidgets.QPushButton(parentWidget)
     self.editMetaTagsButton.setObjectName("editMTButton")
     self.editMetaTagsButton.setMaximumSize(QtCore.QSize(150,50))
@@ -266,17 +331,12 @@ class Ui_MainWindow(QtCore.QObject):
     self.editMetaTagsButton.clicked.connect(self.showEditMetaTagsDialog)
 
     layout.addWidget(self.addWordButton)
-    layout.addWidget(self.editDictsButton)
+    # layout.addWidget(self.editDictsButton)
     layout.addWidget(self.editMetaTagsButton)
 
   def addListViews(self,layout,parentWidget):
     #verticalLayout(layout)
     verticalLayout = QtWidgets.QVBoxLayout()
-
-    self.dictSelect = QtWidgets.QComboBox(parentWidget)
-    self.dictSelect.setMaximumSize(QtCore.QSize(300, 30))
-    self.dictSelect.setObjectName("dictSelect")
-    self.dictSelect.setVisible(False)
 
     self.wordview = QtWidgets.QListView(parentWidget)
     self.wordview.setMaximumSize(QtCore.QSize(400, 400))
@@ -304,7 +364,6 @@ class Ui_MainWindow(QtCore.QObject):
     self.elementTagview.setObjectName("elementTagview")
     self.elementTagview.installEventFilter(self)
 
-    verticalLayout.addWidget(self.dictSelect)
     uiUtils.addLabeledWidget("Tag List", self.tagview,verticalLayout)
     verticalLayout.addWidget(self.tagFilter)
     uiUtils.addLabeledWidget("Phrases by tag", self.wordview,verticalLayout)
@@ -339,6 +398,21 @@ class Ui_MainWindow(QtCore.QObject):
     uiUtils.addLabeledWidget("Saved " + self.definitionName + "s", self.savedDefinitionsView,layout)
     uiUtils.addLabeledWidget("Online" + self.definitionName + "s", self.tabwidget,layout)
 
+  def addDictionaryActionsToMenuBar(self):
+    try:
+      self.menuEdit.removeAction(self.selectEngineMenu.menuAction())
+      self.menuEdit.removeAction(self.selectDefProviderMenu.menuAction())
+    except AttributeError:
+      self.menuEdit.addSeparator()
+    
+    self.selectEngineMenu = self.menuEdit.addMenu("Search Engine")
+    for action in self.selectEngineActions:
+      self.selectEngineMenu.addAction(action)
+
+    self.selectDefProviderMenu = self.menuEdit.addMenu(self.definitionName + " provider")
+    for action in self.selectDefinitionsProviderActions:
+      self.selectDefProviderMenu.addAction(action)
+
   def addMenuBar(self,MainWindow):
     self.menubar = QtWidgets.QMenuBar(MainWindow)
     self.menubar.setGeometry(QtCore.QRect(0, 0, 728, 30))
@@ -362,10 +436,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.menuEdit = QtWidgets.QMenu(self.menubar)
     self.menuEdit.setObjectName("menuEdit")
     self.menuEdit.addAction(self.showPreferencesAction)
-    selectEngineMenu = self.menuEdit.addMenu("Search Engine")
-    for action in self.selectEngineActions:
-      selectEngineMenu.addAction(action)
-
+    
     self.menuEdit.addAction(self.toggleSpellingAction)
     self.menuEdit.addAction(self.useExternalBrowserAction)
     self.menuEdit.addAction(self.markupSavedDefinitionsAction)
@@ -385,61 +456,62 @@ class Ui_MainWindow(QtCore.QObject):
     self.defDataModel       = defDataModel
     self.tagDataModel       = tagDataModel
     self.onlineDefDataModel = onlineDefDataModel
-    if self.mainWindow is not None:
-      #Controllers
-      self.wordController     = WordController(wordDataModel,self.tagDataModel)
-      self.wordview.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-      self.wordFilterController   = QtCore.QSortFilterProxyModel()
-      self.wordFilterController.setSourceModel(self.wordController)
-      self.wordFilterController.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
-      self.wordController.addView(self.wordview)
-      self.wordview.setModel(self.wordFilterController)
 
-      self.tagController      = TagController(self.tagDataModel)
-      self.tagview.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-      self.tagFilterController   = QtCore.QSortFilterProxyModel()
-      self.tagFilterController.setSourceModel(self.tagController)
-      self.tagFilterController.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
-      self.tagview.setModel(self.tagFilterController)
-      
-      self.onlineDefController      = DefinitionController(self.onlineDefDataModel)
-      self.onlineDefController.addView(self.onlineDefinitionsView)
-      self.onlineDefinitionsView.setModel(self.onlineDefController)
-      self.elementController  = ElementTagController(tagDataModel)
-      self.elementTagview.setModel(self.elementController)
-      self.savedDefController = SavedDefinitionsController(defDataModel)
+  def connectUIandDMs(self):
+    #Controllers
+    self.wordController     = WordController(self.wordDataModel,self.tagDataModel)
+    self.wordview.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+    self.wordFilterController   = QtCore.QSortFilterProxyModel()
+    self.wordFilterController.setSourceModel(self.wordController)
+    self.wordFilterController.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
+    self.wordController.addView(self.wordview)
+    self.wordview.setModel(self.wordFilterController)
+
+    self.tagController      = TagController(self.tagDataModel)
+    self.tagview.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+    self.tagFilterController   = QtCore.QSortFilterProxyModel()
+    self.tagFilterController.setSourceModel(self.tagController)
+    self.tagFilterController.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
+    self.tagview.setModel(self.tagFilterController)
     
-      #Set signals/slots views to controllers
-      self.elementTagview.selectionModel().currentChanged.connect(self.elementController.selected)
-      #View->Ui signals
-      self.onlineDefinitionsView.doubleClicked.connect(self.saveDefinition_ui)
-      self.onlineDefinitionsView.clicked.connect(self.onlineDefinitionsView_clicked)     
-      self.tagview.itemDelegate().commitData.connect(self.handleEditedTag)
-      self.tagview.customContextMenuRequested.connect(self.tagViewMenuRequested)
-      self.tagview.selectionModel().currentChanged.connect(self.selectedTagChanged)
-      self.savedDefinitionsView.setModel(self.savedDefController)
-      self.savedDefinitionsView.clicked.connect(self.savedDefinitionsView_clicked)     
+    self.onlineDefController      = DefinitionController(self.onlineDefDataModel)
+    self.onlineDefController.addView(self.onlineDefinitionsView)
+    self.onlineDefinitionsView.setModel(self.onlineDefController)
+    self.elementController  = ElementTagController(self.tagDataModel)
+    self.elementTagview.setModel(self.elementController)
+    self.savedDefController = SavedDefinitionsController(self.defDataModel)
+  
+    #Set signals/slots views to controllers
+    self.elementTagview.selectionModel().currentChanged.connect(self.elementController.selected)
+    #View->Ui signals
+    self.onlineDefinitionsView.doubleClicked.connect(self.saveDefinition_ui)
+    self.onlineDefinitionsView.clicked.connect(self.onlineDefinitionsView_clicked)     
+    self.tagview.itemDelegate().commitData.connect(self.handleEditedTag)
+    self.tagview.customContextMenuRequested.connect(self.tagViewMenuRequested)
+    self.tagview.selectionModel().currentChanged.connect(self.selectedTagChanged)
+    self.savedDefinitionsView.setModel(self.savedDefController)
+    self.savedDefinitionsView.clicked.connect(self.savedDefinitionsView_clicked)     
 
-      #self.savedDefinitionsView.doubleClicked.connect(self.removeDefinition)
-      self.wordview.customContextMenuRequested.connect(self.wordViewContextMenuRequested)
-      self.wordview.selectionModel().currentChanged.connect(self.selectedWordChanged)
-      self.wordview.itemDelegate().commitData.connect(self.handleEditedWord)
-      self.savedDefinitionsView.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-      self.savedDefinitionsView.customContextMenuRequested.connect(self.savedDefViewContextMenuRequested)
-      self.dictSelect.currentTextChanged.connect(self.requestOnlineDefinition_ui)
-      self.tabwidget.currentChanged.connect(self.requestOnlineDefinition_ui)
-      #Controller->Ui signals
-      #self.wordController.clearSelection.connect(self.disableEditWordButton)
-      
-      #View->Controller signals
-      self.tagFilter.textChanged.connect(self.tagFilterController.setFilterFixedString)
-      self.wordFilter.textChanged.connect(self.wordFilterController.setFilterFixedString)
-      #Data models->Ui signals
-      self.onlineDefDataModel.dictNamesUpdated.connect(self.updateDictNames)
-      self.onlineDefDataModel.definitionsUpdated.connect(self.updateOnlineDefinition_ui)
-      self.onlineDefDataModel.showMessage.connect(self.statusBar.showMessage) #Not really needed...
+    #self.savedDefinitionsView.doubleClicked.connect(self.removeDefinition)
+    self.wordview.customContextMenuRequested.connect(self.wordViewContextMenuRequested)
+    self.wordview.selectionModel().currentChanged.connect(self.selectedWordChanged)
+    self.wordview.itemDelegate().commitData.connect(self.handleEditedWord)
+    self.savedDefinitionsView.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+    self.savedDefinitionsView.customContextMenuRequested.connect(self.savedDefViewContextMenuRequested)
+    # self.dictSelect.currentTextChanged.connect(self.requestOnlineDefinition_ui)
+    #self.tabwidget.currentChanged.connect(self.requestOnlineDefinition_ui)
+    #Controller->Ui signals
+    #self.wordController.clearSelection.connect(self.disableEditWordButton)
+    
+    #View->Controller signals
+    self.tagFilter.textChanged.connect(self.tagFilterController.setFilterFixedString)
+    self.wordFilter.textChanged.connect(self.wordFilterController.setFilterFixedString)
+    #Data models->Ui signals
+    #self.onlineDefDataModel.dictNamesUpdated.connect(self.updateDictNames)
+    self.onlineDefDataModel.definitionsUpdated.connect(self.updateOnlineDefinition_ui)
+    self.onlineDefDataModel.showMessage.connect(self.statusBar.showMessage) #Not really needed...
 
-      self.dictSelect.insertItems(0,self.onlineDefDataModel.getDictNames())
+    # self.dictSelect.insertItems(0,self.onlineDefDataModel.getDictNames())
       
   def retranslateUi(self, MainWindow):
     _translate = QtCore.QCoreApplication.translate
@@ -527,14 +599,6 @@ class Ui_MainWindow(QtCore.QObject):
     elif dialogCode == QtWidgets.QDialog.Rejected:
       print('Rejected')
 
-  def showEditDictsDialog(self,event):
-    self.editDictsDialog = DictionaryDialog(self.centralwidget,self.onlineDefDataModel)
-    dialogCode = self.editDictsDialog.exec()
-    if dialogCode == QtWidgets.QDialog.Accepted:
-      self.onlineDefDataModel.selectDictsFromNames(self.editDictsDialog.sController.getDictNames())
-    elif dialogCode == QtWidgets.QDialog.Rejected:
-      print('Rejected')
-  
   def showEditMetaTagsDialog(self,event):
     self.editMetaTagsDialog = TagEditDialog(self.centralwidget,self.wordDataModel,self.tagDataModel)
     dialogCode = self.editMetaTagsDialog.exec()
@@ -618,8 +682,9 @@ class Ui_MainWindow(QtCore.QObject):
         tagDataModel = TagDataModel.fromFile(_input)
         onlineDefDataModel = OnlineDefinitionDataModel.fromFile(_input)
         defDataModel = DefinitionDataModel.fromFile(_input , True)
-      obj.setupUi(window)
       obj.setupDataModels(wordDataModel,tagDataModel,defDataModel)
+      obj.setupUi(window)
+      obj.connectUIandDMs()
     else:
       if version > 0.02:
         obj.wordDataModel._fromFile(_input)
@@ -640,6 +705,7 @@ class Ui_MainWindow(QtCore.QObject):
     obj.dictionary              = None
     obj.activeConnections       = []
     obj.loadDictionary(obj,obj.language)
+    obj.defineDictionaryActions()
     return obj
   
   def openFile(self,fileName = None):
@@ -677,6 +743,7 @@ class Ui_MainWindow(QtCore.QObject):
   def newProject_ui(self , language , projectName):
     self.newProject(language,projectName)
     self.setWindowTitle()
+    self.defineDictionaryActions()
     
   def newProject(self,language,projectName):
     self.language                 = language
@@ -744,17 +811,17 @@ class Ui_MainWindow(QtCore.QObject):
     self.autoSaveTimer.stop()
     self.writeSessionFile()     
 
-  def updateDictNames(self,dictNames):
-    self.dictSelect.clear()
-    self.dictSelect.insertItems(0,dictNames)
-    if len(dictNames) == 0:
-      self.dictSelect.setVisible(False)
-      self.tabwidget.setCurrentIndex(1)
-      self.tabwidget.removeTab(0)
-    else:
-      self.dictSelect.setVisible(True)
-      if self.tabwidget.count() == 1:
-        self.tabwidget.insertTab(0,self.onlineDefinitionsView , "List")
+  # def updateDictNames(self,dictNames):
+  #   self.dictSelect.clear()
+  #   self.dictSelect.insertItems(0,dictNames)
+  #   if len(dictNames) == 0:
+  #     self.dictSelect.setVisible(False)
+  #     self.tabwidget.setCurrentIndex(1)
+  #     self.tabwidget.removeTab(0)
+  #   else:
+  #     self.dictSelect.setVisible(True)
+  #     if self.tabwidget.count() == 1:
+  #       self.tabwidget.insertTab(0,self.onlineDefinitionsView , "List")
 
 
   def onlineDefinitionsView_clicked(self,index):
@@ -786,27 +853,7 @@ class Ui_MainWindow(QtCore.QObject):
           return True
     return False
 
-  def requestOnlineDefinition(self,word,_dict):
-    self.onlineDefDataModel.load(word,_dict,isDefinition=True,_async= True)
 
-  def requestOnlineDefinition_ui(self):
-    activeWidget   = self.tabwidget.currentWidget()
-    activeDict  = self.dictSelect.currentText()
-    if activeDict == "":
-      activeDict = None
-    selectedWord = self.getSelectedWord()
-    # if selectedWord is None:
-    #   return
-    if activeWidget == self.onlineDefinitionsView:
-      self.onlineDefinitionsView.setEnabled(False)
-      self.requestOnlineDefinition(selectedWord,activeDict)
-    elif activeWidget == self.webView:
-      if activeDict is not None:
-        url = self.onlineDefDataModel.createUrl(selectedWord,activeDict)
-      else:
-        self.searchForWordAction.trigger()
-        return
-      self.webView.load(QtCore.QUrl(url))
 
   def updateOnlineDefinition_ui(self,onlineDefinitionsList):
     word = self.getSelectedWord()
@@ -828,7 +875,12 @@ class Ui_MainWindow(QtCore.QObject):
     selectedWord = self.getSelectedWord()
     self.elementController.updateOnWord(selectedWord)
     self.savedDefController.updateOnWord(selectedWord)
-    self.requestOnlineDefinition_ui()
+    if self.getDefinitionsAction.isChecked():
+      self.getDefinitionsAction.trigger()
+    elif self.searchForWordAction.isChecked():
+      self.searchForWordAction.trigger()
+    else:
+      raise KeyError( "No content type selected")
 
   def selectedTagChanged(self,index):
     oldIndex = self.wordview.currentIndex()
@@ -851,7 +903,7 @@ class Ui_MainWindow(QtCore.QObject):
     word        = self.getSelectedWord()
     query = self.getDefDMQuery(word,definition.definition)
     if not self.defDataModel.definitionExists(query):
-      dictionary  = self.dictSelect.currentText()
+      dictionary  = self.selectedDefinitionsDict
       self.saveDefinition(definition.definition,definition.type,word,definition.markups,dictionary,definition.hyperlink)
     self.savedDefController.updateOnWord(word)
 
@@ -959,7 +1011,9 @@ class Ui_MainWindow(QtCore.QObject):
       contextMenu.addAction(self.editTagsOfWordAction)
       contextMenu.addAction(self.removeWordAction)
       contextMenu.addAction(self.renameWordAction)
+      contextMenu.addSeparator()
       contextMenu.addAction(self.searchForWordAction)
+      contextMenu.addAction(self.getDefinitionsAction)
     contextMenu.exec(self.wordview.mapToGlobal(point))
 
   def removeWord(self,word,tags):
