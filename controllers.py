@@ -112,7 +112,9 @@ class SavedDefinitionsController(QAbstractListModel):
       if isinstance(x , str):
         self.html.append(None)
       else:
-        self.html.append(htmlFromMarkups(x.definition , x.markups[0]))
+        html = htmlFromMarkups(x.definition , x.markups[0])
+        html = '<br />'.join(html.splitlines())
+        self.html.append(html)
     self.layoutChanged.emit()
 
   def sortDefList(self):
@@ -165,7 +167,9 @@ class DefinitionController(QAbstractListModel):
       if isinstance(self.definitionsList[index.row()] , str):
         return self.definitionsList[index.row()].upper()
       else:
-       return htmlFromMarkups( self.definitionsList[index.row()].definition, self.definitionsList[index.row()].markups)
+        html = htmlFromMarkups( self.definitionsList[index.row()].definition, self.definitionsList[index.row()].markups) 
+        html = '<br />'.join(html.splitlines())
+        return html
     if role==self.DataRole:
       return self.definitionsList[index.row()]
 
