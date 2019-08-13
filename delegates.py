@@ -4,6 +4,13 @@
 #from PyQt5.QtWidgets import QStyleOptionViewItem,QStyledItemDelegate,QApplication,QStyle
 
 from PyQt5 import QtCore, QtGui , QtWidgets
+import re
+
+def cleanhtml(raw_html):
+  """ Taken from : https://stackoverflow.com/questions/9662346/python-code-to-remove-html-tags-from-a-string """
+  cleanr = re.compile('<.*?>')
+  cleantext = re.sub(cleanr, '', raw_html)
+  return cleantext
 
 class HTMLDelegate(QtWidgets.QStyledItemDelegate):
   def __init__(self, parent=None):
@@ -59,7 +66,8 @@ class HTMLDelegate(QtWidgets.QStyledItemDelegate):
     editor.setText(index.data())
   
   def setModelData(self, editor,model,index):
-    model.setData(index,editor.toPlainText())
+    text = cleanhtml( editor.toPlainText())
+    model.setData(index, text )
     # it = editor.document().begin().begin()
     # while not it.atEnd():
     #   fragment = it.fragment()
@@ -124,4 +132,4 @@ class TextEdit(QtWidgets.QTextEdit):
       self._changed = False  
     
     def text(self):
-      return self.toPlainText()
+      return cleanhtml(self.toPlainText())
