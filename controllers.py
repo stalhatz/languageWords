@@ -102,6 +102,7 @@ class SavedDefinitionsController(QAbstractListModel):
     self.definitionsTable = self.defModel.getDefinitionsForWord(word).copy(True)
     self.html = []
     try:
+      self.definitionsTable.type = self.definitionsTable.type.str.lower()
       self.definitionsTable.sort_values(by=["type"] , inplace = True)
     except KeyError:
       self.layoutChanged.emit()
@@ -125,7 +126,7 @@ class SavedDefinitionsController(QAbstractListModel):
     positions.append((0,self.definitionsList[0].type))
     for i,element in enumerate(self.definitionsList):
       if i>0:
-        if element.type != self.definitionsList[i-1].type:
+        if element.type.lower() != self.definitionsList[i-1].type.lower():
           positions.append((i+numTypes,element.type))
           numTypes+=1
     for position in positions:
