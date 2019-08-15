@@ -50,7 +50,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.language = "N/A"
     self.projectName = "Untitled"
     self.programName = "LanguageWords"
-    self.searchEngines = {"Google" : "www.google.com/search?q=", "Qwant":"www.qwant.com/?q=" , "DuckDuckGo" : "duckduckgo.com/?q="}
+    self.definitionTypes = ["Definition" , "Quotation" , "Example"]
     # Filename of file that stores session details in case the program exits in an abrupt manner
     self.sessionFile = "." + self.programName + "_" + "session" + ".pkl" 
     # Timer to trigger autosave in presence of unsaved changes 
@@ -146,10 +146,6 @@ class Ui_MainWindow(QtCore.QObject):
     self.addDefinitionAction.setObjectName("addDefinitionAction")
     self.addDefinitionAction.triggered.connect(self.addTmpDefinitionToEdit)
 
-    self.addDefFromWebViewAction = QtWidgets.QAction ("Add " +  self.definitionName, self.mainWindow)
-    self.addDefFromWebViewAction.setObjectName("addDefFromWebViewAction")
-    self.addDefFromWebViewAction.triggered.connect(self.addDefFromWebView)
-
     self.addTagFromWebViewAction = QtWidgets.QAction ("Add Tag", self.mainWindow)
     self.addTagFromWebViewAction.setObjectName("addTagFromWebViewAction")
     self.addTagFromWebViewAction.triggered.connect(self.addTagFromWebView)
@@ -199,8 +195,12 @@ class Ui_MainWindow(QtCore.QObject):
     self.followDefinitionHyperlinkAction = QtWidgets.QAction ("Open in browser ", self.mainWindow)
     self.followDefinitionHyperlinkAction.setObjectName("followDefinitionHyperlinkAction")
     self.followDefinitionHyperlinkAction.triggered.connect(partial(self.followDefinitionHyperlink,None) )
+
+    self.createAddDefFromWebViewActions()
+    self.changeDefinitionTypeActions()
     
   def defineDictionaryActions(self):
+    """ Define actions related to the dictionary modules we find"""
     self.createGetDefinitionsActions()
     self.selectDefinitionsProviderActions[0].trigger()
     self.createSearchForWordActions()
@@ -240,7 +240,25 @@ class Ui_MainWindow(QtCore.QObject):
       selectEngineAction.setCheckable(True)
       selectEngineAction.setChecked(False)
       self.selectEngineActions.append(selectEngineAction)
+
+  def createAddDefFromWebViewActions(self):
+    self.addDefFromWebViewMenu          = QtWidgets.QMenu("Add" + self.definitionName + " as...")
+    self.addDefFromWebViewAction        = self.addDefFromWebViewMenu.menuAction()
+    for definitionType in self.definitionTypes:
+      addDefFromWebViewAction = QtWidgets.QAction (definitionType, self.mainWindow)
+      addDefFromWebViewAction.setObjectName("addDefFromWebViewAction_"+definitionType)
+      addDefFromWebViewAction.triggered.connect( partial(self.addDefFromWebView,definitionType) )
+      self.addDefFromWebViewMenu.addAction(addDefFromWebViewAction)
   
+  def changeDefinitionTypeActions(self):
+    self.changeDefTypeMenu          = QtWidgets.QMenu("Change" + self.definitionName + " type")
+    self.changeDefTypeAction        = self.changeDefTypeMenu.menuAction()
+    for definitionType in self.definitionTypes:
+      changeDefTypeAction = QtWidgets.QAction (definitionType, self.mainWindow)
+      changeDefTypeAction.setObjectName("changeDefTypeAction_"+definitionType)
+      changeDefTypeAction.triggered.connect( partial(self.changeDefinitionType,definitionType) )
+      self.changeDefTypeMenu.addAction(changeDefTypeAction)
+
   def selectSearchEngine(self,dictionary,action):
     self.createSearchForWordAction_context(dictionary)
     self.selectedSearchDict = dictionary
@@ -484,7 +502,7 @@ class Ui_MainWindow(QtCore.QObject):
     #Set signals/slots views to controllers
     self.elementTagview.selectionModel().currentChanged.connect(self.elementController.selected)
     #View->Ui signals
-    self.onlineDefinitionsView.doubleClicked.connect(self.saveDefinition_ui)
+    self.onlineDefinitionsView.doubleClicked.connect(self.saveDefinitionFromLV_ui)
     self.onlineDefinitionsView.clicked.connect(self.onlineDefinitionsView_clicked)     
     self.tagview.itemDelegate().commitData.connect(self.handleEditedTag)
     self.tagview.customContextMenuRequested.connect(self.tagViewMenuRequested)
@@ -894,20 +912,23 @@ class Ui_MainWindow(QtCore.QObject):
       if oldIndex.isValid():
         self.selectedWordChanged(index)
 
-  def saveDefinitionFromLV_ui():
+#======Definitions=======================================================
+  def saveDefinitionFromLV_ui(self , event):
     'Save selected definition from the onlineDefinitions ListView widget'
     definition  = self.getSelectedOnlineDefinition()
-    self.saveDefinition_ui(definition)
+    self.saveDefinition_ui(definition.definition, definition.type ,definition.hyperlink, definition.markups)
 
-  def saveDefinition_ui(self , definition):    
+  def saveDefinition_ui(self , definitionText, definitionType, hyperlink = None , markups = None):    
     word        = self.getSelectedWord()
-    query = self.getDefDMQuery(word,definition.definition)
+    query = self.getDefDMQuery(word,definitionText)
     if not self.defDataModel.definitionExists(query):
+      if markups is None: 
+        markups  = self.markupWordInText(word,definitionText)
       dictionary  = self.selectedDefinitionsDict
-      self.saveDefinition(definition.definition,definition.type,word,definition.markups,dictionary,definition.hyperlink)
+      self.saveDefinition(word,definitionText,dictionary,definitionType,markups,hyperlink)
     self.savedDefController.updateOnWord(word)
 
-  def saveDefinition(self,definitionText,definitionType,word,markups,dictionary=None,hyperlink=None):
+  def saveDefinition(self,word,definitionText,dictionary,definitionType,markups,hyperlink=None):
     #Try to check every element of the query before adding the definition
     defTuple = DefinitionDataModel.Definition(word,definitionText,None,dictionary,definitionType,[markups],hyperlink)
     self.defDataModel.addDefinition(defTuple)
@@ -927,6 +948,36 @@ class Ui_MainWindow(QtCore.QObject):
   def editDefinition(self):
     index = self.savedDefinitionsView.currentIndex()
     self.savedDefinitionsView.edit(index)
+  
+  def changeDefinitionType(self, newDefinitionType):
+    oldDefinition = self.getSelectedSavedDefinition()
+    self.replaceDefinition_ui(oldDefinition,type = newDefinitionType)
+
+  def replaceDefinition(self,oldDefinition,**kwargs):
+    newDefinition = oldDefinition._replace(**kwargs)
+    if (hasattr(oldDefinition,"Index") ):
+      self.defDataModel.replaceDefinition(newDefinition)
+    else:
+      self.defDataModel.replaceDefinition(newDefinition , oldDefinition)
+    self.setDirtyState()
+
+  def replaceDefinition_ui(self,oldDefinition,**kwargs):
+    self.replaceDefinition(oldDefinition,**kwargs)
+    self.savedDefController.updateOnWord(self.getSelectedWord())
+
+  def handleEditedDefinition(self,widget):
+    oldDefinition  = self.getSelectedSavedDefinition()
+    newDefinitionText = widget.text()
+    word = self.getSelectedWord()
+    if oldDefinition.type == "_newUserDefinition":  #Dont'replace, add to the model
+      _type = "User " + self.definitionName
+      self.saveDefinition_ui(newDefinitionText,_type)
+      self.savedDefController.deleteTmpDefinition()
+    else:
+      markups  = self.markupWordInText(word,newDefinitionText)
+      self.replaceDefinition_ui(oldDefinition, markups = [markups], definition = newDefinitionText)
+    
+#======Definitions (End)=======================================================
 
   def handleEditedTag(self,widget):
     if (widget.isModified()):
@@ -951,7 +1002,6 @@ class Ui_MainWindow(QtCore.QObject):
     index = self.tagview.currentIndex()
     self.tagview.edit(index)
   
-
   def editSelectedWord(self):
     index = self.wordview.currentIndex()
     self.wordview.edit(index)
@@ -999,6 +1049,7 @@ class Ui_MainWindow(QtCore.QObject):
       if int(self.savedDefController.flags(index) & QtCore.Qt.ItemIsSelectable) != 0:
         contextMenu.addAction(self.removeDefinitionAction)
         contextMenu.addAction(self.followDefinitionHyperlinkAction)
+        contextMenu.addAction(self.changeDefTypeAction)
       if int(self.savedDefController.flags(index) & QtCore.Qt.ItemIsEditable) != 0:
         contextMenu.addAction(self.editDefinitionAction)
       contextMenu.exec(self.savedDefinitionsView.mapToGlobal(point))
@@ -1037,23 +1088,6 @@ class Ui_MainWindow(QtCore.QObject):
   @staticmethod
   def getDefDMQuery(word = None , _def = None):
     return DefinitionDataModel.Definition(text = word, definition = _def)
-
-  def handleEditedDefinition(self,widget):
-    definition  = self.getSelectedSavedDefinition()
-    newDefinition = widget.text()
-    word = self.getSelectedWord()
-    if definition.type == "_newUserDefinition":  #Dont'replace, add to the model
-      markups  = self.markupWordInText(word,newDefinition)
-      self.saveDefinition(newDefinition,"User " + self.definitionName, word,markups)
-      self.savedDefController.deleteTmpDefinition()
-    else:
-      markups  = self.markupWordInText(word,newDefinition)
-      query = self.getDefDMQuery(word,definition.definition)
-      self.defDataModel.replaceDefinition(query,newDefinition)
-      query = self.getDefDMQuery(word, newDefinition)
-      self.defDataModel.replaceMarkups(query,markups)
-      self.setDirtyState()
-    self.savedDefController.updateOnWord(word)
   
   def addTmpDefinitionToEdit(self):
     index = self.savedDefController.addTmpDefinition()
@@ -1120,8 +1154,7 @@ class Ui_MainWindow(QtCore.QObject):
     for row in df.itertuples(index=True, name='Pandas'):
       if row.markups is None or remarkup:
         markups = self.markupWordInText(row.text,row.definition)
-        query = self.getDefDMQuery(row.text,row.definition)
-        self.defDataModel.replaceMarkups(query,markups)
+        self.replaceDefinition(row,markups = markups)
 
   def markupWordInText(self,word , text):
     maxDist = min( int(len(word) / 3) , 4 )
@@ -1136,12 +1169,9 @@ class Ui_MainWindow(QtCore.QObject):
         markups.append(markup)
       return markups
 
-  def addDefFromWebView(self):
-    word          = self.getSelectedWord()
+  def addDefFromWebView(self , _type):
     selectedText  = self.webView.selectedText()
-    markups       = self.markupWordInText(word,selectedText)
-    definition    = DefinitionDataModel.Definition(None,selectedText,None,None, "Web " + self.definitionName,markups,self.webView.url().toString() )
-    self.saveDefinition_ui(definition)
+    self.saveDefinition_ui(selectedText,_type,self.webView.url().toString())
 
   def addTagFromWebView(self):
     newTag = self.webView.selectedText()

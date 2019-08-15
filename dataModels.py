@@ -351,8 +351,20 @@ class DefinitionDataModel():
     obj.savedDefinitionsTable = pd.DataFrame()
     return obj
 
-  def definitionCondition(self,d):
+  def definitionCondition(self,d,*fields):
     condition = None
+    if len(fields) > 0:
+      for f in fields:
+        value = getattr(d,f)
+        if value is None:
+          raise ValueError("Not defined value in key")
+        fieldCondition = (self.savedDefinitionsTable[f] == value)
+        if condition is not None:
+          condition = fieldCondition & condition
+        else:
+          condition = fieldCondition
+      return condition
+
     for value,field in zip(d,d._fields):
       if value is not None:
         fieldCondition = (self.savedDefinitionsTable[field] == value)
@@ -393,6 +405,7 @@ class DefinitionDataModel():
     return self.savedDefinitionsTable[condition]
   
   def replaceWord(self,oldWord,newWord):
+    """ Replaces all instances of a word"""
     try:
       condition = (self.savedDefinitionsTable.text == oldWord)
     except AttributeError:
@@ -400,17 +413,12 @@ class DefinitionDataModel():
     else:
       self.savedDefinitionsTable.loc[condition,"text"] = newWord
 
-
-  def replaceDefinition(self,query,newDefinition):
-    condition = self.definitionCondition(query)
-    self.savedDefinitionsTable.loc[condition,"definition"] = newDefinition
-    #print(self.savedDefinitionsTable[condition])
-  
-  def replaceMarkups(self,query,markups):
-    condition = self.definitionCondition(query)
-    #Temporary hack: Will only set the first record corresponding to the query. Should switch to a Markup DataFrame.
-    i = self.savedDefinitionsTable.where(condition).dropna(how = "all").index.tolist()[0]
-    self.savedDefinitionsTable.at[i,"markups"] = [markups]
+  def replaceDefinition(self,newDefinition , oldDefinition = None):
+    if oldDefinition == None:
+      self.savedDefinitionsTable.iloc[newDefinition.Index] = newDefinition[1:]
+    else:
+      condition = self.definitionCondition(oldDefinition , "text", "definition")
+      self.savedDefinitionsTable.loc[condition] = newDefinition
 
   def removeDefinition(self,query):
     condition = self.definitionCondition(query)

@@ -45,13 +45,12 @@ def test_replaceDefinition(initDefDM):
 
   # We can not for the time being replace multiple Markups  
   # query = DefinitionDataModel.Definition(text = "newWord")
-  # a.replaceMarkups(query, "Hello")
   # query = DefinitionDataModel.Definition(markups = "Hello")
   # definitions = a.getDefinition(query)
   # assert(len(definitions) == pow(3,5) )
 
   query = DefinitionDataModel.Definition(text = "newWord")
-  a.replaceDefinition(query,"Hello World")
+
   query = DefinitionDataModel.Definition(definition = "Hello World")
   definitions = a.getDefinition(query)
   assert(len(definitions) == pow(3,5) )

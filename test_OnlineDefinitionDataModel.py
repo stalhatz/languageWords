@@ -117,8 +117,8 @@ def test_getContentFromDict(dictDirectory):
   language = a.getAvailableLanguages()[0]
   a.language = language
   a.selectDictsFromNames(["fake1"])
-  assert ( a.getDefinitionsFromHtml("fake1","fakehtml")[0] == "def1_fakehtml_" + language )
-  assert ( a.getTagsFromHtml("fake1","fakehtml")[0] == "tag1_fakehtml_" + language )
+  assert ( a.getDefinitionsFromDict("fake1","fakehtml")[0] == "def1_fakehtml_" + language )
+  assert ( a.getTagsFromDict("fake1","fakehtml")[0] == "tag1_fakehtml_" + language )
 
 def updateOnlineTags(result , tagsList): #Callback from onlineDefDataModel
   assert (result == tagsList[0])
