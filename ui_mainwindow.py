@@ -192,9 +192,9 @@ class Ui_MainWindow(QtCore.QObject):
     self.markupSavedDefinitionsAction.setObjectName("useExternalBrowserAction")
     self.markupSavedDefinitionsAction.triggered.connect(self.reMarkupSDandRefreshView)
 
-    self.followDefinitionHyperlinkAction = QtWidgets.QAction ("Open in browser ", self.mainWindow)
-    self.followDefinitionHyperlinkAction.setObjectName("followDefinitionHyperlinkAction")
-    self.followDefinitionHyperlinkAction.triggered.connect(partial(self.followDefinitionHyperlink,None) )
+    self.followSavedDefinitionHyperlinkAction = QtWidgets.QAction ("Open in browser ", self.mainWindow)
+    self.followSavedDefinitionHyperlinkAction.setObjectName("followSavedDefinitionHyperlinkAction")
+    self.followSavedDefinitionHyperlinkAction.triggered.connect(partial(self.followSavedDefinitionHyperlink,None) )
 
     self.createAddDefFromWebViewActions()
     self.changeDefinitionTypeActions()
@@ -266,14 +266,19 @@ class Ui_MainWindow(QtCore.QObject):
       if a is not action:
         a.setChecked(False)
 
-  def followDefinitionHyperlink(self,index = None):
-    if index is None:
-      index = self.savedDefinitionsView.currentIndex()
-    definition = self.onlineDefController.data(index,DefinitionController.DataRole)
+  def followOnlineDefinitionHyperlink(self,index = None):
+    definition = self.getSelectedOnlineDefinition()
     if definition.hyperlink is not None:
       self.openLinkInBrowser(definition.hyperlink)
     else:
-      self.statusBar.showMessage("No hyperlink to follow "+ fileName , 1000)
+      self.statusBar.showMessage("No hyperlink to follow ", 1000)
+  
+  def followSavedDefinitionHyperlink(self,index = None):
+    definition = self.getSelectedSavedDefinition()
+    if definition.hyperlink is not None:
+      self.openLinkInBrowser(definition.hyperlink)
+    else:
+      self.statusBar.showMessage("No hyperlink to follow ", 1000)
 
   def openLinkInBrowser(self,link):
     if ( self.useExternalBrowserAction.isChecked() ):
@@ -844,18 +849,11 @@ class Ui_MainWindow(QtCore.QObject):
 
   def onlineDefinitionsView_clicked(self,index):
     if int( QtGui.QGuiApplication.instance().queryKeyboardModifiers() & QtCore.Qt.ControlModifier) != 0:
-      self.followDefinitionHyperlink(index)        
+      self.followOnlineDefinitionHyperlink(index)        
 
   def savedDefinitionsView_clicked(self,index):
     if int( QtGui.QGuiApplication.instance().queryKeyboardModifiers() & QtCore.Qt.ControlModifier) != 0:
-      definition = self.savedDefController.data(index,SavedDefinitionsController.DataRole)
-      try:
-        if (definition.hyperlink is not None) and (pd.notna(definition.hyperlink) ):
-          QtGui.QDesktopServices.openUrl(QtCore.QUrl(definition.hyperlink))
-        else:
-          self.statusBar.showMessage("No hyperlink to follow " , 1000)
-      except AttributeError:
-        self.statusBar.showMessage("No hyperlink to follow ", 1000)
+      self.followSavedDefinitionHyperlinkAction.trigger()
   # def showEditWordDialog(self,event):
   #FIXME: When editing Enter key is not consumed in Delegate of TagView and is falsely propagated up to this filter. Reactivate filters when fixed.
   def eventFilter(self,_object, event):
@@ -1048,7 +1046,7 @@ class Ui_MainWindow(QtCore.QObject):
       contextMenu.addAction(self.addDefinitionAction)
       if int(self.savedDefController.flags(index) & QtCore.Qt.ItemIsSelectable) != 0:
         contextMenu.addAction(self.removeDefinitionAction)
-        contextMenu.addAction(self.followDefinitionHyperlinkAction)
+        contextMenu.addAction(self.followSavedDefinitionHyperlinkAction)
         contextMenu.addAction(self.changeDefTypeAction)
       if int(self.savedDefController.flags(index) & QtCore.Qt.ItemIsEditable) != 0:
         contextMenu.addAction(self.editDefinitionAction)
