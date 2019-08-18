@@ -38,7 +38,7 @@ class WordDialog(QtWidgets.QDialog):
   EDIT_DIALOG = 1
 
   def __init__(self, parent, wordDataModel, tagDataModel, onlineDefDataModel,
-                dictionary,dialogType, existingWord = None , existingTags = None):
+                dictionary,dialogType, **kwargs):
     super(WordDialog,self).__init__(parent)
     self.wordDataModel        = wordDataModel
     self.tagDataModel         = tagDataModel
@@ -47,11 +47,11 @@ class WordDialog(QtWidgets.QDialog):
     self.dictionary           = dictionary
     self.wordSpelledCorrectly = False
     self.wordAlreadyExists    = False
-    self.existingWord         = existingWord
+    self.existingWord         = kwargs.get("existingWord")
     self.dialogType           = dialogType
-    self.existingTags         = existingTags
+    self.existingTags         = kwargs.get("existingTags")
     vLayout     = QtWidgets.QVBoxLayout(self)
-
+    self.wordName = kwargs.get("wordName")
     #vLayout
     hLowLayout  = QtWidgets.QHBoxLayout()
     hHighLayout = QtWidgets.QHBoxLayout()
@@ -91,7 +91,7 @@ class WordDialog(QtWidgets.QDialog):
     self.wLineEdit.setMaximumSize(QtCore.QSize(400, 25))
     self.wLineEdit.setFocus()
     if self.dialogType == self.CREATE_DIALOG:
-      self.wLineEdit.setPlaceholderText("Enter a new word")
+      self.wLineEdit.setPlaceholderText("Enter a new" +  self.wordName)
       self.wLineEdit.editingFinished.connect(self.loadOnlineTags)
     if self.dialogType == self.EDIT_DIALOG:
       self.wLineEdit.setEnabled(False)
@@ -112,13 +112,13 @@ class WordDialog(QtWidgets.QDialog):
     #self.tagView.setSelectionBehavior(QtWidgets.QAbstractItemView.)
     self.tLineEdit = QtWidgets.QLineEdit(self)
     self.tLineEdit.setMaximumSize(QtCore.QSize(400, 50))
-    self.tLineEdit.setPlaceholderText("Enter a new tag linked to the word")
+    self.tLineEdit.setPlaceholderText("Enter a new tag linked to the " + self.wordName)
     self.tLineEdit.textChanged.connect(self.tagTextChanged)
     tagCompleter = QtWidgets.QCompleter(self.tagDataModel.getTags())
     tagCompleter.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
     self.tLineEdit.setCompleter(tagCompleter)
 
-    uiUtils.addLabeledWidget("Tags attributed to word", self.tagView , vRightLayout)
+    uiUtils.addLabeledWidget("Tags attributed to " + self.wordName, self.tagView , vRightLayout)
     vRightLayout.addWidget(self.tLineEdit)
     tagHLayout = QtWidgets.QHBoxLayout()
     vRightLayout.addLayout(tagHLayout)
@@ -135,7 +135,7 @@ class WordDialog(QtWidgets.QDialog):
     tagHLayout.addWidget(self.addTagButton)
     tagHLayout.addWidget(self.removeTagButton)
   
-    if existingWord is not None:
+    if self.existingWord is not None:
       self.wLineEdit.setText(self.existingWord)
       self.loadOnlineTags()
     
@@ -176,11 +176,11 @@ class WordDialog(QtWidgets.QDialog):
       self.statusBar.showMessage("")
       return True
     if self.wordAlreadyExists:
-      self.statusBar.showMessage("Word already exists")
+      self.statusBar.showMessage(self.wordName + " already exists")
     elif not self.wordSpelledCorrectly:
       self.statusBar.showMessage("Please check your spelling")  
     elif len(self.tagController.stringList()) == 0:
-      self.statusBar.showMessage("Need at least one tag to register word")  
+      self.statusBar.showMessage("Need at least one tag to register" + self.wordName)  
     return False
     
     

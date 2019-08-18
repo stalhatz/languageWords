@@ -47,6 +47,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.mainWindow = None
     self.version = 0.03
     self.definitionName = "Textbite"
+    self.wordName       = "Concept"
     self.language = "N/A"
     self.projectName = "Untitled"
     self.programName = "LanguageWords"
@@ -116,31 +117,31 @@ class Ui_MainWindow(QtCore.QObject):
     self.actionSave.setShortcut("Ctrl+S")
     #self.actionSave.setEnabled(False)
 
-    self.addWordAction = QtWidgets.QAction ("Add Word", self.mainWindow)
+    self.addWordAction = QtWidgets.QAction ("Add "+ self.wordName, self.mainWindow)
     self.addWordAction.setObjectName("addWordAction")
     self.addWordAction.triggered.connect(self.addWord_ui)
     self.addWordAction.setShortcut("Ctrl+Shift+A")
-    self.addWordAction.setToolTip("Show a dialog to add a new word to the project")
+    self.addWordAction.setToolTip("Show a dialog to add a new " + self.wordName +" to the project")
 
     self.editTagsOfWordAction = QtWidgets.QAction ("Edit Tags", self.mainWindow)
     self.editTagsOfWordAction.setObjectName("editTagsOfWordAction")
     self.editTagsOfWordAction.triggered.connect(self.editTagsOfWord_dialog_ui)
     self.editTagsOfWordAction.setShortcut("Ctrl+Shift+E")
     self.editTagsOfWordAction.setEnabled(False)
-    self.editTagsOfWordAction.setToolTip("Show a dialog to edit the selected word")
+    self.editTagsOfWordAction.setToolTip("Show a dialog to edit the selected "+ self.wordName)
 
-    self.removeWordAction = QtWidgets.QAction ("Remove Word", self.mainWindow)
+    self.removeWordAction = QtWidgets.QAction ("Remove " + self.wordName, self.mainWindow)
     self.removeWordAction.setObjectName("removeWordAction")
     self.removeWordAction.triggered.connect(self.removeWord_ui)
     self.removeWordAction.setShortcut("Ctrl+Shift+R")
     self.removeWordAction.setEnabled(False)
-    self.removeWordAction.setToolTip("Remove selected word from the project")
+    self.removeWordAction.setToolTip("Remove selected "+ self.wordName +" from the project")
     
-    self.renameWordAction = QtWidgets.QAction ("Rename Word", self.mainWindow)
+    self.renameWordAction = QtWidgets.QAction ("Rename "+self.wordName, self.mainWindow)
     self.renameWordAction.setObjectName("renameWordAction")
     self.renameWordAction.triggered.connect(self.editSelectedWord)    
     self.removeWordAction.setEnabled(False)
-    self.removeWordAction.setToolTip("Rename selected selected word")
+    self.removeWordAction.setToolTip("Rename selected "+ self.wordName)
     
     self.addDefinitionAction = QtWidgets.QAction ("Add Custom " + self.definitionName, self.mainWindow)
     self.addDefinitionAction.setObjectName("addDefinitionAction")
@@ -150,7 +151,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.addTagFromWebViewAction.setObjectName("addTagFromWebViewAction")
     self.addTagFromWebViewAction.triggered.connect(self.addTagFromWebView)
 
-    self.addWordFromWebViewAction = QtWidgets.QAction ("Add Word...", self.mainWindow)
+    self.addWordFromWebViewAction = QtWidgets.QAction ("Add " + self.wordName + "...", self.mainWindow)
     self.addWordFromWebViewAction.setObjectName("addWorfFromWebViewAction")
     self.addWordFromWebViewAction.triggered.connect(self.addWordFromWebView)
 
@@ -247,7 +248,7 @@ class Ui_MainWindow(QtCore.QObject):
       self.selectEngineActions.append(selectEngineAction)
 
   def createAddDefFromWebViewActions(self):
-    self.addDefFromWebViewMenu          = QtWidgets.QMenu("Add" + self.definitionName + " as...")
+    self.addDefFromWebViewMenu          = QtWidgets.QMenu("Add " + self.definitionName + " as...")
     self.addDefFromWebViewAction        = self.addDefFromWebViewMenu.menuAction()
     for definitionType in self.definitionTypes:
       addDefFromWebViewAction = QtWidgets.QAction (definitionType, self.mainWindow)
@@ -372,7 +373,7 @@ class Ui_MainWindow(QtCore.QObject):
 
     self.wordFilter = QtWidgets.QLineEdit(parentWidget)
     self.wordFilter.setObjectName("wordFilter")
-    self.wordFilter.setPlaceholderText("Enter text to filter phrases")
+    self.wordFilter.setPlaceholderText("Enter text to filter " +  self.wordName)
     self.wordFilter.setMaximumSize(QtCore.QSize(400, 30))
     self.wordFilter.installEventFilter(self) #Catch Enter
 
@@ -394,9 +395,9 @@ class Ui_MainWindow(QtCore.QObject):
 
     uiUtils.addLabeledWidget("Tag List", self.tagview,verticalLayout)
     verticalLayout.addWidget(self.tagFilter)
-    uiUtils.addLabeledWidget("Phrases by tag", self.wordview,verticalLayout)
+    uiUtils.addLabeledWidget( self.wordName + "s by tag", self.wordview,verticalLayout)
     verticalLayout.addWidget(self.wordFilter)
-    uiUtils.addLabeledWidget("Tags by Phrase", self.elementTagview,verticalLayout)
+    uiUtils.addLabeledWidget("Tags by " + self.wordName, self.elementTagview,verticalLayout)
     
     self.savedDefinitionsView = QtWidgets.QListView(parentWidget)
     self.savedDefinitionsView.setObjectName("savedDefinitionListView")
@@ -424,7 +425,7 @@ class Ui_MainWindow(QtCore.QObject):
 
     layout.addLayout(verticalLayout)
     self.savedDefLayout,self.savedDefLabel = uiUtils.addLabeledWidget("Saved " + self.definitionName + "s", self.savedDefinitionsView,layout)
-    uiUtils.addLabeledWidget("Online" + self.definitionName + "s", self.tabwidget,layout)
+    uiUtils.addLabeledWidget("Online " + self.definitionName + "s", self.tabwidget,layout)
 
     layout.setStretch(0,1)
     layout.setStretch(1,1)
@@ -553,7 +554,7 @@ class Ui_MainWindow(QtCore.QObject):
   def retranslateUi(self, MainWindow):
     _translate = QtCore.QCoreApplication.translate
     self.menuFile.setTitle(_translate("MainWindow", "Fi&le"))
-    self.menuWord.setTitle(_translate("MainWindow", "&Word"))
+    self.menuWord.setTitle(_translate("MainWindow", self.wordName))
     self.menuEdit.setTitle(_translate("MainWindow", "&Edit"))
     self.menuView.setTitle(_translate("MainWindow", "&View"))
     self.actionNew.setText(_translate("MainWindow", "New project"))
@@ -589,7 +590,7 @@ class Ui_MainWindow(QtCore.QObject):
     if self.toggleSpellingAction.isChecked():
       dictionary = self.dictionary
     self.addWordDialog = WordDialog(self.centralwidget,self.wordDataModel,self.tagDataModel,self.onlineDefDataModel,dictionary,
-                                    WordDialog.CREATE_DIALOG , word)
+                                    WordDialog.CREATE_DIALOG , existingWord = word , wordName = self.wordName)
     dialogCode = self.addWordDialog.exec()
     if dialogCode == QtWidgets.QDialog.Accepted:
       newWord = self.addWordDialog.getWord()
@@ -629,7 +630,7 @@ class Ui_MainWindow(QtCore.QObject):
       return
     tags      = self.tagDataModel.getTagsFromIndex(word)
     self.editWordDialog = WordDialog(self.centralwidget,self.wordDataModel,self.tagDataModel,self.onlineDefDataModel,self.dictionary,
-                                      WordDialog.EDIT_DIALOG , word, tags)
+                                      WordDialog.EDIT_DIALOG , existingWord = word, existingTags = tags , wordName = self.wordName)
     dialogCode = self.editWordDialog.exec()
     if dialogCode == QtWidgets.QDialog.Accepted:
       newTags    = self.editWordDialog.getTags()
