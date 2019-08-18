@@ -154,11 +154,11 @@ class Ui_MainWindow(QtCore.QObject):
     self.addWordFromWebViewAction.setObjectName("addWorfFromWebViewAction")
     self.addWordFromWebViewAction.triggered.connect(self.addWordFromWebView)
 
-    self.removeDefinitionAction = QtWidgets.QAction ("Remove Definition", self.mainWindow)
+    self.removeDefinitionAction = QtWidgets.QAction ("Remove " + self.definitionName, self.mainWindow)
     self.removeDefinitionAction.setObjectName("removeDefinitionAction")
     self.removeDefinitionAction.triggered.connect(self.removeSelectedDefinition_ui)
 
-    self.editDefinitionAction = QtWidgets.QAction ("Edit Definition", self.mainWindow)
+    self.editDefinitionAction = QtWidgets.QAction ("Edit " + self.definitionName, self.mainWindow)
     self.editDefinitionAction.setObjectName("editDefinitionAction")
     self.editDefinitionAction.triggered.connect(self.editDefinition)
 
@@ -256,7 +256,7 @@ class Ui_MainWindow(QtCore.QObject):
       self.addDefFromWebViewMenu.addAction(addDefFromWebViewAction)
   
   def changeDefinitionTypeActions(self):
-    self.changeDefTypeMenu          = QtWidgets.QMenu("Change" + self.definitionName + " type")
+    self.changeDefTypeMenu          = QtWidgets.QMenu("Change " + self.definitionName + " type")
     self.changeDefTypeAction        = self.changeDefTypeMenu.menuAction()
     for definitionType in self.definitionTypes:
       changeDefTypeAction = QtWidgets.QAction (definitionType, self.mainWindow)
@@ -314,7 +314,7 @@ class Ui_MainWindow(QtCore.QObject):
       prevAction                = self.getDefinitionsAction
     except AttributeError:
       prevAction = None
-    self.getDefinitionsAction = QtWidgets.QAction ("Get Definitions from " + dictionary, self.mainWindow)
+    self.getDefinitionsAction = QtWidgets.QAction ("Get " + self.definitionName+ "s from " + dictionary, self.mainWindow)
     self.getDefinitionsAction.setObjectName("getDefinitionsAction")
     self.getDefinitionsAction.triggered.connect(partial(self.requestOnlineDefinition_ui,dictionary) )
     self.getDefinitionsAction.setCheckable(True)
