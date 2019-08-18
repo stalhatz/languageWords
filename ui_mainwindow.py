@@ -404,7 +404,6 @@ class Ui_MainWindow(QtCore.QObject):
     self.savedDefinitionsView.setItemDelegate(HTMLDelegate())
     self.savedDefinitionsView.setWordWrap(True)
     self.savedDefinitionsView.itemDelegate().commitData.connect(self.handleEditedDefinition)
-    self.savedDefinitionsView.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
     self.savedDefinitionsView.setMaximumWidth(560)
 
     self.tabwidget = QtWidgets.QTabWidget(parentWidget)
