@@ -82,12 +82,12 @@ class Ui_MainWindow(QtCore.QObject):
     buttonHorizontalLayout = QtWidgets.QHBoxLayout()
     self.addTopButtons(buttonHorizontalLayout,self.centralwidget)
     #horizontalLayout(outerVerticalLayout)
-    horizontalLayout = QtWidgets.QHBoxLayout()
-    horizontalLayout.setContentsMargins(0, 0, 0, 0)
-    horizontalLayout.setObjectName("horizontalLayout")  
-    self.addListViews(horizontalLayout,self.centralwidget)
+    self.horizontalLayout = QtWidgets.QHBoxLayout()
+    self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
+    self.horizontalLayout.setObjectName("horizontalLayout")  
+    self.addListViews(self.horizontalLayout,self.centralwidget)
     outerVerticalLayout.addLayout(buttonHorizontalLayout)
-    outerVerticalLayout.addLayout(horizontalLayout)
+    outerVerticalLayout.addLayout(self.horizontalLayout)
 
     self.addMenuBar(MainWindow)            
     self.addStatusBar(MainWindow)
@@ -195,6 +195,11 @@ class Ui_MainWindow(QtCore.QObject):
     self.followSavedDefinitionHyperlinkAction = QtWidgets.QAction ("Open in browser ", self.mainWindow)
     self.followSavedDefinitionHyperlinkAction.setObjectName("followSavedDefinitionHyperlinkAction")
     self.followSavedDefinitionHyperlinkAction.triggered.connect(partial(self.followSavedDefinitionHyperlink,None) )
+
+    self.hideCentralPanelAction = QtWidgets.QAction ("Maximize content retrieval", self.mainWindow)
+    self.hideCentralPanelAction.setObjectName("hideCentralPanelAction")
+    self.hideCentralPanelAction.triggered.connect(self.hideCentralPanel)
+    self.hideCentralPanelAction.setShortcut("F11")
 
     self.createAddDefFromWebViewActions()
     self.changeDefinitionTypeActions()
@@ -418,8 +423,12 @@ class Ui_MainWindow(QtCore.QObject):
     self.tabwidget.addTab(self.webView , "Web page")
 
     layout.addLayout(verticalLayout)
-    uiUtils.addLabeledWidget("Saved " + self.definitionName + "s", self.savedDefinitionsView,layout)
+    self.savedDefLayout,self.savedDefLabel = uiUtils.addLabeledWidget("Saved " + self.definitionName + "s", self.savedDefinitionsView,layout)
     uiUtils.addLabeledWidget("Online" + self.definitionName + "s", self.tabwidget,layout)
+
+    layout.setStretch(0,1)
+    layout.setStretch(1,1)
+    layout.setStretch(2,2)
 
   def addDictionaryActionsToMenuBar(self):
     try:
@@ -459,14 +468,19 @@ class Ui_MainWindow(QtCore.QObject):
     self.menuEdit = QtWidgets.QMenu(self.menubar)
     self.menuEdit.setObjectName("menuEdit")
     self.menuEdit.addAction(self.showPreferencesAction)
-    
     self.menuEdit.addAction(self.toggleSpellingAction)
     self.menuEdit.addAction(self.useExternalBrowserAction)
     self.menuEdit.addAction(self.markupSavedDefinitionsAction)
 
+    self.menuView = QtWidgets.QMenu(self.menubar)
+    self.menuView.setObjectName("menuView")
+    self.menuView.addAction(self.hideCentralPanelAction)
+
     self.menubar.addAction(self.menuFile.menuAction())
     self.menubar.addAction(self.menuWord.menuAction())
     self.menubar.addAction(self.menuEdit.menuAction())
+    self.menubar.addAction(self.menuView.menuAction())
+
     MainWindow.setMenuBar(self.menubar)
   def addStatusBar(self,MainWindow):
     self.statusBar = QtWidgets.QStatusBar(MainWindow)
@@ -541,6 +555,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.menuFile.setTitle(_translate("MainWindow", "Fi&le"))
     self.menuWord.setTitle(_translate("MainWindow", "&Word"))
     self.menuEdit.setTitle(_translate("MainWindow", "&Edit"))
+    self.menuView.setTitle(_translate("MainWindow", "&View"))
     self.actionNew.setText(_translate("MainWindow", "New project"))
     self.actionOpen.setText(_translate("MainWindow", "Open..."))
     self.actionSaveAs.setText(_translate("MainWindow", "Save As..."))
@@ -862,7 +877,7 @@ class Ui_MainWindow(QtCore.QObject):
         if (event.key() == QtCore.Qt.Key_Enter) or (event.key() == QtCore.Qt.Key_Return):
           #self.tagview.setFocus()
           return True
-    if _object == self.tagview:
+    elif _object == self.tagview:
       if event.type() == QtCore.QEvent.KeyPress:
         if (event.key()  == QtCore.Qt.Key_Enter) or (event.key() == QtCore.Qt.Key_Return):
           #self.wordview.setFocus()
@@ -1184,3 +1199,13 @@ class Ui_MainWindow(QtCore.QObject):
     newWord = self.webView.selectedText()
     self.addWord_ui(newWord)
     
+  def hideCentralPanel(self):
+    if self.horizontalLayout.count() == 3:
+      self.horizontalLayout.removeItem(self.savedDefLayout)
+      self.savedDefinitionsView.setVisible(False)
+      self.savedDefLabel.setVisible(False)
+    else:
+      self.horizontalLayout.insertItem(1,self.savedDefLayout)
+      self.horizontalLayout.setStretch(1,1)
+      self.savedDefinitionsView.setVisible(True)
+      self.savedDefLabel.setVisible(True)
