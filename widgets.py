@@ -25,14 +25,17 @@ class myWebViewer(QtWebEngineWidgets.QWebEngineView):
     menu.exec_(event.globalPos())
   
   def eventFilter(self,object,event):
-    if object.parent() == self:
-      if isinstance(event,QtGui.QKeyEvent):
-        if event.type() == QtGui.QKeyEvent.KeyPress:
-          if int( QtGui.QGuiApplication.instance().queryKeyboardModifiers() & QtCore.Qt.AltModifier) != 0:
-            if (event.key() == QtCore.Qt.Key_Left):
-              self.back()
-              return True
-            elif (event.key() == QtCore.Qt.Key_Right):
-              self.forward()
-              return True    
+    try:
+      if object.parent() == self:
+        if isinstance(event,QtGui.QKeyEvent):
+          if event.type() == QtGui.QKeyEvent.KeyPress:
+            if int( QtGui.QGuiApplication.instance().queryKeyboardModifiers() & QtCore.Qt.AltModifier) != 0:
+              if (event.key() == QtCore.Qt.Key_Left):
+                self.back()
+                return True
+              elif (event.key() == QtCore.Qt.Key_Right):
+                self.forward()
+                return True
+    except TypeError:
+      pass
     return False
