@@ -1167,7 +1167,7 @@ class Ui_MainWindow(QtCore.QObject):
     for row in df.itertuples(index=True, name='Pandas'):
       if row.markups is None or remarkup:
         markups = self.markupWordInText(row.text,row.definition)
-        self.replaceDefinition(row,markups = markups)
+        self.replaceDefinition(row,markups = [markups])
 
   def markupWordInText(self,word , text):
     maxDist = min( int(len(word) / 3) , 4 )
