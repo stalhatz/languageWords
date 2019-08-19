@@ -507,8 +507,9 @@ class Ui_MainWindow(QtCore.QObject):
     self.tagController      = TagController(self.tagDataModel)
     self.tagview.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
     self.tagFilterController   = QtCore.QSortFilterProxyModel()
-    self.tagFilterController.setSourceModel(self.tagController)
     self.tagFilterController.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
+    self.tagFilterController.setSortCaseSensitivity(QtCore.Qt.CaseInsensitive)
+    self.tagFilterController.setSourceModel(self.tagController)
     self.tagview.setModel(self.tagFilterController)
     
     self.onlineDefController      = DefinitionController(self.onlineDefDataModel)
@@ -596,6 +597,7 @@ class Ui_MainWindow(QtCore.QObject):
       tags    = self.addWordDialog.getTags()
       self.addWord(newWord, tags)
       self.tagController.updateTags()   
+      self.tagFilterController.sort(0)   
       self.tagFilter.setText("")
       tagIndex = self.tagController.getTagIndex(tags[0])
       tagIndex = self.tagFilterController.mapFromSource(tagIndex)
@@ -618,6 +620,7 @@ class Ui_MainWindow(QtCore.QObject):
   def replaceTagsOfWord_ui(self, word, newTags): 
     self.replaceTagsOfWord(word,newTags)
     self.tagController.updateTags()
+    self.tagFilterController.sort(0)
     self.wordController.updateOnTag(self.getSelectedTag())
     wordIndex = self.wordController.getWordIndex(word)
     viewIndex = self.wordFilterController.mapFromSource(wordIndex)
@@ -642,6 +645,7 @@ class Ui_MainWindow(QtCore.QObject):
     dialogCode = self.editMetaTagsDialog.exec()
     if dialogCode == QtWidgets.QDialog.Accepted:
       self.tagController.updateTags()
+      self.tagFilterController.sort(0)
     elif dialogCode == QtWidgets.QDialog.Rejected:
       print('Rejected')
   
@@ -766,6 +770,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.markupSavedDefinitions(remarkup = False)
     self.setWindowTitle()
     self.tagController.updateTags()
+    self.tagFilterController.sort(0)
     self.statusBar.showMessage("Loaded from "+ fileName , 2000)
     if self.welcomeDialog.isVisible():
       self.welcomeDialog.loadedFile = True
@@ -998,6 +1003,7 @@ class Ui_MainWindow(QtCore.QObject):
       newTag = widget.text()
       self.tagDataModel.replaceTag(oldTag,newTag)
       self.tagController.updateTags()
+      self.tagFilterController.sort(0)
       self.setDirtyState()
 
   def handleEditedWord(self,widget):
@@ -1091,6 +1097,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.removeWord(word,tags)
     self.wordController.updateOnTag(self.getSelectedTag())
     self.tagController.updateTags()
+    self.tagFilterController.sort(0)
   
   def renameWord(self,oldWord,word):
     self.wordDataModel.renameWord(oldWord,word)
