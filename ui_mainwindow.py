@@ -230,9 +230,25 @@ class Ui_MainWindow(QtCore.QObject):
   def selectDefinitionsProvider(self , dictionary , action):
     self.createGetDefinitionsAction_context(dictionary)
     self.selectedDefinitionsDict = dictionary
+    if self.getSelectedWord() is not None:
+      self.getDefinitionsAction.trigger()
     for a in self.selectDefinitionsProviderActions:
       if a is not action:
         a.setChecked(False)
+
+  def createGetDefinitionsAction_context(self,dictionary):
+    try:
+      prevAction                = self.getDefinitionsAction
+    except AttributeError:
+      prevAction = None
+    self.getDefinitionsAction = QtWidgets.QAction ("Get " + self.definitionName+ "s from " + dictionary, self.mainWindow)
+    self.getDefinitionsAction.setObjectName("getDefinitionsAction")
+    self.getDefinitionsAction.triggered.connect(partial(self.requestOnlineDefinition_ui,dictionary) )
+    self.getDefinitionsAction.setCheckable(True)
+    if prevAction is not None:
+      self.getDefinitionsAction.setChecked(prevAction.isChecked())
+    self.dictionaryContentType  = "definitionList"
+    self.selectedDict           = dictionary
 
   def createSearchForWordActions(self):
     self.selectEngineActions  = []
@@ -268,6 +284,8 @@ class Ui_MainWindow(QtCore.QObject):
   def selectSearchEngine(self,dictionary,action):
     self.createSearchForWordAction_context(dictionary)
     self.selectedSearchDict = dictionary
+    if self.getSelectedWord() is not None:
+      self.searchForWordAction.trigger()
     for a in self.selectEngineActions:
       if a is not action:
         a.setChecked(False)
@@ -309,20 +327,6 @@ class Ui_MainWindow(QtCore.QObject):
     self.tabwidget.setCurrentIndex(0)
     self.onlineDefinitionsView.setEnabled(False)
     self.requestOnlineDefinition(self.getSelectedWord(),self.selectedDefinitionsDict)
-
-  def createGetDefinitionsAction_context(self,dictionary):
-    try:
-      prevAction                = self.getDefinitionsAction
-    except AttributeError:
-      prevAction = None
-    self.getDefinitionsAction = QtWidgets.QAction ("Get " + self.definitionName+ "s from " + dictionary, self.mainWindow)
-    self.getDefinitionsAction.setObjectName("getDefinitionsAction")
-    self.getDefinitionsAction.triggered.connect(partial(self.requestOnlineDefinition_ui,dictionary) )
-    self.getDefinitionsAction.setCheckable(True)
-    if prevAction is not None:
-      self.getDefinitionsAction.setChecked(prevAction.isChecked())
-    self.dictionaryContentType  = "definitionList"
-    self.selectedDict           = dictionary
 
   def createSearchForWordAction_context(self,engine):
     try:
