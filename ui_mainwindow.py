@@ -578,6 +578,20 @@ class Ui_MainWindow(QtCore.QObject):
     else:
       print("Rejected")
 
+  def selectWord(self,word,forceUpdate = False):
+    wordIndex = self.wordController.getWordIndex(word)
+    viewIndex = self.wordFilterController.mapFromSource(wordIndex)
+    if forceUpdate:
+      self.selectedWordChanged(viewIndex)
+    else:
+      self.wordview.setCurrentIndex(viewIndex)
+
+  def selectTag(self,tag):
+    tagIndex = self.tagController.getTagIndex(tag)
+    viewIndex = self.tagFilterController.mapFromSource(tagIndex) 
+    self.tagview.setCurrentIndex(viewIndex)
+    return tagIndex
+
   def addWord(self, newWord, tags):
     self.tagDataModel.addTagging(newWord,tags)
     self.wordDataModel.addWord(newWord)
@@ -596,19 +610,15 @@ class Ui_MainWindow(QtCore.QObject):
       newWord = self.addWordDialog.getWord()
       tags    = self.addWordDialog.getTags()
       self.addWord(newWord, tags)
-      self.tagController.updateTags()   
+      self.tagController.updateTags()
       self.tagFilterController.sort(0)   
       self.tagFilter.setText("")
-      tagIndex = self.tagController.getTagIndex(tags[0])
-      tagIndex = self.tagFilterController.mapFromSource(tagIndex)
-      self.tagview.setCurrentIndex(tagIndex)
+      tagIndex = self.selectTag(tags[0])
       #When the tag has not changed setCurrentIndex does not trigger a refresh of the word list
       if tagIndex == self.tagview.currentIndex():
         self.wordController.updateOnTag(tags[0])
       self.wordFilter.setText("")
-      wordIndex = self.wordController.getWordIndex(newWord)
-      viewIndex = self.wordFilterController.mapFromSource(wordIndex)
-      self.wordview.setCurrentIndex(viewIndex)
+      self.selectWord(newWord)
 
     elif dialogCode == QtWidgets.QDialog.Rejected:
       print('Rejected')
@@ -618,13 +628,21 @@ class Ui_MainWindow(QtCore.QObject):
     self.tagDataModel.replaceTagging(word,newTags)
 
   def replaceTagsOfWord_ui(self, word, newTags): 
+    oldSelectedTag = self.getSelectedTag()
     self.replaceTagsOfWord(word,newTags)
     self.tagController.updateTags()
     self.tagFilterController.sort(0)
-    self.wordController.updateOnTag(self.getSelectedTag())
-    wordIndex = self.wordController.getWordIndex(word)
-    viewIndex = self.wordFilterController.mapFromSource(wordIndex)
-    self.wordview.setCurrentIndex(viewIndex)
+    
+    if newTags is None or len(newTags) == 0:
+      self.wordController.updateOnTag(self.getSelectedTag())
+    elif oldSelectedTag not in newTags:
+      newSelectedTag = newTags[0]
+    else:
+      newSelectedTag = oldSelectedTag
+    self.selectTag(newSelectedTag)
+    self.wordController.updateOnTag(newSelectedTag)
+    self.selectWord(word)
+    self.elementController.updateOnWord(word)
 
   def editTagsOfWord_dialog_ui(self,event):
     word = self.getSelectedWord()
@@ -771,6 +789,10 @@ class Ui_MainWindow(QtCore.QObject):
     self.setWindowTitle()
     self.tagController.updateTags()
     self.tagFilterController.sort(0)
+    self.deselectLV(self.tagview)
+    self.wordController.updateOnTag(None)
+    self.deselectLV(self.wordview)
+    self.elementController.clear()
     self.statusBar.showMessage("Loaded from "+ fileName , 2000)
     if self.welcomeDialog.isVisible():
       self.welcomeDialog.loadedFile = True
@@ -924,11 +946,14 @@ class Ui_MainWindow(QtCore.QObject):
     self.wordController.updateOnTag(selectedTag)
     index = self.wordview.currentIndex()
     if index.isValid():
-      self.wordview.selectionModel().setCurrentIndex(QtCore.QModelIndex(),QtCore.QItemSelectionModel.Deselect)
-      self.wordview.selectionModel().setCurrentIndex(QtCore.QModelIndex(),QtCore.QItemSelectionModel.Clear)
+      self.deselectLV(self.wordview)
     else:
       if oldIndex.isValid():
         self.selectedWordChanged(index)
+
+  def deselectLV(self, listview):
+    listview.selectionModel().setCurrentIndex(QtCore.QModelIndex(),QtCore.QItemSelectionModel.Deselect)
+    listview.selectionModel().setCurrentIndex(QtCore.QModelIndex(),QtCore.QItemSelectionModel.Clear)
 
 #======Definitions=======================================================
   def saveDefinitionFromLV_ui(self , event):
@@ -1012,10 +1037,9 @@ class Ui_MainWindow(QtCore.QObject):
       newWord = widget.text()
       self.renameWord(oldWord,newWord)
       self.wordController.updateOnTag(self.getSelectedTag())
-      sourceIndex = self.wordController.getWordIndex(newWord)
-      viewIndex = self.wordFilterController.mapFromSource(sourceIndex)
-      #Trigger a refresh of the part of the UI depending on the selected word
-      self.selectedWordChanged(viewIndex)
+      self.selectWord(newWord)
+      self.selectWord(newWord,forceUpdate = True)
+
 
   def editSelectedTag(self):
     index = self.tagview.currentIndex()

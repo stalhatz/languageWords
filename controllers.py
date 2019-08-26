@@ -302,14 +302,15 @@ class WordController(QAbstractListModel):
       return str(self.df_image.iloc[index.row(),0])
     if role==self.DataRole:
       return str(self.df_image.iloc[index.row(),0])
-
   def updateOnTag(self,tag):
     self.layoutAboutToBeChanged.emit()
-    tagList = self.tagModel.getAllChildTags(tag)
-    tagList.append(tag)
-    tagIndexTable = self.tagModel.getIndexesFromTagList(tagList)
-
-    self.df_image = pd.merge(self.wordModel.wordTable, tagIndexTable, on=['text','text'])
+    if tag == None:
+      self.df_image = self.wordModel.wordTable
+    else:
+      tagList = self.tagModel.getAllChildTags(tag)
+      tagList.append(tag)
+      tagIndexTable = self.tagModel.getIndexesFromTagList(tagList)
+      self.df_image = pd.merge(self.wordModel.wordTable, tagIndexTable, on=['text','text'])
     self.layoutChanged.emit()
 
   def getWordIndex(self,word):
@@ -389,6 +390,10 @@ class ElementTagController(QAbstractListModel):
         self.tagList += self.tagModel.getAllParentTags(tag)
       self.tagList = list(set(self.tagList))
       self.orderTagLists()
+    self.layoutChanged.emit()
+  def clear(self):
+    self.layoutAboutToBeChanged.emit()
+    self.tagList = []
     self.layoutChanged.emit()
 
   def update(self):
