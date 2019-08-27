@@ -50,6 +50,7 @@ class WordDialog(QtWidgets.QDialog):
     self.existingWord         = kwargs.get("existingWord")
     self.dialogType           = dialogType
     self.existingTags         = kwargs.get("existingTags")
+    self.isAutoTag     = kwargs.get("isAutoTag")
     vLayout     = QtWidgets.QVBoxLayout(self)
     self.wordName = kwargs.get("wordName")
     #vLayout
@@ -114,7 +115,7 @@ class WordDialog(QtWidgets.QDialog):
     self.tLineEdit.setMaximumSize(QtCore.QSize(400, 50))
     self.tLineEdit.setPlaceholderText("Enter a new tag linked to the " + self.wordName)
     self.tLineEdit.textChanged.connect(self.tagTextChanged)
-    tagCompleter = QtWidgets.QCompleter(self.tagDataModel.getTags())
+    tagCompleter = QtWidgets.QCompleter(self.tagDataModel.getTags(includeAutoTags = False))
     tagCompleter.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
     self.tLineEdit.setCompleter(tagCompleter)
 
@@ -157,9 +158,12 @@ class WordDialog(QtWidgets.QDialog):
   def tagTextChanged(self,text):
     shouldEnable = False
     if text != "":
-      if any(text == x for x in self.tagController.stringList()):
+      if self.isAutoTag(text):
         shouldEnable = False
-        self.statusBar.showMessage("Tag already added")
+        self.statusBar.showMessage("Can't add tag : Using reserved characters")
+      elif any(text == x for x in self.tagController.stringList()):
+        shouldEnable = False
+        self.statusBar.showMessage("Can't add tag : Tag already added")
       else:
         shouldEnable = True
     if shouldEnable:
@@ -169,7 +173,7 @@ class WordDialog(QtWidgets.QDialog):
       self.addTagButton.setEnabled(False)
       
   def enableOKButton(self):
-    if (not self.wordSpelledCorrectly) or self.wordAlreadyExists or len(self.tagController.stringList()) == 0:
+    if (not self.wordSpelledCorrectly) or self.wordAlreadyExists:
       self.okButton.setEnabled(False)
     else:
       self.okButton.setEnabled(True)
@@ -179,8 +183,8 @@ class WordDialog(QtWidgets.QDialog):
       self.statusBar.showMessage(self.wordName + " already exists")
     elif not self.wordSpelledCorrectly:
       self.statusBar.showMessage("Please check your spelling")  
-    elif len(self.tagController.stringList()) == 0:
-      self.statusBar.showMessage("Need at least one tag to register" + self.wordName)  
+    # elif len(self.tagController.stringList()) == 0:
+      # self.statusBar.showMessage("Need at least one tag to register" + self.wordName)  
     return False
     
     
@@ -410,7 +414,7 @@ class TagEditDialog(QtWidgets.QDialog):
     self.mtLineEdit.setMaximumSize(QtCore.QSize(400, 50))
     self.mtLineEdit.setPlaceholderText("Enter metatag to be applied to selected tag")
     self.mtLineEdit.textChanged.connect(self.mtEditTextChanged)
-    tagCompleter            = QtWidgets.QCompleter(self.tagDataModel.getTags())
+    tagCompleter            = QtWidgets.QCompleter(self.tagDataModel.getTags(includeAutoTags = False))
     tagCompleter.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
     self.mtLineEdit.setCompleter(tagCompleter)
     self.metaTagView.selectionModel().currentChanged.connect(self.metaTagSelected)

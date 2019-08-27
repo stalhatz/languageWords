@@ -15,6 +15,29 @@ from collections import namedtuple
 
 from wikipedia.exceptions import WikipediaException
 
+def pandasCondition(dataFrame, query,fields):
+  condition = None
+  if len(fields) > 0:
+    for f in fields:
+      value = getattr(query,f)
+      if value is None:
+        raise ValueError("Not defined value in key")
+      fieldCondition = (dataFrame[f] == value)
+      if condition is not None:
+        condition = fieldCondition & condition
+      else:
+        condition = fieldCondition
+    return condition
+
+  for value,field in zip(query,query._fields):
+    if value is not None:
+      fieldCondition = (dataFrame[field] == value)
+      if condition is not None:
+        condition = fieldCondition & condition
+      else:
+        condition = fieldCondition
+  return condition
+
 def saveToPickle(a , file):
   if isinstance(file,str):
     with open(file, 'wb') as output:
@@ -352,27 +375,7 @@ class DefinitionDataModel():
     return obj
 
   def definitionCondition(self,d,*fields):
-    condition = None
-    if len(fields) > 0:
-      for f in fields:
-        value = getattr(d,f)
-        if value is None:
-          raise ValueError("Not defined value in key")
-        fieldCondition = (self.savedDefinitionsTable[f] == value)
-        if condition is not None:
-          condition = fieldCondition & condition
-        else:
-          condition = fieldCondition
-      return condition
-
-    for value,field in zip(d,d._fields):
-      if value is not None:
-        fieldCondition = (self.savedDefinitionsTable[field] == value)
-        if condition is not None:
-          condition = fieldCondition & condition
-        else:
-          condition = fieldCondition
-    return condition
+    return pandasCondition(self.savedDefinitionsTable,d,fields)
 
   def definitionExists(self,d):
     try:
@@ -483,28 +486,33 @@ class TagDataModel():
   to tags attributed to tags. Through the transitive property tags related to other tags also apply to indexes but there is no way to
   directly remove a tag related transitively to an index because by design this information is not captured"""
 
-  def __init__(self , tagTable = None , globalParentTag = "#All Words#"):
-    
-    self.useGlobalParentTag = False
-    if globalParentTag is not None:
-      self.useGlobalParentTag = True
-      self.globalParentTag = globalParentTag
-      
+  Tag = namedtuple('Tag',['text' , 'tag', 'timestamp' , 'isAutoTag'])
+  Tag.__new__.__defaults__ = (None,) * len(Tag._fields)
+  
+
+  def __init__(self , tagTable = None):  
     self.version = 0.01
     self.tagNodes = {}
     if tagTable is None:
-      self.tagTable   = pd.DataFrame(columns = ["text" , "tag"])
+      self.tagTable   = pd.DataFrame()
     else:
       self.tagTable   = tagTable
+
+  def condition(self,t,*fields):
+    return pandasCondition(self.tagTable,t,fields)
 
   def getTagsFromIndex(self,word):
     a =  self.tagTable[self.tagTable.text == word]
     a = list(a.tag)
     return a
 
-  def getTags(self):
-    tagIndex = pd.pivot_table(self.tagTable,values='text',index='tag',aggfunc=pd.Series.nunique).reset_index()
-    return list(tagIndex['tag'])
+  def getTags(self , includeAutoTags = True):
+    # tagIndex = pd.pivot_table(self.tagTable,values='isAutoTag',index='tag',aggfunc=pd.Series.nunique).reset_index()
+    table = self.tagTable
+    if not includeAutoTags:
+      table = table[table.isAutoTag != True]
+    uniqueTagColumn = table.tag.unique()
+    return list(uniqueTagColumn)
 
   def replaceTag(self,oldTag,newTag):
     #Replace it as a metatag
@@ -520,11 +528,15 @@ class TagDataModel():
     condition = self.tagTable.text == oldWord
     self.tagTable.loc[condition,"text"] = newWord
 
-  def addTagging(self,word,tags):
+  def addTagging(self,word,tags,autoTags=None):
     if len(tags) > 0:
       tagTableList = []
-      for tag in tags:
-        tagTableList.append({"tag":tag , "text" : word})
+      ts = pd.Timestamp.now()
+      for i,tag in enumerate(tags):
+        if autoTags is not None and autoTags[i]:
+          tagTableList.append({"tag":tag , "text" : word ,"timestamp":ts, "isAutoTag" : True})
+        else:
+          tagTableList.append({"tag":tag , "text" : word ,"timestamp":ts, "isAutoTag" : False})
       self.tagTable = self.tagTable.append(tagTableList, ignore_index = True)
       self.tagTable.drop_duplicates(inplace = True)
 
@@ -532,14 +544,18 @@ class TagDataModel():
     if len(tags) > 0:
       tagTableList = []
       for tag in tags:
-        tagTableList.append({"tag":tag , "text" : word})
-      self.tagTable = self.tagTable.append(tagTableList, ignore_index = True)
-      self.tagTable.drop_duplicates(keep=False, inplace = True)
-  
-  def replaceTagging(self,word,newTags):
+        self.removeSingleTagging(word,tag)
+
+  def removeSingleTagging(self,word,tag):
+    query = TagDataModel.Tag(text = word , tag = tag)
+    condition = self.condition( query )
+    index = self.tagTable[condition].index
+    self.tagTable.drop(index, inplace = True)
+
+  def replaceTagging(self,word,newTags,autoTags=None):
     oldTags = self.getTagsFromIndex(word)
     self.removeTagging(word,oldTags)
-    self.addTagging(word,newTags)
+    self.addTagging(word,newTags,autoTags)
 
   def getIndexesFromTagList(self,tagList):
     #print(tagList)
@@ -550,17 +566,19 @@ class TagDataModel():
     tagIndexTable = tagIndexTable.drop_duplicates()
     return tagIndexTable
 
-  def createAutoTags(self):
-    if self.useGlobalParentTag:
-      tags = self.getTags()
-      for tag in tags:
-        tagNode = self.tagToNode(tag)
-        globalNode = self.tagToNode(self.globalParentTag,True)
-        self.addNodeRelation(tagNode,globalNode)
-
   def deleteAutoTags(self):
-    self.removeTag(self.globalParentTag)
+    #delete auto meta tags
+    metaTagsToBeRemoved = []
+    for tag in self.tagNodes:
+      if self.tagNodes[tag].isAutoTag:
+        metaTagsToBeRemoved.append(tag)
+    for tag in metaTagsToBeRemoved:
+      self.removeMetaTag(tag)
 
+    #delete auto tags
+    condition = self.condition(TagDataModel.Tag(isAutoTag = True))
+    index = self.tagTable[condition].index
+    self.tagTable.drop(index, inplace = True)
   
   def saveData(self,output):
     #version 0.01
@@ -582,8 +600,6 @@ class TagDataModel():
     if version == 0.01:
       self.tagTable = loadFromPickle(_input)  
       self.tagNodes = loadFromPickle(_input)
-    #FIXME:Auto tags should be moved out of this class. They should be part of the application
-    self.createAutoTags()
     #self.tagTable = loadFromPickle(_input)
 
   def toFile(self,file):
@@ -675,12 +691,12 @@ class TagDataModel():
   def connected(self, subNode, predNode):
     return predNode in subNode.predicatives
 
-  def addRelation(self,subject,pred):
+  def addRelation(self,subject,pred, isAutoTag=False):
     if subject == pred:
       #print("Can't relate a tag to itself")
       return
-    subNode = self.tagToNode(subject)
-    predNode = self.tagToNode(pred)
+    subNode = self.tagToNode(subject,isAutoTag)
+    predNode = self.tagToNode(pred,isAutoTag)
     self.addNodeRelation(subNode,predNode)
       
 
@@ -701,15 +717,12 @@ class TagDataModel():
     predNode.subjects.append(subNode)
     return True
 
-  def removeRelation(self,subject,pred):
-    subNode = self.tagNodes[subject]
-    predNode = self.tagNodes[pred]
-  
   def removeNodeRelation(self,subNode,predNode):
     subNode.predicatives.remove(predNode)
     predNode.subjects.remove(subNode)
 
-  def removeTag(self,tag):
+
+  def removeMetaTag(self,tag):
     try:
       node = self.tagNodes[tag]
     except KeyError:

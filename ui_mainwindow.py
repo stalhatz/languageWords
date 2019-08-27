@@ -48,6 +48,10 @@ class Ui_MainWindow(QtCore.QObject):
     self.version = 0.03
     self.definitionName = "Textbite"
     self.wordName       = "Concept"
+    self.autoTagCharacter = "#"
+    self.noTagsAutoTag  =  self.createAutoTag("No Tags")
+    self.noDefinitionsAutoTag = self.createAutoTag("No " + self.definitionName + "s")
+    self.globalAutoTag  = self.createAutoTag("All " + self.wordName+"s")
     self.language = "N/A"
     self.projectName = "Untitled"
     self.programName = "LanguageWords"
@@ -508,7 +512,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.wordController.addView(self.wordview)
     self.wordview.setModel(self.wordFilterController)
 
-    self.tagController      = TagController(self.tagDataModel)
+    self.tagController      = TagController(self.tagDataModel,self.isAutoTag,self.stripAutoTag)
     self.tagview.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
     self.tagFilterController   = QtCore.QSortFilterProxyModel()
     self.tagFilterController.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
@@ -597,7 +601,12 @@ class Ui_MainWindow(QtCore.QObject):
     return tagIndex
 
   def addWord(self, newWord, tags):
-    self.tagDataModel.addTagging(newWord,tags)
+    if len(tags) > 0:
+      self.tagDataModel.addTagging(newWord,tags)
+    else:
+      self.addNoTagsAutoTag(newWord)
+    self.addNoDefinitionsAutoTag(newWord)
+    self.addGlobalAutoTag(newWord)
     self.wordDataModel.addWord(newWord)
     self.setDirtyState()
 
@@ -608,7 +617,8 @@ class Ui_MainWindow(QtCore.QObject):
     if self.toggleSpellingAction.isChecked():
       dictionary = self.dictionary
     self.addWordDialog = WordDialog(self.centralwidget,self.wordDataModel,self.tagDataModel,self.onlineDefDataModel,dictionary,
-                                    WordDialog.CREATE_DIALOG , existingWord = word , wordName = self.wordName)
+                                    WordDialog.CREATE_DIALOG , existingWord = word , wordName = self.wordName ,
+                                    isAutoTag = self.isAutoTag)
     dialogCode = self.addWordDialog.exec()
     if dialogCode == QtWidgets.QDialog.Accepted:
       newWord = self.addWordDialog.getWord()
@@ -617,10 +627,11 @@ class Ui_MainWindow(QtCore.QObject):
       self.tagController.updateTags()
       self.tagFilterController.sort(0)   
       self.tagFilter.setText("")
-      tagIndex = self.selectTag(tags[0])
+      allTags    = self.tagDataModel.getTagsFromIndex(newWord)
+      tagIndex = self.selectTag(allTags[0])
       #When the tag has not changed setCurrentIndex does not trigger a refresh of the word list
       if tagIndex == self.tagview.currentIndex():
-        self.wordController.updateOnTag(tags[0])
+        self.wordController.updateOnTag(allTags[0])
       self.wordFilter.setText("")
       self.selectWord(newWord)
 
@@ -629,11 +640,57 @@ class Ui_MainWindow(QtCore.QObject):
 
   def replaceTagsOfWord(self, word,newTags):
     #Remove word and tags
-    self.tagDataModel.replaceTagging(word,newTags)
+    autoFlags = [self.isAutoTag(x) for x in newTags]
+    self.tagDataModel.replaceTagging(word,newTags,autoFlags)
+    if len(newTags) == 0:
+      self.addNoTagAutoTag(word)
+    else:
+      if self.noTagsAutoTag in newTags:
+        self.removeNoTagsAutoTag(word)
+        newTags.remove(self.noTagsAutoTag)
+    return newTags
+
+  def createAutoTag(self,tag):
+    return self.autoTagCharacter + tag + self.autoTagCharacter
+  def stripAutoTag(self,autoTag):
+    return autoTag[len(self.autoTagCharacter) : -len(self.autoTagCharacter)]
+  def isAutoTag(self,tag):
+    return tag.startswith(self.autoTagCharacter)
+
+  def addAutoTagsToModel(self):
+    tags = self.tagDataModel.getTags()
+    words = self.wordDataModel.getWords()
+    for word in words:
+      addNoDefinitionsAutoTag = False
+      addNoTagsAutoTag = False
+      definitions = self.defDataModel.getDefinitionsForWord(word)
+      if definitions is None or len(definitions) == 0:
+        addNoDefinitionsAutoTag = True
+      tags        = self.tagDataModel.getTagsFromIndex(word)
+      if tags is None or len(tags) == 0:
+        addNoTagsAutoTag = True 
+      self.addGlobalAutoTag(word)    
+      if addNoDefinitionsAutoTag  : self.addNoDefinitionsAutoTag(word)
+      if addNoTagsAutoTag         : self.addNoTagsAutoTag(word)
+
+  def addGlobalAutoTag(self,word):
+    self.tagDataModel.addTagging(word,[self.globalAutoTag] , [True])
+
+  def addNoDefinitionsAutoTag(self,word):
+    self.tagDataModel.addTagging(word,[self.noDefinitionsAutoTag],[True])
+
+  def addNoTagsAutoTag(self,word):
+    self.tagDataModel.addTagging(word,[self.noTagsAutoTag],[True])
+
+  def removeNoDefinitionsAutoTag(self,word):
+    self.tagDataModel.removeTagging(word,[self.noDefinitionsAutoTag])
+
+  def removeNoTagsAutoTag(self,word):
+    self.tagDataModel.removeTagging(word,[self.noTagsAutoTag])
 
   def replaceTagsOfWord_ui(self, word, newTags): 
     oldSelectedTag = self.getSelectedTag()
-    self.replaceTagsOfWord(word,newTags)
+    newTags = self.replaceTagsOfWord(word,newTags)
     self.tagController.updateTags()
     self.tagFilterController.sort(0)
     
@@ -647,6 +704,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.wordController.updateOnTag(newSelectedTag)
     self.selectWord(word)
     self.elementController.updateOnWord(word)
+    self.setDirtyState()
 
   def editTagsOfWord_dialog_ui(self,event):
     word = self.getSelectedWord()
@@ -654,7 +712,8 @@ class Ui_MainWindow(QtCore.QObject):
       return
     tags      = self.tagDataModel.getTagsFromIndex(word)
     self.editWordDialog = WordDialog(self.centralwidget,self.wordDataModel,self.tagDataModel,self.onlineDefDataModel,self.dictionary,
-                                      WordDialog.EDIT_DIALOG , existingWord = word, existingTags = tags , wordName = self.wordName)
+                                      WordDialog.EDIT_DIALOG , existingWord = word, existingTags = tags , wordName = self.wordName, 
+                                      isAutoTag = self.isAutoTag)
     dialogCode = self.editWordDialog.exec()
     if dialogCode == QtWidgets.QDialog.Accepted:
       newTags    = self.editWordDialog.getTags()
@@ -770,6 +829,7 @@ class Ui_MainWindow(QtCore.QObject):
     obj.activeConnections       = []
     obj.loadDictionary(obj,obj.language)
     obj.defineDictionaryActions()
+    obj.addAutoTagsToModel()
     return obj
   
   def openFile(self,fileName = None):
@@ -915,11 +975,10 @@ class Ui_MainWindow(QtCore.QObject):
           return True
     return False
 
-
-
   def updateOnlineDefinition_ui(self,onlineDefinitionsList):
     word = self.getSelectedWord()
-    # if word is None: return
+    if word is None: 
+      return
     for i,d in enumerate(onlineDefinitionsList):
       markups = self.markupWordInText(word,d.definition)
       onlineDefinitionsList[i] = dictT.Definition(d.definition , d.type , markups , d.hyperlink )
@@ -974,16 +1033,27 @@ class Ui_MainWindow(QtCore.QObject):
       dictionary  = self.selectedDefinitionsDict
       self.saveDefinition(word,definitionText,dictionary,definitionType,markups,hyperlink)
     self.savedDefController.updateOnWord(word)
+    currentTag = self.getSelectedTag()
+    self.tagController.updateTags()
+    tags = self.tagDataModel.getTagsFromIndex(word)
+    if currentTag not in tags:
+      self.selectTag(tags[0])
+      self.selectWord(word)
+    
 
   def saveDefinition(self,word,definitionText,dictionary,definitionType,markups,hyperlink=None):
     #Try to check every element of the query before adding the definition
     defTuple = DefinitionDataModel.Definition(word,definitionText,None,dictionary,definitionType,[markups],hyperlink)
     self.defDataModel.addDefinition(defTuple)
+    self.removeNoDefinitionsAutoTag(word)
     self.setDirtyState()
   
   def removeDefinition(self,word,definition):
     query = self.getDefDMQuery(word,definition)
     self.defDataModel.removeDefinition(query)
+    definitions = self.defDataModel.getDefinitionsFromWord(word)
+    if definitions is None or len(definitions) == 0:
+      self.addNoDefinitionAutoTag(word)
     self.setDirtyState()
 
   def removeSelectedDefinition_ui(self):
@@ -1030,6 +1100,8 @@ class Ui_MainWindow(QtCore.QObject):
     if (widget.isModified()):
       oldTag  = self.getSelectedTag()
       newTag = widget.text()
+      if self.isAutoTag(newTag):
+        return
       self.tagDataModel.replaceTag(oldTag,newTag)
       self.tagController.updateTags()
       self.tagFilterController.sort(0)

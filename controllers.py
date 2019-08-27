@@ -1,3 +1,4 @@
+from PyQt5.QtGui import (QFont,QIcon)
 from PyQt5.QtCore import (QVariant, Qt, pyqtSignal, QUrl,QItemSelectionModel)
 from PyQt5.QtCore import (QAbstractListModel, QModelIndex, QStringListModel)
 from PyQt5.QtNetwork import (QNetworkAccessManager, QNetworkRequest, QNetworkReply)
@@ -212,9 +213,11 @@ class DefinitionController(QAbstractListModel):
 # TODO: [FEATURE] [LOW PRIORITY] use > = < filters to filter tags with certain number of corresponding words
 class TagController(QAbstractListModel):
   DataRole = Qt.UserRole
-  def __init__(self,tagModel):
+  def __init__(self,tagModel,isAutoTag,stripAutoTag):
     super(TagController,self).__init__()
     self.tagModel = tagModel
+    self.isAutoTag    = isAutoTag
+    self.stripAutoTag = stripAutoTag
     if self.tagModel.tagTable.empty:
       self.tagIndex  = pd.DataFrame(columns=["tag","text"])
     else:
@@ -224,8 +227,21 @@ class TagController(QAbstractListModel):
   def data(self, index, role):
     if not index.isValid() or not (0<=index.row()<len(self.tagIndex.index)):  
       return QVariant()
-    if role==Qt.DisplayRole:      
-      return (self.getTag(index) + " ("+str(self.getTagCount(index))+")").capitalize()
+    if role== Qt.DecorationRole:
+      tagName = self.getTag(index)
+      if (self.isAutoTag(tagName)):
+        return QIcon("sample.svg")
+    if role == Qt.FontRole:
+      tagName = self.getTag(index)
+      if (self.isAutoTag(tagName)):
+        font = QFont();
+        font.setBold(True);
+        return font;
+    if role==Qt.DisplayRole: 
+      tagName = self.getTag(index)
+      if (self.isAutoTag(tagName)):
+        tagName = self.stripAutoTag(tagName)
+      return (tagName + " ("+str(self.getTagCount(index))+")").capitalize()
     if role==Qt.EditRole:
       return self.getTag(index)
     if role==self.DataRole:
@@ -302,6 +318,11 @@ class WordController(QAbstractListModel):
       return str(self.df_image.iloc[index.row(),0])
     if role==self.DataRole:
       return str(self.df_image.iloc[index.row(),0])
+    if role==Qt.ToolTipRole:
+      a  = self.df_image.iloc[index.row()]
+      wrapper = textwrap.TextWrapper()
+      wrapper.width = 80
+      return wrapper.fill(str(a))
   def updateOnTag(self,tag):
     self.layoutAboutToBeChanged.emit()
     if tag == None:
@@ -310,7 +331,7 @@ class WordController(QAbstractListModel):
       tagList = self.tagModel.getAllChildTags(tag)
       tagList.append(tag)
       tagIndexTable = self.tagModel.getIndexesFromTagList(tagList)
-      self.df_image = pd.merge(self.wordModel.wordTable, tagIndexTable, on=['text','text'])
+      self.df_image = pd.merge(self.wordModel.wordTable, tagIndexTable[["text"]], on=['text','text'])
     self.layoutChanged.emit()
 
   def getWordIndex(self,word):
