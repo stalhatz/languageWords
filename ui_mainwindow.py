@@ -1067,7 +1067,7 @@ class Ui_MainWindow(QtCore.QObject):
   def removeDefinition(self,word,definition):
     query = self.getDefDMQuery(word,definition)
     self.defDataModel.removeDefinition(query)
-    definitions = self.defDataModel.getDefinitionsFromWord(word)
+    definitions = self.defDataModel.getDefinitionsForWord(word)
     if definitions is None or len(definitions) == 0:
       self.addNoDefinitionAutoTag(word)
     self.setDirtyState()
