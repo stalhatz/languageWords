@@ -19,8 +19,10 @@ class myWebViewer(QtWebEngineWidgets.QWebEngineView):
     
   def contextMenuEvent(self, event):
     menu = QtWidgets.QMenu(self)
-    for action in self.actions:
-      menu.addAction(action)
+    if len(self.selectedText()) > 0:
+      for action in self.actions:
+        if action.isEnabled():
+          menu.addAction(action)
     menu.addAction(self.actionBack)
     menu.exec_(event.globalPos())
   
