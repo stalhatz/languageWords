@@ -206,6 +206,16 @@ class Ui_MainWindow(QtCore.QObject):
     self.hideCentralPanelAction.triggered.connect(self.hideCentralPanel)
     self.hideCentralPanelAction.setShortcut("F11")
 
+    self.showSearchBarAction = QtWidgets.QAction ("Show search bar", self.mainWindow)
+    self.showSearchBarAction.setObjectName("showSearchBarAction")
+    self.showSearchBarAction.triggered.connect(self.showSearchBar)
+    self.showSearchBarAction.setShortcut("Ctrl+L")
+
+    self.searchClipboardAction = QtWidgets.QAction ("Search clipboard contents", self.mainWindow)
+    self.searchClipboardAction.setObjectName("searchClipboardAction")
+    self.searchClipboardAction.triggered.connect(self.searchClipboard)
+    self.searchClipboardAction.setShortcut("Ctrl+Shift+L")
+
     self.createAddDefFromWebViewActions()
     self.changeDefinitionTypeActions()
     
@@ -341,18 +351,21 @@ class Ui_MainWindow(QtCore.QObject):
     self.searchForWordAction.setObjectName("searchForWordAction")
     self.searchForWordAction.triggered.connect(partial(self.searchForWordInBrowser,engine) )
     self.searchForWordAction.setCheckable(True)
+    self.searchForWordAction.engine = engine
     if prevAction is not None:
       self.searchForWordAction.setChecked(prevAction.isChecked())
 
     self.dictionaryContentType  = "urls"
     self.selectedDict           = engine
   
-  def searchForWordInBrowser(self , engine):
+  def searchForWordInBrowser(self , engine , word = None):
     self.dictionaryContentType  = "urls"
     self.selectedDict           = engine
     self.searchForWordAction.setChecked(True)
     self.getDefinitionsAction.setChecked(False)
-    url = self.onlineDefDataModel.createUrl(self.getSelectedWord(),self.selectedSearchDict)
+    if word is None or word == False:
+      word = self.getSelectedWord()
+    url = self.onlineDefDataModel.createUrl(word,self.selectedSearchDict)
     self.openLinkInBrowser(url)  
 
   def addTopButtons(self , layout ,parentWidget):
@@ -479,6 +492,8 @@ class Ui_MainWindow(QtCore.QObject):
     self.menuEdit.addAction(self.toggleSpellingAction)
     self.menuEdit.addAction(self.useExternalBrowserAction)
     self.menuEdit.addAction(self.markupSavedDefinitionsAction)
+    self.menuEdit.addAction(self.showSearchBarAction)
+    self.menuEdit.addAction(self.searchClipboardAction)
 
     self.menuView = QtWidgets.QMenu(self.menubar)
     self.menuView.setObjectName("menuView")
@@ -1026,6 +1041,7 @@ class Ui_MainWindow(QtCore.QObject):
 
   def saveDefinition_ui(self , definitionText, definitionType, hyperlink = None , markups = None):    
     word        = self.getSelectedWord()
+    if word is None: return
     query = self.getDefDMQuery(word,definitionText)
     if not self.defDataModel.definitionExists(query):
       if markups is None: 
@@ -1086,6 +1102,7 @@ class Ui_MainWindow(QtCore.QObject):
     oldDefinition  = self.getSelectedSavedDefinition()
     newDefinitionText = widget.text()
     word = self.getSelectedWord()
+    if word is None: return
     if oldDefinition.type == "_newUserDefinition":  #Dont'replace, add to the model
       _type = "User " + self.definitionName
       self.saveDefinition_ui(newDefinitionText,_type)
@@ -1277,7 +1294,12 @@ class Ui_MainWindow(QtCore.QObject):
         self.replaceDefinition(row,markups = [markups])
 
   def markupWordInText(self,word , text):
-    maxDist = min( int(len(word) / 3) , 4 )
+    try:
+      maxDist = min( int(len(word) / 3) , 4 )
+    except TypeError as e: #Very pernicious bug! Word == None
+      print("Word: " + str(word))
+      print("Text: " + str(text))
+      raise(e)
     #matches = fnm(phrase.lower(),text.lower(),max_l_dist = maxDist)
     matches = mp(word.lower(),text.lower(),0.25)
     if len(matches) == 0:
@@ -1316,3 +1338,35 @@ class Ui_MainWindow(QtCore.QObject):
       self.horizontalLayout.setStretch(1,1)
       self.savedDefinitionsView.setVisible(True)
       self.savedDefLabel.setVisible(True)
+  
+  def showSearchBar(self):
+    ok = False
+    text,ok = QtWidgets.QInputDialog.getText(self.mainWindow, "Address bar",
+                                         "Url or search term", QtWidgets.QLineEdit.Normal)
+    if ok and len(text) > 0:
+      self.searchAndOpenInBrowser(text)
+
+  def validateUrl(self,text):
+    blankSplits = text.split()
+    if len(blankSplits) > 1: #Should not contain a space
+      return False
+    else:
+      dotSplits = text.split(".") 
+      if len(dotSplits) == 1: #Must contain a dot
+        return False
+    return True
+  
+  def searchAndOpenInBrowser(self,text):
+    text = text.strip()
+    if self.validateUrl(text):
+      self.openLinkInBrowser(text)
+    else:
+      self.searchForWordInBrowser(self.searchForWordAction.engine , text)
+  
+  def searchClipboard(self):
+    clipboard = QtWidgets.QApplication.clipboard()
+    clipText  = clipboard.text()
+    if len(clipText) == 0:
+      return
+    else:
+      self.searchAndOpenInBrowser(clipText)
