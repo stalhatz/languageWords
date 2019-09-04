@@ -307,24 +307,24 @@ class Ui_MainWindow(QtCore.QObject):
   def followOnlineDefinitionHyperlink(self,index = None):
     definition = self.getSelectedOnlineDefinition()
     if definition.hyperlink is not None:
-      self.openLinkInBrowser(definition.hyperlink)
+      self.openLinkInBrowser(definition.hyperlink,self.getSelectedWord())
     else:
       self.statusBar.showMessage("No hyperlink to follow ", 1000)
   
   def followSavedDefinitionHyperlink(self,index = None):
     definition = self.getSelectedSavedDefinition()
     if definition.hyperlink is not None:
-      self.openLinkInBrowser(definition.hyperlink)
+      self.openLinkInBrowser(definition.hyperlink,self.getSelectedWord())
     else:
       self.statusBar.showMessage("No hyperlink to follow ", 1000)
 
-  def openLinkInBrowser(self,link):
+  def openLinkInBrowser(self,link , word = None):
     if ( self.useExternalBrowserAction.isChecked() ):
       QtGui.QDesktopServices.openUrl(QtCore.QUrl(link))
     else:
       url = QtCore.QUrl.fromUserInput(link)
       self.tabwidget.setCurrentIndex(1)
-      self.webView.load(url)
+      self.webView.load(url,word)
       self.statusBar.showMessage("Loading page from : " + str(url.toDisplayString() ))
 
   def requestOnlineDefinition(self,word,_dict):
@@ -366,7 +366,7 @@ class Ui_MainWindow(QtCore.QObject):
     if word is None or word == False:
       word = self.getSelectedWord()
     url = self.onlineDefDataModel.createUrl(word,self.selectedSearchDict)
-    self.openLinkInBrowser(url)  
+    self.openLinkInBrowser(url, word)  
 
   def addTopButtons(self , layout ,parentWidget):
     self.addWordButton = QtWidgets.QToolButton(parentWidget)
