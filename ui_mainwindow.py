@@ -56,8 +56,18 @@ class Ui_MainWindow(QtCore.QObject):
     self.projectName = "Untitled"
     self.programName = "LanguageWords"
     self.definitionTypes = ["Definition" , "Quotation" , "Example"]
+    #Program paths
+    self.tmpPath = QtCore.QStandardPaths.writableLocation(QtCore.QStandardPaths.TempLocation)
+    self.tmpPath = self.tmpPath + os.sep + self.programName
+    if not os.path.exists(self.tmpPath):
+      os.mkdir(self.tmpPath)
+    self.dataPath = QtCore.QStandardPaths.writableLocation(QtCore.QStandardPaths.AppDataLocation)
+    self.dataPath = self.dataPath + os.sep + self.programName
+    if not os.path.exists(self.dataPath):
+      os.mkdir(self.dataPath)
+    
     # Filename of file that stores session details in case the program exits in an abrupt manner
-    self.sessionFile = "." + self.programName + "_" + "session" + ".pkl" 
+    self.sessionFile = self.dataPath + os.sep + "." + "session" + ".pkl" 
     # Timer to trigger autosave in presence of unsaved changes 
     self.autoSaveTimer = QtCore.QTimer() 
     self.autoSaveTimer.timeout.connect(self.autoSave) 
@@ -849,7 +859,7 @@ class Ui_MainWindow(QtCore.QObject):
   
   def openFile(self,fileName = None):
     if (fileName is None) | (fileName is False):
-      fileName,fileType = QtWidgets.QFileDialog.getOpenFileName(self.centralwidget,"Open File", ".", "Pickle Files (*.pkl)")
+      fileName,fileType = QtWidgets.QFileDialog.getOpenFileName(self.centralwidget,"Open File", self.dataPath, "Pickle Files (*.pkl)")
     if fileName == "" or fileName is None:
       return None
     else:
@@ -1234,7 +1244,7 @@ class Ui_MainWindow(QtCore.QObject):
   def setDirtyState(self):
     if self.autoSaveTimer.isActive():
       return
-    self.tempProjectFile = ".tmp_"+self.projectName+".pkl"
+    self.tempProjectFile = self.dataPath + os.sep + ".tmp_"+self.projectName+".pkl"
     self.unsavedChanges = True
     self.autoSaveTimer.start(self.autoSaveTimerInterval)
 
@@ -1256,10 +1266,15 @@ class Ui_MainWindow(QtCore.QObject):
           self.cssFileName      = pickle.load(_input)
           self.applyCss(self.cssFileName)
         except EOFError:
-          pass
+          self.cssFileName = "stylesheet_compl.css"
+          self.applyCss(self.cssFileName)
         if self.unsavedChanges:
           tempCallback          = partial(self.loadProject_ui,self.tempProjectFile,True)
         lastOpenedCallback    = partial(self.loadProject_ui,self.projectFile)
+    else:
+      self.cssFileName = "stylesheet_compl.css"
+      self.applyCss(self.cssFileName)
+
     return tempCallback,lastOpenedCallback
 
   def writeSessionFile(self):
