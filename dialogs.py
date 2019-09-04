@@ -90,12 +90,7 @@ class WordDialog(QtWidgets.QDialog):
 
     self.wLineEdit = QtWidgets.QLineEdit(self)
     self.wLineEdit.setMaximumSize(QtCore.QSize(400, 25))
-    self.wLineEdit.setFocus()
-    if self.dialogType == self.CREATE_DIALOG:
-      self.wLineEdit.setPlaceholderText("Enter a new" +  self.wordName)
-      self.wLineEdit.editingFinished.connect(self.loadOnlineTags)
-    if self.dialogType == self.EDIT_DIALOG:
-      self.wLineEdit.setEnabled(False)
+    
     self.wLineEdit.textChanged.connect(self.wordTextChanged)
     vLeftLayout.addStretch()
 
@@ -118,6 +113,14 @@ class WordDialog(QtWidgets.QDialog):
     tagCompleter = QtWidgets.QCompleter(self.tagDataModel.getTags(includeAutoTags = False))
     tagCompleter.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
     self.tLineEdit.setCompleter(tagCompleter)
+
+    if self.dialogType == self.CREATE_DIALOG:
+      self.wLineEdit.setFocus()
+      self.wLineEdit.setPlaceholderText("Enter a new" +  self.wordName)
+      self.wLineEdit.editingFinished.connect(self.loadOnlineTags)
+    if self.dialogType == self.EDIT_DIALOG:
+      self.tLineEdit.setFocus()
+      self.wLineEdit.setEnabled(False)
 
     uiUtils.addLabeledWidget("Tags attributed to " + self.wordName, self.tagView , vRightLayout)
     vRightLayout.addWidget(self.tLineEdit)
