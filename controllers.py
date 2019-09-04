@@ -105,7 +105,7 @@ class SavedDefinitionsController(QAbstractListModel):
     try:
       self.definitionsTable.type = self.definitionsTable.type.str.lower()
       self.definitionsTable.sort_values(by=["type"] , inplace = True)
-    except KeyError:
+    except (KeyError, AttributeError):
       self.layoutChanged.emit()
       return
     self.definitionsList  = [x for x in self.definitionsTable.itertuples()]

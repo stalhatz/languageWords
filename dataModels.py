@@ -12,7 +12,6 @@ import requests
 from concurrent.futures import ThreadPoolExecutor
 import copy
 from collections import namedtuple
-
 from wikipedia.exceptions import WikipediaException
 
 def pandasCondition(dataFrame, query,fields):
@@ -510,9 +509,16 @@ class TagDataModel():
     # tagIndex = pd.pivot_table(self.tagTable,values='isAutoTag',index='tag',aggfunc=pd.Series.nunique).reset_index()
     table = self.tagTable
     if not includeAutoTags:
-      table = table[table.isAutoTag != True]
-    uniqueTagColumn = table.tag.unique()
-    return list(uniqueTagColumn)
+      try:
+        table = table[table.isAutoTag != True]
+      except AttributeError: #.isAutoTag does not exist
+        pass
+    try:
+      uniqueTagColumn = table.tag.unique()
+    except AttributeError: #.tag does not exist
+      return []
+    else:
+      return list(uniqueTagColumn)
 
   def replaceTag(self,oldTag,newTag):
     #Replace it as a metatag
@@ -576,9 +582,13 @@ class TagDataModel():
       self.removeMetaTag(tag)
 
     #delete auto tags
-    condition = self.condition(TagDataModel.Tag(isAutoTag = True))
-    index = self.tagTable[condition].index
-    self.tagTable.drop(index, inplace = True)
+    try:
+      condition = self.condition(TagDataModel.Tag(isAutoTag = True))
+    except KeyError: # if isAutoTag does not exist
+      pass
+    else:
+      index = self.tagTable[condition].index
+      self.tagTable.drop(index, inplace = True)
   
   def saveData(self,output):
     #version 0.01

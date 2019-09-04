@@ -1,4 +1,6 @@
 .directory
+stylesheets/*
+!stylesheets/stylesheet1.css
 *.csv
 *.ods
 *.xlsx

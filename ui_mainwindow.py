@@ -328,7 +328,7 @@ class Ui_MainWindow(QtCore.QObject):
       self.openLinkInBrowser(definition.hyperlink,self.getSelectedWord())
     else:
       self.statusBar.showMessage("No hyperlink to follow ", 1000)
-
+  
   def openLinkInBrowser(self,link , word = None):
     if ( self.useExternalBrowserAction.isChecked() ):
       QtGui.QDesktopServices.openUrl(QtCore.QUrl(link))
