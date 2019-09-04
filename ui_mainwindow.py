@@ -279,10 +279,11 @@ class Ui_MainWindow(QtCore.QObject):
     urlDicts = self.onlineDefDataModel.getDictNamesProvidingUrls()
     langDicts = self.onlineDefDataModel.getDictNamesProvidingLanguage(self.language)
     compatibleDicts = set(urlDicts).intersection(langDicts) 
-    for dictionary in compatibleDicts:
+    for i,dictionary in enumerate(compatibleDicts):
       selectEngineAction = QtWidgets.QAction (dictionary, self.mainWindow)
       selectEngineAction.setObjectName("Select"+dictionary+"Action")
       selectEngineAction.triggered.connect(partial(self.selectSearchEngine,dictionary,selectEngineAction) )
+      selectEngineAction.setShortcut("Ctrl+" + str(i))
       selectEngineAction.setCheckable(True)
       selectEngineAction.setChecked(False)
       self.selectEngineActions.append(selectEngineAction)
