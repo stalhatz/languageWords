@@ -1016,9 +1016,14 @@ class Ui_MainWindow(QtCore.QObject):
     if index.isValid():
       self.editTagsOfWordAction.setEnabled(True)
       self.removeWordAction.setEnabled(True)
+      self.addDefFromWebViewAction.setEnabled(True)
+      self.addTagFromWebViewAction.setEnabled(True)
     else:
       self.editTagsOfWordAction.setEnabled(False)
       self.removeWordAction.setEnabled(False)
+      self.addDefFromWebViewAction.setEnabled(False)
+      self.addTagFromWebViewAction.setEnabled(False)
+      
     selectedWord = self.getSelectedWord()
     self.elementController.updateOnWord(selectedWord)
     self.savedDefController.updateOnWord(selectedWord)
