@@ -29,6 +29,10 @@ QLineEdit{
   background: #2B2B2B;
 }
 
+QPushButton:disabled{
+  color:#92979B
+}
+
 QLineEdit:disabled{
   background: #82878B;
 }
