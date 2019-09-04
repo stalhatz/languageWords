@@ -15,8 +15,16 @@ class myWebViewer(QtWebEngineWidgets.QWebEngineView):
     self.actionBack.triggered.connect(self.back)
     QtWidgets.QApplication.instance().installEventFilter(self)
     self.setFocusProxy(self)
+    self.searchText = ""
 
-    
+  #Override
+  def load(self,url,text = ""):
+    if text is None:
+      text = ""
+    self.page().findText(text)
+    self.searchText = text
+    super(myWebViewer,self).load(url)
+
   def contextMenuEvent(self, event):
     menu = QtWidgets.QMenu(self)
     if len(self.selectedText()) > 0:
@@ -38,6 +46,25 @@ class myWebViewer(QtWebEngineWidgets.QWebEngineView):
               elif (event.key() == QtCore.Qt.Key_Right):
                 self.forward()
                 return True
+            elif int( QtGui.QGuiApplication.instance().queryKeyboardModifiers() & QtCore.Qt.ControlModifier) != 0:
+              if (event.key() == QtCore.Qt.Key_F):
+                text = self.showFindTextDialog()
+                if text is not None and (not text == ""):
+                  self.page().findText(text )
+                  self.searchText = text
+            elif (event.key() == QtCore.Qt.Key_F3):
+              if self.searchText != "":
+                self.page().findText(self.searchText)
+
     except TypeError:
       pass
     return False
+
+  def showFindTextDialog(self):
+    ok = False
+    text,ok = QtWidgets.QInputDialog.getText(self, "Find text in page",
+                                          "Text to find", QtWidgets.QLineEdit.Normal)
+    if ok and len(text) > 0:
+      return text
+    else:
+      return None
