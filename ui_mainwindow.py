@@ -549,7 +549,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.onlineDefController      = DefinitionController(self.onlineDefDataModel)
     self.onlineDefController.addView(self.onlineDefinitionsView)
     self.onlineDefinitionsView.setModel(self.onlineDefController)
-    self.elementController  = ElementTagController(self.tagDataModel)
+    self.elementController  = ElementTagController(self.tagDataModel,self.isAutoTag,self.stripAutoTag)
     self.elementTagview.setModel(self.elementController)
     self.savedDefController = SavedDefinitionsController(self.defDataModel)
   

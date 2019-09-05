@@ -40,6 +40,22 @@ def htmlFromMarkups(text,markups):
     icl += len(markup[1])
   return text
 
+def toDisplay(text)->str:
+  text = text.strip()
+  returnText = ""
+  for i,w in enumerate(text.split()):
+    if w.isupper() :
+      k = w
+    else:
+      if i > 0:
+        k = w.lower()
+      else:
+        k = w.title()
+    if i > 0:
+      returnText += " " + k
+    else:
+      returnText += k
+  return returnText
 #TODO: Merge with DefinitionController
 class SavedDefinitionsController(QAbstractListModel):
   DataRole = Qt.UserRole + 1
@@ -241,7 +257,7 @@ class TagController(QAbstractListModel):
       tagName = self.getTag(index)
       if (self.isAutoTag(tagName)):
         tagName = self.stripAutoTag(tagName)
-      return (tagName + " ("+str(self.getTagCount(index))+")").capitalize()
+      return (toDisplay(tagName) + " ("+str(self.getTagCount(index))+")")
     if role==Qt.EditRole:
       return self.getTag(index)
     if role==self.DataRole:
@@ -313,7 +329,7 @@ class WordController(QAbstractListModel):
     if not index.isValid() or not (0<=index.row()<len(self.df_image.index)):
       return QVariant()
     if role==Qt.DisplayRole:
-      return str(self.df_image.iloc[index.row(),0]).capitalize()
+      return toDisplay(str(self.df_image.iloc[index.row(),0]))
     if role==Qt.EditRole:
       return str(self.df_image.iloc[index.row(),0])
     if role==self.DataRole:
@@ -354,7 +370,7 @@ class WordController(QAbstractListModel):
 #TODO: Augment internal list with non-selectable elements ("INHERITED TAGS") to simplify indexing
 class ElementTagController(QAbstractListModel):
   dataChanged       = pyqtSignal(QModelIndex,QModelIndex)
-  def __init__(self,tagModel):
+  def __init__(self,tagModel,isAutoTag,stripAutoTag):
     super(ElementTagController,self).__init__()
     self.tagModel = tagModel
     self.currentIndex = -1
@@ -362,6 +378,8 @@ class ElementTagController(QAbstractListModel):
     self.directTagList = []
     self.currentElement = None
     self.spliterText = " INHERITED TAGS"
+    self.isAutoTag = isAutoTag
+    self.stripAutoTag = stripAutoTag
   def rowCount(self, modelIndex):
     return self.dataSize()
   def dataSize(self):
@@ -373,14 +391,28 @@ class ElementTagController(QAbstractListModel):
   def data(self, index, role):
     if not index.isValid() or not (0<=index.row()<self.dataSize()):
       return QVariant()
+
+    if role== Qt.DecorationRole:
+      tagName = self.getTag(index)
+      if (self.isAutoTag(tagName)):
+        return QIcon("sample.svg")
     if role==Qt.DisplayRole:
-      if index.row() < len(self.directTagList):
-        return str(self.tagList[index.row()])
-      elif index.row() == len(self.directTagList):
-        return self.spliterText
+      tag = self.getTag(index)
+      if tag is not None:
+        if self.isAutoTag(tag):
+          tag = self.stripAutoTag(tag)
+        return toDisplay(str(tag))
       else:
-        return str(self.tagList[index.row() - 1])
-      
+        return self.spliterText
+  
+  def getTag(self,index):
+    if index.row() < len(self.directTagList):
+      return self.tagList[index.row()]
+    elif index.row() == len(self.directTagList):
+      return None
+    else:
+      return self.tagList[index.row() - 1]
+
   def selected(self, index , prevIndex):
     self.currentIndex = index.row()
 
