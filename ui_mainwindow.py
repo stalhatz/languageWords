@@ -1269,17 +1269,17 @@ class Ui_MainWindow(QtCore.QObject):
         self.projectFile      = pickle.load(_input)
         self.unsavedChanges   = pickle.load(_input)
         try:
-          self.cssFileName      = pickle.load(_input)
-          self.applyCss(self.cssFileName)
+          cssFileName = pickle.load(_input)
+          self.applyCss(cssFileName)
         except EOFError:
-          self.cssFileName = "stylesheet_compl.css"
-          self.applyCss(self.cssFileName)
+          cssFileName = "stylesheet_compl.css"
+          self.applyCss("stylesheet_compl.css")
         if self.unsavedChanges:
           tempCallback          = partial(self.loadProject_ui,self.tempProjectFile,True)
         lastOpenedCallback    = partial(self.loadProject_ui,self.projectFile)
     else:
-      self.cssFileName = "stylesheet_compl.css"
-      self.applyCss(self.cssFileName)
+      cssFileName = "stylesheet_compl.css"
+      self.applyCss(cssFileName)
 
     return tempCallback,lastOpenedCallback
 
@@ -1295,9 +1295,11 @@ class Ui_MainWindow(QtCore.QObject):
 
   def applyCss(self,cssFileName = None):
     if cssFileName is not None:
-      self.cssFileName = cssFileName
-      with open(cssFileName,"r") as fh:
-        self.app.setStyleSheet(fh.read())
+      if (not hasattr(self,cssFileName)) or (cssFileName != self.cssFileName):
+        self.setDirtyState()
+        self.cssFileName = cssFileName
+        with open(cssFileName,"r") as fh:
+          self.app.setStyleSheet(fh.read())
     
     stylesheet="stylesheet_compl.css"
     with open(stylesheet,"r") as fh:
