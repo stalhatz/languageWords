@@ -1236,6 +1236,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.wordDataModel.renameWord(oldWord,word)
     self.tagDataModel.replaceWord(oldWord,word)
     self.defDataModel.replaceWord(oldWord,word)
+    self.markupSavedDefinitions(remarkup=True,word=word)
     self.setDirtyState()
 
   @staticmethod
@@ -1309,12 +1310,14 @@ class Ui_MainWindow(QtCore.QObject):
     self.markupSavedDefinitions(True)
     self.savedDefController.updateOnWord(self.getSelectedWord())
   
-  def markupSavedDefinitions(self, remarkup = False):
+  def markupSavedDefinitions(self, remarkup = False , word = None):
     df = self.defDataModel.savedDefinitionsTable
     for row in df.itertuples(index=True, name='Pandas'):
       if row.markups is None or remarkup:
+        if word is None or word == row.text:
         markups = self.markupWordInText(row.text,row.definition)
         self.replaceDefinition(row,markups = [markups])
+
 
   def markupWordInText(self,word , text):
     try:
