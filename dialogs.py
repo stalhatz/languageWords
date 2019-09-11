@@ -524,14 +524,14 @@ class TagEditDialog(QtWidgets.QDialog):
     #self.enableOKButton()
 
 class WelcomeDialog(QtWidgets.QDialog):
-  def __init__(self ,parent, loadAction , newAction , programName, version ,languages,lastOpenedFunc,loadTmpFunc):
+  def __init__(self ,parent, loadAction , newAction , programName, version ,lastOpenedFunc,loadTmpFunc):
     super(WelcomeDialog,self).__init__(parent)
     self.loadAction = loadAction
     self.newAction  = newAction
     self.loadedFile = False
+    self.setWindowTitle("Welcome Dialog")
     vLayout     = QtWidgets.QVBoxLayout(self)
     #vLayout
-    hHighLayout   = QtWidgets.QHBoxLayout()
     hMiddleLayout     = QtWidgets.QHBoxLayout()
     hLowLayout      = QtWidgets.QHBoxLayout()
     
@@ -540,17 +540,14 @@ class WelcomeDialog(QtWidgets.QDialog):
     welcomeMessageLabel.setText(welcomeMessage)
 
     vLayout.addWidget(welcomeMessageLabel)
-    vLayout.addLayout(hHighLayout)
     vLayout.addLayout(hMiddleLayout)
-    vLayout.addLayout(hLowLayout)
         
     #hMiddleLayout (vLayout)
     self.newProjectButton      = QtWidgets.QPushButton(self)
     self.newProjectButton.setText("New project")
     self.newProjectButton.setObjectName("welcomeDialog.newProjectButton")
     self.newProjectButton.setMinimumSize(QtCore.QSize(100, 50))
-    self.newProjectButton.clicked.connect(self.accept)
-    self.newProjectButton.setEnabled(False)
+    self.newProjectButton.clicked.connect(self.newAction.trigger)
 
     self.loadProjectButton      = QtWidgets.QPushButton(self)
     self.loadProjectButton.setText("Load existing project...")
@@ -577,7 +574,15 @@ class WelcomeDialog(QtWidgets.QDialog):
       self.loadTmpButton.clicked.connect(loadTmpFunc)
       hMiddleLayout.addWidget(self.loadTmpButton)
 
-    #hLowLayout (vLayout)
+class NewProjectDialog(QtWidgets.QDialog):
+  def __init__(self,parent,onlineDefDataModel):
+    super(NewProjectDialog,self).__init__(parent)
+    languages = onlineDefDataModel.getAvailableLanguages()
+    self.setWindowTitle("New Project Dialog")
+    vLayout         = QtWidgets.QVBoxLayout(self)
+    hHighLayout     = QtWidgets.QHBoxLayout()
+    hLowLayout     = QtWidgets.QHBoxLayout()
+
     self.nameLineEdit     = QtWidgets.QLineEdit(self)
     self.nameLineEdit.setObjectName("welcomeDialog.nameLineEdit")
     self.nameLineEdit.setPlaceholderText("Enter name for new project")
@@ -589,18 +594,40 @@ class WelcomeDialog(QtWidgets.QDialog):
     self.languageComboBox.insertItems(0,languages)
     self.languageComboBox.setMaximumSize(QtCore.QSize(100, 20))
 
-    hLowLayout.addWidget(self.nameLineEdit)
-    hLowLayout.addWidget(self.languageComboBox)
-    
+    hHighLayout.addWidget(self.nameLineEdit)
+    hHighLayout.addWidget(self.languageComboBox)
+
+    self.okButton      = QtWidgets.QPushButton(self)
+    self.okButton.setText("OK")
+    self.okButton.setObjectName("newProjectDialog.okButton")
+    self.okButton.setMinimumSize(QtCore.QSize(100, 30))
+    self.okButton.clicked.connect(self.accept)
+    self.okButton.setEnabled(False)
+
+    self.cancelButton      = QtWidgets.QPushButton(self)
+    self.cancelButton.setText("Cancel")
+    self.cancelButton.setObjectName("newProjectDialog.cancelButton")
+    self.cancelButton.setMinimumSize(QtCore.QSize(100, 30))
+    self.cancelButton.clicked.connect(self.reject)
+
+    hLowLayout.addWidget(self.okButton)
+    hLowLayout.addWidget(self.cancelButton)
+
+    vLayout.addLayout(hHighLayout)
+    vLayout.addLayout(hLowLayout)
+
+
+
   def eventFilter(self,_object, event):
     pass
     
   def nameTextChanged(self,text):
     shouldEnable = False
     if len(text) > 3:
-      self.newProjectButton.setEnabled(True)
+      self.okButton.setEnabled(True)
     else:
-      self.newProjectButton.setEnabled(False)
+      self.okButton.setEnabled(False)
+
 
 class PreferencesDialog(QtWidgets.QDialog):
   def __init__(self ,parent, uiObject, mainWindow, app , applyCssFunc):

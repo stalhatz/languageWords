@@ -1,6 +1,6 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from controllers import (DefinitionController, TagController, WordController,ElementTagController,SavedDefinitionsController)
-from dialogs import WordDialog,DictionaryDialog,TagEditDialog,WelcomeDialog,PreferencesDialog
+from dialogs import WordDialog,DictionaryDialog,TagEditDialog,WelcomeDialog,PreferencesDialog,NewProjectDialog
 from dataModels import WordDataModel,DefinitionDataModel,TagDataModel,OnlineDefinitionDataModel
 from delegates import HTMLDelegate
 from widgets import myWebViewer
@@ -24,20 +24,32 @@ Markup = namedtuple('Markup', ('start', 'stop','tagType'))
 
 class Ui_MainWindow(QtCore.QObject):
 
+  @staticmethod
+  def initDataModels():
+    return  (WordDataModel(),DefinitionDataModel.getInstance(),
+    OnlineDefinitionDataModel.getInstance(),TagDataModel())
+
+  def resetDataModels(self):
+    models = self.initDataModels()
+    self.setupDataModels(*models)
+    self.connectUIandDMs()
+
+  def setupDataModels(self,wordDataModel,defDataModel,onlineDefDataModel,tagDataModel):
+    #Data Models
+    self.wordDataModel      = wordDataModel
+    self.defDataModel       = defDataModel
+    self.tagDataModel       = tagDataModel
+    self.onlineDefDataModel = onlineDefDataModel
+
   @classmethod
   def defaultInit(cls,app=None,window=None):
-    wordDataModel   = WordDataModel()
-    defDataModel    = DefinitionDataModel.getInstance()
-    onlineDefDataModel  = OnlineDefinitionDataModel.getInstance()
-    tagDataModel    = TagDataModel()
-
+    models = cls.initDataModels()
     obj = cls()
     obj.init()
-    obj.setupDataModels(wordDataModel,tagDataModel, defDataModel, onlineDefDataModel)
+    obj.setupDataModels(*models)
     if window is not None:
       obj.setupUi(window)
     obj.connectUIandDMs()
-    
     obj.dictionary  = None
     obj.language    = None
     obj.app         = app
@@ -112,7 +124,7 @@ class Ui_MainWindow(QtCore.QObject):
   def defineActions(self):
     self.actionNew = QtWidgets.QAction(self.mainWindow)
     self.actionNew.setObjectName("actionNew")
-    self.actionNew.triggered.connect(self.newProject)
+    self.actionNew.triggered.connect(self.newProject_ui)
     self.actionNew.setShortcut("Ctrl+N")
 
     self.actionOpen = QtWidgets.QAction(self.mainWindow)
@@ -374,7 +386,7 @@ class Ui_MainWindow(QtCore.QObject):
     self.selectedDict           = engine
     self.searchForWordAction.setChecked(True)
     self.getDefinitionsAction.setChecked(False)
-    if word is None or word == False:
+    if word is None or isinstance(word,bool):
       word = self.getSelectedWord()
     url = self.onlineDefDataModel.createUrl(word,self.selectedSearchDict)
     self.openLinkInBrowser(url, word)  
@@ -520,13 +532,6 @@ class Ui_MainWindow(QtCore.QObject):
     self.statusBar = QtWidgets.QStatusBar(MainWindow)
     self.statusBar.setObjectName("statusbar")
     MainWindow.setStatusBar(self.statusBar)
-  
-  def setupDataModels(self,wordDataModel,tagDataModel,defDataModel,onlineDefDataModel):
-    #Data Models
-    self.wordDataModel      = wordDataModel
-    self.defDataModel       = defDataModel
-    self.tagDataModel       = tagDataModel
-    self.onlineDefDataModel = onlineDefDataModel
 
   def connectUIandDMs(self):
     #Controllers
@@ -664,6 +669,10 @@ class Ui_MainWindow(QtCore.QObject):
     elif dialogCode == QtWidgets.QDialog.Rejected:
       print('Rejected')
 
+  def addWordFromWebView(self):
+    newWord = self.webView.selectedText()
+    self.addWord_ui(newWord)
+
   def replaceTagsOfWord(self, word,newTags):
     #Remove word and tags
     autoFlags = [self.isAutoTag(x) for x in newTags]
@@ -758,17 +767,11 @@ class Ui_MainWindow(QtCore.QObject):
   
   def showWelcomeDialog(self):
     tempCallback,lastOpenedCallback = self.readSessionFile()
-    availableLanguages = self.onlineDefDataModel.getAvailableLanguages()
     self.welcomeDialog = WelcomeDialog(self.centralwidget,self.actionOpen, self.actionNew , 
-                                        self.programName , self.version , availableLanguages,
+                                        self.programName , self.version,
                                         lastOpenedCallback , tempCallback)
-    dialogCode = self.welcomeDialog.exec()
-    if dialogCode == QtWidgets.QDialog.Accepted:
-      if not self.welcomeDialog.loadedFile: #New Project
-        language     = self.welcomeDialog.languageComboBox.currentText()
-        projectName  = self.welcomeDialog.nameLineEdit.text()
-        self.newProject_ui(language,projectName)
-    elif dialogCode == QtWidgets.QDialog.Rejected:
+    dialogCode = self.welcomeDialog.exec() #Always pops up as modal!
+    if dialogCode == QtWidgets.QDialog.Rejected:
       self.exitAppAction.trigger()
   # def disableEditWordButton(self):
   #   self.editWordButton.setEnabled(False)
@@ -885,7 +888,6 @@ class Ui_MainWindow(QtCore.QObject):
     self.elementController.clear()
     self.statusBar.showMessage("Loaded from "+ fileName , 2000)
     if self.welcomeDialog.isVisible():
-      self.welcomeDialog.loadedFile = True
       self.welcomeDialog.accept()
 
   def loadProject(self,fileName,isTmpFile):
@@ -895,12 +897,24 @@ class Ui_MainWindow(QtCore.QObject):
       self.writeSessionFile()
     self.actionSave.setEnabled(True)
   
-  def newProject_ui(self , language , projectName):
+  def newProject_ui(self , language = None , projectName = None):
+    if not isinstance(language,str) or not isinstance(projectName,str):
+      availableLanguages = self.onlineDefDataModel.getAvailableLanguages()
+      self.newProjDialog = NewProjectDialog(self.centralwidget,self.onlineDefDataModel)
+      dialogCode = self.newProjDialog.exec()
+      if dialogCode == QtWidgets.QDialog.Accepted:
+        language     = self.newProjDialog.languageComboBox.currentText()
+        projectName  = self.newProjDialog.nameLineEdit.text()
+      elif dialogCode == QtWidgets.QDialog.Rejected:
+        return
+    if self.welcomeDialog.isVisible():
+      self.welcomeDialog.accept()
     self.newProject(language,projectName)
     self.setWindowTitle()
     self.defineDictionaryActions()
     
   def newProject(self,language,projectName):
+    self.resetDataModels()
     self.language                 = language
     self.wordDataModel.language   = language
     self.defDataModel.language    = language
@@ -1065,6 +1079,7 @@ class Ui_MainWindow(QtCore.QObject):
       dictionary  = self.selectedDefinitionsDict
       self.saveDefinition(word,definitionText,dictionary,definitionType,markups,hyperlink)
     self.savedDefController.updateOnWord(word)
+    #Tags may change (auto tags) by adding a definition
     currentTag = self.getSelectedTag()
     self.tagController.updateTags()
     tags = self.tagDataModel.getTagsFromIndex(word)
@@ -1315,9 +1330,9 @@ class Ui_MainWindow(QtCore.QObject):
     for row in df.itertuples(index=True, name='Pandas'):
       if row.markups is None or remarkup:
         if word is None or word == row.text:
-        markups = self.markupWordInText(row.text,row.definition)
-        self.replaceDefinition(row,markups = [markups])
-
+          markups = self.markupWordInText(row.text,row.definition)
+          self.replaceDefinition(row,markups = [markups])
+    
 
   def markupWordInText(self,word , text):
     try:
@@ -1349,11 +1364,7 @@ class Ui_MainWindow(QtCore.QObject):
     if not alreadyExists:
       tags.append(newTag)
       self.replaceTagsOfWord_ui(word,tags)
-  
-  def addWordFromWebView(self):
-    newWord = self.webView.selectedText()
-    self.addWord_ui(newWord)
-    
+     
   def hideCentralPanel(self):
     if self.horizontalLayout.count() == 3:
       self.horizontalLayout.removeItem(self.savedDefLayout)
